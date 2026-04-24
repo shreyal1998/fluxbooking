@@ -62,6 +62,8 @@ export async function POST(req: Request) {
           planStatus: status.toUpperCase(),
           plan: planId,
           planInterval: interval,
+          lemonSqueezyCustomerId: attributes.customer_id.toString(),
+          lemonSqueezySubscriptionId: payload.data.id.toString(),
           subscriptionEndsAt: attributes.renews_at ? new Date(attributes.renews_at) : null,
         },
       });

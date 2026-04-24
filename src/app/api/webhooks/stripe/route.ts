@@ -47,8 +47,8 @@ export async function POST(req: Request) {
       await prisma.tenant.update({
         where: { id: tenantId },
         data: {
-          stripeCustomerId: session.customer as string,
-          stripeSubscriptionId: (subscription as any).id,
+          lemonSqueezyCustomerId: session.customer as string,
+          lemonSqueezySubscriptionId: (subscription as any).id,
           planStatus: "ACTIVE",
           plan: "PRO", // Default for stripe legacy
           subscriptionEndsAt: new Date((subscription as any).current_period_end * 1000),
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
   if (event.type === "invoice.payment_failed") {
     const subscriptionId = session.subscription as string;
     await prisma.tenant.update({
-      where: { stripeSubscriptionId: subscriptionId },
+      where: { lemonSqueezySubscriptionId: subscriptionId },
       data: { planStatus: "PAST_DUE" },
     });
   }

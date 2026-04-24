@@ -65,8 +65,8 @@ model Tenant {
   plan                SubscriptionPlan     @default(FREE)
   planInterval        SubscriptionInterval @default(MONTH)
   planStatus          String?              @default("TRIALING") // ACTIVE, TRIALING, PAST_DUE, CANCELED
-  stripeCustomerId    String?              @unique
-  stripeSubscriptionId String?             @unique
+  lemonSqueezyCustomerId    String?        @unique
+  lemonSqueezySubscriptionId String?       @unique
   trialEndsAt         DateTime?
   subscriptionEndsAt  DateTime?
 
