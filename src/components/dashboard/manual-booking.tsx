@@ -17,6 +17,17 @@ import {
 import { getAvailableSlots, createBooking, updateBooking } from "@/app/actions/booking";
 import { searchCustomers, addCustomer } from "@/app/actions/customer";
 import { AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+
+function InputError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+}
 
 export function ManualBooking({ 
   tenantId, 
@@ -36,6 +47,21 @@ export function ManualBooking({
   const [customerSearch, setCustomerSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isAddingNewCustomer, setIsAddingNewCustomer] = useState(false);
+
+  const fetchSlots = async (date: Date, serviceId: string, staffId?: string) => {
+    setLoading(true);
+    const result = await getAvailableSlots(
+      tenantId, 
+      serviceId, 
+      format(date, "yyyy-MM-dd"), 
+      staffId,
+      initialData?.id
+    );
+    if ((result as any).slots) {
+      setAvailableSlots((result as any).slots);
+    }
+    setLoading(false);
+  };
 
   // Selection State
   const [selectedService, setSelectedService] = useState<any>(initialData?.service || null);
@@ -58,53 +84,6 @@ export function ManualBooking({
       fetchSlots(selectedDate, selectedService.id);
     }
   }, []);
-
-  // Customer Search Logic
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (customerSearch.length >= 2) {
-        const results = await searchCustomers(customerSearch);
-        setSearchResults(results);
-      } else {
-        setSearchResults([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [customerSearch]);
-
-  const clearFieldError = (field: string) => {
-    if (fieldErrors[field]) {
-      const newErrors = { ...fieldErrors };
-      delete newErrors[field];
-      setFieldErrors(newErrors);
-    }
-  };
-
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
-  };
-
-  const fetchSlots = async (date: Date, serviceId: string, staffId?: string) => {
-    setLoading(true);
-    const result = await getAvailableSlots(
-      tenantId, 
-      serviceId, 
-      format(date, "yyyy-MM-dd"), 
-      staffId,
-      initialData?.id
-    );
-    if ((result as any).slots) {
-      setAvailableSlots((result as any).slots);
-    }
-    setLoading(false);
-  };
 
   const handleSelectCustomer = (customer: any) => {
     setCustomerInfo({
@@ -147,12 +126,13 @@ export function ManualBooking({
 
     const result = await addCustomer(formData);
     if (result.success) {
+      toast.success("Customer created and selected!");
       handleSelectCustomer(result.customer);
     } else {
       if (result.error?.includes("email")) {
         setFieldErrors({ customerEmail: "This email is already in use" });
       } else {
-        alert(result.error);
+        toast.error(result.error);
       }
     }
     setLoading(false);
@@ -180,9 +160,10 @@ export function ManualBooking({
     }
 
     if (result.success) {
+      toast.success(mode === "edit" ? "Booking updated successfully!" : "Booking created successfully!");
       handleClose();
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setLoading(false);
   };
@@ -315,15 +296,16 @@ export function ManualBooking({
                           return (
                             <button
                               key={idx}
-                              onClick={() => { setSelectedSlot(slot); setStep(3); }}
+                              type="button"
+                              onClick={() => setSelectedSlot(slot)}
                               className={`p-3 rounded-xl border-2 transition-all text-left ${
                                 isSelected
                                   ? "bg-indigo-600 border-indigo-600 text-white shadow-lg"
                                   : "border-slate-50 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-100 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800"
                               }`}
                             >
-                              <span className="text-xs font-black">{slot.time}</span>
-                              <span className={`block text-[8px] uppercase tracking-tighter mt-0.5 ${isSelected ? 'text-indigo-100' : 'opacity-60'}`}>{slot.staffName}</span>
+                              <span className="block text-xs font-black">{slot.time}</span>
+                              <span className={`block text-[8px] uppercase tracking-tighter mt-0.5 ${isSelected ? 'text-indigo-100' : 'opacity-60'}`}>{slot.staffName.split(' ')[0]}</span>
                             </button>
                           );
                         })}

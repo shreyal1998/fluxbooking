@@ -11,34 +11,54 @@ import {
   Loader2,
   Calendar,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  Users
 } from "lucide-react";
 import { createBooking } from "@/app/actions/booking";
+import { toast } from "sonner";
 
 interface Service {
   id: string;
   name: string;
   durationMinutes: number;
   price: string;
+  color: string;
 }
 
 interface Staff {
   id: string;
   name: string;
+  bio?: string | null;
+  color: string;
+  services?: any[];
 }
+
+const InputError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+};
 
 export function BookingForm({ 
   tenantId, 
   services, 
-  staff 
+  staff,
+  primaryColor = "#6366f1"
 }: { 
   tenantId: string; 
   services: Service[]; 
-  staff: Staff[] 
+  staff: Staff[];
+  primaryColor?: string;
 }) {
   const [hasMounted, setHasMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; staffId: string; staffName: string } | null>(null);
   const [slots, setSlots] = useState<{ time: string; staffId: string; staffName: string }[]>([]);
@@ -55,21 +75,16 @@ export function BookingForm({
     }
   };
 
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
-  };
-
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  // Fetch slots when date or service changes
+  // Filter staff based on selected service
+  const filteredStaff = staff.filter(s => 
+    !selectedService || s.services?.some((srv: any) => srv.id === selectedService.id)
+  );
+
+  // Fetch slots when date, service, or staff changes
   useEffect(() => {
     async function fetchSlots() {
       if (!selectedService) return;
@@ -77,7 +92,8 @@ export function BookingForm({
       setLoadingSlots(true);
       try {
         const dateStr = format(selectedDate, "yyyy-MM-dd");
-        const response = await fetch(`/api/slots?tenantId=${tenantId}&serviceId=${selectedService.id}&date=${dateStr}`);
+        const staffParam = selectedStaffId !== "any" ? `&staffId=${selectedStaffId}` : "";
+        const response = await fetch(`/api/slots?tenantId=${tenantId}&serviceId=${selectedService.id}&date=${dateStr}${staffParam}`);
         const data = await response.json();
         setSlots(data.slots || []);
       } catch (error) {
@@ -90,12 +106,12 @@ export function BookingForm({
     if (hasMounted && step === 2 && selectedService) {
       fetchSlots();
     }
-  }, [selectedDate, selectedService, step, tenantId, hasMounted]);
+  }, [selectedDate, selectedService, selectedStaffId, step, tenantId, hasMounted]);
 
   if (!hasMounted) {
     return (
       <div className="flex justify-center items-center p-24">
-        <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
+        <Loader2 className="h-10 w-10 animate-spin" style={{ color: primaryColor }} />
       </div>
     );
   }
@@ -131,9 +147,10 @@ export function BookingForm({
     setSubmitting(false);
 
     if (result.success) {
+      toast.success("Booking confirmed! Please check your email.");
       setSuccess(true);
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
   };
 
@@ -163,7 +180,8 @@ export function BookingForm({
         </div>
         <button 
           onClick={() => window.location.reload()}
-          className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+          className="text-sm font-bold transition-colors"
+          style={{ color: primaryColor }}
         >
           Book another appointment
         </button>
@@ -178,11 +196,14 @@ export function BookingForm({
         <div className="flex items-center gap-4">
            {[1, 2, 3].map(i => (
              <div key={i} className="flex items-center gap-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                  step === i 
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110" 
-                    : step > i ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"
-                }`}>
+                <div 
+                  className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
+                    step === i 
+                      ? "text-white shadow-lg scale-110" 
+                      : step > i ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"
+                  }`}
+                  style={{ backgroundColor: step === i ? primaryColor : (step > i ? undefined : undefined) }}
+                >
                   {step > i ? <CheckCircle2 className="h-4 w-4" /> : i}
                 </div>
                 {i < 3 && <div className={`w-8 h-0.5 rounded-full ${step > i ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>}
@@ -199,7 +220,7 @@ export function BookingForm({
           <div className="space-y-8 animate-fade-in">
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-indigo-600" /> Select a Service
+                <Sparkles className="h-6 w-6" style={{ color: primaryColor }} /> Select a Service
               </h2>
               <p className="text-slate-500 font-medium mt-1">Choose the service you'd like to book.</p>
             </div>
@@ -213,9 +234,13 @@ export function BookingForm({
                   }}
                   className={`group flex items-center justify-between p-6 rounded-3xl border-2 text-left transition-all ${
                     selectedService?.id === service.id
-                      ? "border-indigo-600 bg-indigo-50/30"
-                      : "border-slate-100 bg-slate-50/50 hover:border-indigo-200 hover:bg-slate-50"
+                      ? "bg-opacity-10"
+                      : "border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50"
                   }`}
+                  style={{ 
+                    borderColor: selectedService?.id === service.id ? primaryColor : undefined,
+                    backgroundColor: selectedService?.id === service.id ? `${primaryColor}10` : undefined
+                  }}
                 >
                   <div className="space-y-1">
                     <p className="font-bold text-slate-900 text-lg">{service.name}</p>
@@ -225,9 +250,12 @@ export function BookingForm({
                       <span>${service.price}</span>
                     </div>
                   </div>
-                  <div className={`h-10 w-10 rounded-2xl flex items-center justify-center transition-all ${
-                    selectedService?.id === service.id ? "bg-indigo-600 text-white" : "bg-white text-slate-400 shadow-sm group-hover:bg-indigo-50 group-hover:text-indigo-600"
-                  }`}>
+                  <div 
+                    className={`h-10 w-10 rounded-2xl flex items-center justify-center transition-all ${
+                      selectedService?.id === service.id ? "text-white" : "bg-white text-slate-400 shadow-sm"
+                    }`}
+                    style={{ backgroundColor: selectedService?.id === service.id ? primaryColor : undefined }}
+                  >
                     <ChevronRight className="h-5 w-5" />
                   </div>
                 </button>
@@ -240,18 +268,43 @@ export function BookingForm({
           <div className="space-y-8 animate-fade-in">
              <button 
               onClick={() => setStep(1)}
-              className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-colors mb-2"
+              className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors mb-2"
             >
               <ChevronLeft className="h-4 w-4" /> Back to services
             </button>
             
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Pick a time</h2>
-              <p className="text-slate-500 font-medium mt-1">Available slots for {selectedService?.name}.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Pick a time</h2>
+                <p className="text-slate-500 font-medium mt-1">Available slots for {selectedService?.name}.</p>
+              </div>
+
+              {/* Staff Preference Selector */}
+              <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl">
+                 <button 
+                  onClick={() => setSelectedStaffId("any")}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    selectedStaffId === "any" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                 >
+                   Any Staff
+                 </button>
+                 {filteredStaff.map(s => (
+                   <button 
+                    key={s.id}
+                    onClick={() => setSelectedStaffId(s.id)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      selectedStaffId === s.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                   >
+                     {s.name.split(' ')[0]}
+                   </button>
+                 ))}
+              </div>
             </div>
 
             <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
-              {[...Array(7)].map((_, i) => {
+              {[...Array(14)].map((_, i) => {
                 const date = addDays(startOfToday(), i);
                 const isSelected = format(selectedDate, "yyyy-MM-dd") === format(date, "yyyy-MM-dd");
                 return (
@@ -260,14 +313,18 @@ export function BookingForm({
                     onClick={() => setSelectedDate(date)}
                     className={`flex-shrink-0 flex flex-col items-center justify-center w-20 h-24 rounded-2xl border-2 transition-all ${
                       isSelected
-                        ? "border-indigo-600 bg-indigo-50/50 shadow-lg shadow-indigo-100/50"
+                        ? "shadow-lg shadow-indigo-100/50"
                         : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
                     }`}
+                    style={{ 
+                      borderColor: isSelected ? primaryColor : undefined,
+                      backgroundColor: isSelected ? `${primaryColor}10` : undefined
+                    }}
                   >
-                    <span className={`text-[10px] font-black uppercase tracking-tighter ${isSelected ? "text-indigo-600" : "text-slate-400"}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-tighter`} style={{ color: isSelected ? primaryColor : '#94A3B8' }}>
                       {format(date, "EEE")}
                     </span>
-                    <span className={`text-xl font-black mt-1 ${isSelected ? "text-indigo-900" : "text-slate-900"}`}>
+                    <span className={`text-xl font-black mt-1 ${isSelected ? "text-slate-900" : "text-slate-900"}`}>
                       {format(date, "d")}
                     </span>
                   </button>
@@ -277,7 +334,7 @@ export function BookingForm({
 
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
+                <Loader2 className="h-10 w-10 animate-spin" style={{ color: primaryColor }} />
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Searching available slots...</p>
               </div>
             ) : slots.length > 0 ? (
@@ -291,17 +348,22 @@ export function BookingForm({
                     }}
                     className={`p-4 rounded-2xl border-2 font-black text-sm transition-all ${
                       selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId
-                        ? "border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                        : "border-slate-50 bg-slate-50 hover:border-indigo-200 text-slate-700"
+                        ? "text-white shadow-lg"
+                        : "border-slate-50 bg-slate-50 hover:border-slate-200 text-slate-700"
                     }`}
+                    style={{ 
+                      backgroundColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined,
+                      borderColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined
+                    }}
                   >
                     {slot.time}
+                    <div className="text-[8px] opacity-60 font-medium mt-1">{slot.staffName.split(' ')[0]}</div>
                   </button>
                 ))}
               </div>
             ) : (
               <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                <p className="text-slate-500 font-medium">No slots available for this day. Try another date!</p>
+                <p className="text-slate-500 font-medium">No slots available for this day. Try another date or staff member!</p>
               </div>
             )}
           </div>
@@ -311,7 +373,7 @@ export function BookingForm({
           <div className="space-y-8 animate-fade-in">
             <button 
               onClick={() => setStep(2)}
-              className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-colors mb-2"
+              className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors mb-2"
             >
               <ChevronLeft className="h-4 w-4" /> Back to times
             </button>
@@ -321,22 +383,22 @@ export function BookingForm({
               <p className="text-slate-500 font-medium mt-1">Review and confirm your appointment.</p>
             </div>
 
-            <div className="bg-indigo-50/50 rounded-3xl p-6 border border-indigo-100/50 space-y-4">
+            <div className="bg-opacity-5 rounded-3xl p-6 border space-y-4" style={{ backgroundColor: `${primaryColor}05`, borderColor: `${primaryColor}20` }}>
                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-indigo-600">
-                     <Calendar className="h-6 w-6" />
+                  <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm" style={{ color: primaryColor }}>
+                     <Users className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-wider">Appointment</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>Appointment</p>
                     <p className="font-bold text-slate-900">{selectedService?.name} with {selectedSlot?.staffName}</p>
                   </div>
                </div>
                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-indigo-600">
-                     <Clock className="h-6 w-6" />
+                  <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm" style={{ color: primaryColor }}>
+                     <Calendar className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-wider">Date & Time</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>Date & Time</p>
                     <p className="font-bold text-slate-900">{format(selectedDate, "EEEE, MMMM d")} at {selectedSlot?.time}</p>
                   </div>
                </div>
@@ -351,9 +413,10 @@ export function BookingForm({
                     type="text"
                     required
                     onChange={() => clearFieldError("customerName")}
-                    className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                      fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                    className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
+                      fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:ring-indigo-500/10"
                     }`}
+                    style={{ borderColor: fieldErrors.customerName ? undefined : (fieldErrors.customerName ? undefined : undefined) }}
                     placeholder="Enter your full name"
                   />
                   <InputError message={fieldErrors.customerName} />
@@ -365,8 +428,8 @@ export function BookingForm({
                     type="email"
                     required
                     onChange={() => clearFieldError("customerEmail")}
-                    className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                      fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                    className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
+                      fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:ring-indigo-500/10"
                     }`}
                     placeholder="name@example.com"
                   />
@@ -377,7 +440,8 @@ export function BookingForm({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-16 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-2xl shadow-slate-200 transition-all hover:bg-slate-800 hover:scale-[1.02] active:scale-95 disabled:bg-slate-300 flex items-center justify-center gap-3 mt-4"
+                className="w-full h-16 text-white rounded-2xl font-black text-lg shadow-2xl transition-all hover:scale-[1.02] active:scale-95 disabled:bg-slate-300 flex items-center justify-center gap-3 mt-4"
+                style={{ backgroundColor: primaryColor }}
               >
                 {submitting ? (
                   <>

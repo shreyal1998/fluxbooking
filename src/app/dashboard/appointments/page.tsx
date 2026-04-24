@@ -24,7 +24,7 @@ export default async function AppointmentsPage() {
     }
   }
 
-  const [bookings, blockedSlots, services, staff, tenant] = await Promise.all([
+  const [bookings, blockedSlots, services, staffRaw, tenant] = await Promise.all([
     prisma.booking.findMany({
       where: bookingQuery,
       include: {
@@ -44,6 +44,13 @@ export default async function AppointmentsPage() {
     prisma.staff.findMany({ where: { tenantId } }),
     prisma.tenant.findUnique({ where: { id: tenantId } })
   ]);
+
+  // If user is STAFF, filter the staff list to only include themselves for manual booking options
+  let staff = staffRaw;
+  if (userRole === "STAFF") {
+    const staffProfile = staffRaw.find(s => s.userId === userId);
+    staff = staffProfile ? [staffProfile] : [];
+  }
 
   return (
     <AppointmentsClient 

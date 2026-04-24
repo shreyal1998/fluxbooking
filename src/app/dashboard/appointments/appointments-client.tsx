@@ -15,11 +15,13 @@ import {
   AlertCircle,
   MoreVertical,
   Pencil,
-  Trash2
+  Trash2,
+  Users
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { ManualBooking } from "@/components/dashboard/manual-booking";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
+import { toast } from "sonner";
 
 export function AppointmentsClient({ 
   bookings, 
@@ -30,15 +32,28 @@ export function AppointmentsClient({
   userRole,
   tenant
 }: any) {
-  const [viewMode, setViewViewMode] = useState<"list" | "calendar">("calendar");
+  const [viewMode, setViewMode] = useState<"list" | "calendar" | "team">("calendar");
   const [staffFilter, setStaffFilter] = useState<string>("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [editingBooking, setEditingBooking] = useState<any>(null);
 
+  // Time grid for calendar (08:00 to 22:00)
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let i = 8; i <= 22; i++) {
+      slots.push(`${i.toString().padStart(2, '0')}:00`);
+    }
+    return slots;
+  }, []);
+
   const handleStatusUpdate = async (id: string, status: string) => {
     setProcessingId(id);
     const result = await updateBookingStatus(id, status);
-    if (!result.success) alert(result.error);
+    if (result.success) {
+      toast.success(`Booking ${status.toLowerCase()}`);
+    } else {
+      toast.error(result.error);
+    }
     setProcessingId(null);
   };
 
@@ -47,7 +62,11 @@ export function AppointmentsClient({
     
     setProcessingId(id);
     const result = await deleteBooking(id);
-    if (!result.success) alert(result.error);
+    if (result.success) {
+      toast.success("Booking deleted");
+    } else {
+      toast.error(result.error);
+    }
     setProcessingId(null);
   };
 
@@ -125,14 +144,23 @@ export function AppointmentsClient({
 
           <div className="bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
             <button 
-              onClick={() => setViewViewMode("calendar")}
+              onClick={() => setViewMode("calendar")}
               className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              title="Calendar View"
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
             <button 
-              onClick={() => setViewViewMode("list")}
+              onClick={() => setViewMode("team")}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'team' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              title="Team View"
+            >
+              <Users className="h-4 w-4" />
+            </button>
+            <button 
+              onClick={() => setViewMode("list")}
               className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              title="List View"
             >
               <List className="h-4 w-4" />
             </button>

@@ -6,6 +6,7 @@ import { Settings as SettingsIcon, Building, Globe, Mail, Shield, Clock, Palette
 import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
+import { BrandingSettings } from "@/components/dashboard/branding-settings";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -31,6 +32,14 @@ export default async function SettingsPage() {
           currentPlan={tenant?.plan || "FREE"} 
           planInterval={tenant?.planInterval || "MONTH"} 
           smsCredits={tenant?.smsCredits || 0}
+        />
+      )}
+
+      {/* Branding Section - ONLY for ADMIN */}
+      {userRole === "ADMIN" && (
+        <BrandingSettings 
+          initialColor={tenant?.primaryColor || "#6366f1"} 
+          initialLogo={tenant?.logoUrl || null} 
         />
       )}
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { approveLeaveRequest, rejectLeaveRequest } from "@/app/actions/dashboard";
 import { Check, X, Clock, Calendar, User, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export function LeaveRequestsManager({ initialRequests }: { initialRequests: any[] }) {
   const [requests, setRequests] = useState(initialRequests);
@@ -14,9 +15,10 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
     const result = action === 'approve' ? await approveLeaveRequest(id) : await rejectLeaveRequest(id);
     
     if (result.success) {
+      toast.success(action === 'approve' ? "Request approved" : "Request rejected");
       setRequests(prev => prev.filter(r => r.id !== id));
     } else {
-      alert(result.error);
+      toast.error(result.error);
     }
     setProcessing(null);
   };
@@ -86,7 +88,7 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
             </div>
             {request.reason && (
               <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-                "{request.reason}"
+                &quot;{request.reason}&quot;
               </div>
             )}
           </div>

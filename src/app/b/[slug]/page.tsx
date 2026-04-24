@@ -14,8 +14,14 @@ export default async function PublicBookingPage({
   const tenant = await prisma.tenant.findUnique({
     where: { slug: params.slug },
     include: {
-      services: true,
-      staff: true,
+      services: {
+        orderBy: { name: "asc" }
+      },
+      staff: {
+        include: {
+          services: true
+        }
+      },
     },
   });
 
@@ -79,7 +85,8 @@ export default async function PublicBookingPage({
           <BookingForm 
             tenantId={tenant.id} 
             services={tenant.services.map(s => ({ ...s, price: s.price.toString() }))} 
-            staff={tenant.staff} 
+            staff={tenant.staff as any} 
+            primaryColor={tenant.primaryColor}
           />
         </div>
 

@@ -34,13 +34,12 @@ function LoginForm() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    if (!email) {
-      setFieldErrors(prev => ({ ...prev, email: "Email is required" }));
-      setLoading(false);
-      return;
-    }
-    if (!password) {
-      setFieldErrors(prev => ({ ...prev, password: "Password is required" }));
+    const errors: Record<string, string> = {};
+    if (!email) errors.email = "Email is required";
+    if (!password) errors.password = "Password is required";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       setLoading(false);
       return;
     }

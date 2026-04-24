@@ -87,12 +87,19 @@ function RegisterContent() {
     if (!formData.get("confirmPassword")) errors.confirmPassword = "Confirm your password";
     if (!formData.get("businessName")) errors.businessName = "Business name is required";
     if (!formData.get("slug")) errors.slug = "URL is required";
+    if (!formData.get("phone")) errors.phone = "Phone number is required";
     if (!selectedCountry) errors.country = "Select your country";
     if (!selectedBusinessType) errors.businessType = "Select business type";
 
     const password = formData.get("password") as string;
+    const phone = formData.get("phone") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
     
+    // Format check for phone
+    if (phone && !/^[0-9\s-]{7,20}$/.test(phone)) {
+      errors.phone = "Invalid phone format";
+    }
+
     // Only show mismatch error if both fields have values
     if (password && confirmPassword && password !== confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
@@ -334,10 +341,14 @@ function RegisterContent() {
                   id="phone"
                   name="phone"
                   type="tel"
-                  className="flex-1 rounded-2xl border-2 border-slate-50 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all sm:text-sm font-medium"
+                  onChange={() => clearFieldError("phone")}
+                  className={`flex-1 rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
+                    fieldErrors.phone ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                  }`}
                   placeholder="234 567 890"
                 />
               </div>
+              <InputError message={fieldErrors.phone} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -355,7 +366,10 @@ function RegisterContent() {
                     }`}
                   >
                     <span className={!selectedBusinessType ? "text-slate-400" : ""}>
-                      {selectedBusinessType === "SALON" ? "Salon / Spa" : selectedBusinessType === "GYM" ? "Gym / Fitness" : "Select Type"}
+                      {selectedBusinessType === "SALON" ? "Salon / Spa" : 
+                       selectedBusinessType === "GYM" ? "Gym / Fitness" : 
+                       selectedBusinessType === "CLINIC" ? "Healthcare & Wellness" : 
+                       "Select Type"}
                     </span>
                     <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${openDropdown === "type" ? "rotate-180" : ""}`} />
                   </button>
@@ -365,24 +379,22 @@ function RegisterContent() {
                     <div className={`absolute z-50 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200 ${
                       dropdownDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
                     }`}>
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedBusinessType("SALON"); setOpenDropdown(null); clearFieldError("businessType"); }}
-                        className={`flex items-center w-full px-5 py-3 text-sm font-bold transition-colors ${
-                          selectedBusinessType === "SALON" ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        Salon / Spa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedBusinessType("GYM"); setOpenDropdown(null); clearFieldError("businessType"); }}
-                        className={`flex items-center w-full px-5 py-3 text-sm font-bold transition-colors ${
-                          selectedBusinessType === "GYM" ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        Gym / Fitness
-                      </button>
+                      {[
+                        { id: "SALON", label: "Salon / Spa" },
+                        { id: "GYM", label: "Gym / Fitness" },
+                        { id: "CLINIC", label: "Healthcare & Wellness" },
+                      ].map((type) => (
+                        <button
+                          key={type.id}
+                          type="button"
+                          onClick={() => { setSelectedBusinessType(type.id); setOpenDropdown(null); clearFieldError("businessType"); }}
+                          className={`flex items-center w-full px-5 py-3 text-sm font-bold transition-colors ${
+                            selectedBusinessType === type.id ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

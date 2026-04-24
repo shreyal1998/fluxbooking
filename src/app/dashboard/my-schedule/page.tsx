@@ -3,8 +3,10 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
+import { EditStaffForm } from "@/components/dashboard/edit-staff-form";
 import { LeaveRequestForm } from "@/components/dashboard/leave-request-form";
-import { Clock, Calendar, History } from "lucide-react";
+import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
+import { Clock, Calendar, History, Ban } from "lucide-react";
 import { format } from "date-fns";
 
 export default async function MySchedulePage() {
@@ -12,15 +14,30 @@ export default async function MySchedulePage() {
   if (!session) redirect("/login");
 
   const userId = (session.user as any).id;
-  const staffProfile = await prisma.staff.findUnique({
-    where: { userId },
-    include: {
-      leaveRequests: {
-        orderBy: { createdAt: "desc" },
-        take: 5
+  const tenantId = (session.user as any).tenantId;
+  
+  const [staffProfile, services] = await Promise.all([
+    prisma.staff.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        services: true,
+        leaveRequests: {
+          orderBy: { createdAt: "desc" },
+          take: 5
+        },
+        blockedSlots: {
+          where: {
+            endTime: { gte: new Date() }
+          },
+          orderBy: { startTime: "asc" }
+        }
       }
-    }
-  });
+    }),
+    prisma.service.findMany({
+      where: { tenantId }
+    })
+  ]);
 
   if (!staffProfile) {
     return (
@@ -48,6 +65,25 @@ export default async function MySchedulePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {/* Profile Section */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+              <div 
+                className="h-10 w-10 rounded-2xl flex items-center justify-center border-2"
+                style={{ borderColor: staffProfile.color, backgroundColor: `${staffProfile.color}10` }}
+              >
+                <History className="h-5 w-5" style={{ color: staffProfile.color }} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white">Public Profile</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">How you appear to customers.</p>
+              </div>
+            </div>
+            <div className="p-8">
+              <EditStaffForm staff={staffProfile} isAdmin={false} services={services} />
+            </div>
+          </div>
+
           {/* Availability Section */}
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
             <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
@@ -64,6 +100,22 @@ export default async function MySchedulePage() {
                 staffId={staffProfile.id} 
                 initialAvailability={staffProfile.availabilityJson} 
               />
+            </div>
+          </div>
+
+          {/* Quick Block Section */}
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+              <div className="h-10 w-10 rounded-2xl bg-slate-900 dark:bg-slate-800 flex items-center justify-center text-white">
+                <Ban className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white">Quick Block</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Temporarily block specific hours from your calendar.</p>
+              </div>
+            </div>
+            <div className="p-8">
+              <QuickBlockForm staffId={staffProfile.id} existingBlocks={staffProfile.blockedSlots} />
             </div>
           </div>
 

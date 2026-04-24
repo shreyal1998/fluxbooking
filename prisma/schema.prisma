@@ -12,6 +12,7 @@ datasource db {
 enum BusinessType {
   SALON
   GYM
+  CLINIC
 }
 
 enum UserRole {
@@ -57,6 +58,7 @@ model Tenant {
   country           String       @default("US") // ISO Country Code (e.g., US, IN, GB)
   currency          String       @default("USD") // Currency Code (e.g., USD, INR, GBP)
   logoUrl           String?
+  primaryColor      String       @default("#6366f1")
   businessHoursJson Json?        // Global opening/closing hours
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
@@ -143,6 +145,7 @@ model Service {
   tenantId        String
   name            String
   durationMinutes Int
+  bufferTime      Int      @default(0)
   price           Decimal  @db.Decimal(10, 2)
   color           String   @default("#6366f1") // Default Indigo
   capacity        Int      @default(1) // 1 for Salons, N for Gym classes
@@ -151,6 +154,7 @@ model Service {
 
   tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   bookings        Booking[]
+  staff           Staff[]  @relation("StaffServices")
 }
 
 model Staff {
@@ -169,6 +173,7 @@ model Staff {
   bookings         Booking[]
   blockedSlots     BlockedSlot[]
   leaveRequests    LeaveRequest[]
+  services         Service[] @relation("StaffServices")
 }
 
 model Customer {

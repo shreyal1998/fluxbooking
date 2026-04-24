@@ -14,6 +14,7 @@ export async function addService(formData: FormData) {
   const tenantId = (session.user as any).tenantId;
   const name = formData.get("name") as string;
   const duration = parseInt(formData.get("duration") as string);
+  const bufferTime = parseInt(formData.get("bufferTime") as string) || 0;
   const price = parseFloat(formData.get("price") as string);
   const color = formData.get("color") as string || "#6366f1";
 
@@ -22,6 +23,7 @@ export async function addService(formData: FormData) {
       data: {
         name,
         durationMinutes: duration,
+        bufferTime,
         price,
         color,
         tenantId,
@@ -31,6 +33,66 @@ export async function addService(formData: FormData) {
     return { success: true };
   } catch (error) {
     return { error: "Failed to add service" };
+  }
+}
+
+export async function updateService(serviceId: string, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = (session.user as any).tenantId;
+  const name = formData.get("name") as string;
+  const duration = parseInt(formData.get("duration") as string);
+  const bufferTime = parseInt(formData.get("bufferTime") as string) || 0;
+  const price = parseFloat(formData.get("price") as string);
+  const color = formData.get("color") as string;
+
+  try {
+    await prisma.service.update({
+      where: { id: serviceId, tenantId },
+      data: {
+        name,
+        durationMinutes: duration,
+        bufferTime,
+        price,
+        color
+      },
+    });
+    revalidatePath("/dashboard/services");
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to update service" };
+  }
+}
+
+export async function deleteService(serviceId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = (session.user as any).tenantId;
+
+  try {
+    // Check for future bookings
+    const bookings = await prisma.booking.count({
+      where: {
+        serviceId,
+        tenantId,
+        startTime: { gte: new Date() },
+        status: { in: ["PENDING", "CONFIRMED"] }
+      }
+    });
+
+    if (bookings > 0) {
+      return { error: `Cannot delete service with ${bookings} upcoming booking(s).` };
+    }
+
+    await prisma.service.delete({
+      where: { id: serviceId, tenantId }
+    });
+    revalidatePath("/dashboard/services");
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to delete service" };
   }
 }
 
@@ -46,6 +108,9 @@ export async function addStaff(formData: FormData) {
   const phone = formData.get("phone") as string;
   const countryCode = formData.get("staffCountryCode") as string;
   const existingUserId = formData.get("userId") as string;
+  
+  // Get selected services from formData (multiple services)
+  const serviceIds = formData.getAll("services") as string[];
 
   // Combine phone with country code
   const selectedCountryData = COUNTRIES.find(c => c.code === countryCode);
@@ -117,6 +182,9 @@ export async function addStaff(formData: FormData) {
           thursday: { start: "09:00", end: "17:00" },
           friday: { start: "09:00", end: "17:00" },
         }),
+        services: {
+          connect: serviceIds.map(id => ({ id }))
+        }
       },
     });
     revalidatePath("/dashboard/staff");
@@ -124,6 +192,30 @@ export async function addStaff(formData: FormData) {
   } catch (error) {
     console.error("Add Staff Error:", error);
     return { error: "Failed to add staff" };
+  }
+}
+
+export async function updateTenantBranding(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = (session.user as any).tenantId;
+  const primaryColor = formData.get("primaryColor") as string;
+  const logoUrl = formData.get("logoUrl") as string;
+
+  try {
+    const tenant = await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { 
+        primaryColor: primaryColor || "#6366f1",
+        logoUrl: logoUrl || null
+      },
+    });
+    revalidatePath("/dashboard/settings");
+    revalidatePath(`/b/${tenant.slug}`);
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to update branding" };
   }
 }
 
@@ -167,6 +259,104 @@ export async function updateStaffAvailability(staffId: string, availability: any
     return { success: true };
   } catch (error) {
     return { error: "Failed to update staff availability" };
+  }
+}
+
+export async function updateStaffProfile(staffId: string, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const tenantId = (session.user as any).tenantId;
+  const userRole = (session.user as any).role;
+  const currentUserId = (session.user as any).id;
+
+  const name = formData.get("name") as string;
+  const bio = formData.get("bio") as string;
+  const phone = formData.get("phone") as string;
+  const color = formData.get("color") as string;
+  const serviceIds = formData.getAll("services") as string[];
+
+  try {
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId, tenantId },
+      include: { user: true }
+    });
+
+    if (!staff) return { error: "Staff not found" };
+
+    // Authorization: Admin can edit anyone, Staff can only edit themselves
+    if (userRole !== "ADMIN" && staff.userId !== currentUserId) {
+      return { error: "Unauthorized" };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Update Staff record
+      await tx.staff.update({
+        where: { id: staffId },
+        data: {
+          name: userRole === "ADMIN" ? name : staff.name, // Only Admin can change name? Or let staff change name too? Usually name is fine.
+          bio,
+          color: color || staff.color,
+          services: {
+            set: serviceIds.map(id => ({ id }))
+          }
+        }
+      });
+
+      // Update linked User record if it exists
+      if (staff.userId) {
+        await tx.user.update({
+          where: { id: staff.userId },
+          data: {
+            name: userRole === "ADMIN" ? name : staff.name,
+            phone: phone || null
+          }
+        });
+      }
+    });
+
+    revalidatePath("/dashboard/staff");
+    revalidatePath("/dashboard/my-schedule");
+    return { success: true };
+  } catch (error) {
+    console.error("Update Staff Error:", error);
+    return { error: "Failed to update staff profile" };
+  }
+}
+
+export async function deleteStaff(staffId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any)?.role !== "ADMIN") {
+    return { error: "Unauthorized" };
+  }
+
+  const tenantId = (session.user as any).tenantId;
+
+  try {
+    // 1. Check for upcoming bookings
+    const upcomingBookings = await prisma.booking.count({
+      where: {
+        staffId,
+        tenantId,
+        startTime: { gt: new Date() },
+        status: { in: ["PENDING", "CONFIRMED"] }
+      }
+    });
+
+    if (upcomingBookings > 0) {
+      return { error: `Cannot delete staff with ${upcomingBookings} upcoming appointment(s). Please reassign or cancel them first.` };
+    }
+
+    // 2. Perform deletion
+    await prisma.staff.delete({
+      where: { id: staffId, tenantId }
+    });
+
+    revalidatePath("/dashboard/staff");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete Staff Error:", error);
+    return { error: "Failed to delete staff member" };
   }
 }
 
@@ -282,5 +472,100 @@ export async function rejectLeaveRequest(requestId: string) {
     return { success: true };
   } catch (error) {
     return { error: "Failed to reject request" };
+  }
+}
+
+export async function blockTimeSlot(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const tenantId = (session.user as any).tenantId;
+  const userRole = (session.user as any).role;
+  const userId = (session.user as any).id;
+
+  const staffId = formData.get("staffId") as string;
+  const reason = formData.get("reason") as string;
+  const startTime = new Date(formData.get("startTime") as string);
+  const endTime = new Date(formData.get("endTime") as string);
+
+  try {
+    // Security: If staff, verify they are blocking themselves
+    if (userRole === "STAFF") {
+      const staffProfile = await prisma.staff.findUnique({ where: { userId } });
+      if (!staffProfile || staffId !== staffProfile.id) {
+        return { error: "Unauthorized" };
+      }
+    }
+
+    // Validation: End must be after start
+    if (startTime >= endTime) {
+      return { error: "End time must be after start time" };
+    }
+
+    // Conflict Check: Are there any bookings in this range?
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        staffId,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        startTime: { lt: endTime },
+        endTime: { gt: startTime }
+      }
+    });
+
+    if (conflict) {
+      return { error: "Cannot block time: An appointment already exists during this period." };
+    }
+
+    await prisma.blockedSlot.create({
+      data: {
+        tenantId,
+        staffId,
+        reason: reason || "Personal Block",
+        startTime,
+        endTime
+      }
+    });
+
+    revalidatePath("/dashboard/my-schedule");
+    revalidatePath("/dashboard/appointments");
+    return { success: true };
+  } catch (error) {
+    console.error("Block Error:", error);
+    return { error: "Failed to block time slot" };
+  }
+}
+
+export async function deleteBlockedSlot(slotId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const tenantId = (session.user as any).tenantId;
+  const userRole = (session.user as any).role;
+  const userId = (session.user as any).id;
+
+  try {
+    const slot = await prisma.blockedSlot.findUnique({
+      where: { id: slotId, tenantId }
+    });
+
+    if (!slot) return { error: "Slot not found" };
+
+    // Security check
+    if (userRole === "STAFF") {
+      const staffProfile = await prisma.staff.findUnique({ where: { userId } });
+      if (!staffProfile || slot.staffId !== staffProfile.id) {
+        return { error: "Unauthorized" };
+      }
+    }
+
+    await prisma.blockedSlot.delete({
+      where: { id: slotId }
+    });
+
+    revalidatePath("/dashboard/my-schedule");
+    revalidatePath("/dashboard/appointments");
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to remove block" };
   }
 }

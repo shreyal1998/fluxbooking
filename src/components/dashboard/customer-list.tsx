@@ -19,6 +19,17 @@ import {
 } from "lucide-react";
 import { updateCustomer, toggleCustomerStatus } from "@/app/actions/customer";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
+const InputError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+};
 
 export function CustomerList({ initialCustomers, userRole }: { initialCustomers: any[], userRole: string }) {
   const [customers, setCustomers] = useState(initialCustomers);
@@ -75,6 +86,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
     const result = await updateCustomer(editingCustomer.id, formData);
     
     if (result.success) {
+      toast.success("Customer updated successfully!");
       setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...c, 
         name: formData.get('name'), 
         email: formData.get('email'),
@@ -87,20 +99,10 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
       if (result.error?.includes("email")) {
         setFieldErrors({ email: "This email is already in use" });
       } else {
-        alert(result.error);
+        toast.error(result.error);
       }
     }
     setLoading(false);
-  };
-
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
   };
 
   const handleToggleStatus = async (id: string, currentStatus: string, reason?: string) => {
@@ -109,18 +111,18 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
       const result = await toggleCustomerStatus(id, newStatus, reason);
       
       if (result.success) {
+          toast.success(newStatus === 'ACTIVE' ? "Customer restored successfully!" : "Customer archived successfully!");
           setCustomers(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
           setArchivingCustomer(null);
           setArchiveReason("");
       } else {
-          alert(result.error);
+          toast.error(result.error);
       }
       setProcessingId(null);
   };
 
   const handleArchiveRequest = (customer: any) => {
     if (userRole === "ADMIN") {
-      // Admins skip the reason pop-up for speed, or you can force it for them too
       handleToggleStatus(customer.id, 'ACTIVE');
     } else {
       setArchivingCustomer(customer);
@@ -141,7 +143,6 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
             />
         </div>
 
-        {/* Filter Bar: ONLY visible to ADMIN */}
         {userRole === "ADMIN" && (
           <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
@@ -222,7 +223,6 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                   <td className="px-8 py-5 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       
-                      {/* Set INACTIVE Action: Both can do this for active clients */}
                       {customer.status === 'ACTIVE' ? (
                           <button 
                             onClick={() => handleArchiveRequest(customer)}
@@ -233,7 +233,6 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                             <Archive className="h-4 w-4" />
                           </button>
                       ) : (
-                        /* Set ACTIVE Action: ONLY Admin can restore inactive clients */
                         userRole === "ADMIN" && (
                           <button 
                             onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
@@ -262,7 +261,6 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
         </div>
       </div>
 
-      {/* Edit Modal */}
       {editingCustomer && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
@@ -336,7 +334,6 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
         </div>
       )}
 
-      {/* Archive Confirmation Modal (Staff Only) */}
       {archivingCustomer && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">

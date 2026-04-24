@@ -13,11 +13,14 @@ export default async function StaffPage() {
   if (!session) redirect("/login");
 
   const tenantId = (session.user as any).tenantId;
-  const [staffMembers, users, pendingRequests, tenant] = await Promise.all([
+  const [staffMembers, users, pendingRequests, tenant, services] = await Promise.all([
     prisma.staff.findMany({
       where: { tenantId },
       orderBy: { createdAt: "asc" }, // Order by creation to determine who is "active"
-      include: { user: true }
+      include: { 
+        user: true,
+        services: true
+      }
     }),
     prisma.user.findMany({
       where: { 
@@ -46,6 +49,10 @@ export default async function StaffPage() {
     prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { plan: true, planStatus: true }
+    }),
+    prisma.service.findMany({
+      where: { tenantId },
+      orderBy: { name: "asc" }
     })
   ]);
 
@@ -109,7 +116,7 @@ export default async function StaffPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Add Staff Form */}
         <div className="lg:col-span-1">
-          <AddStaffForm users={users} />
+          <AddStaffForm users={users} services={services} />
         </div>
 
         {/* Staff List */}
@@ -120,7 +127,7 @@ export default async function StaffPage() {
               <p className="text-slate-500">No staff members added yet. Add your team to start taking appointments.</p>
             </div>
           ) : (
-            <StaffList staffMembers={staffMembers} currentLimit={currentLimit} />
+            <StaffList staffMembers={staffMembers} currentLimit={currentLimit} services={services} />
           )}
         </div>
       </div>

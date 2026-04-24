@@ -11,6 +11,7 @@ import {
   Clock,
   CheckCircle2
 } from "lucide-react";
+import { getLabels } from "@/lib/labels";
 import { format } from "date-fns";
 
 export default async function DashboardPage() {
@@ -21,6 +22,9 @@ export default async function DashboardPage() {
   const userRole = (session.user as any).role;
   const userId = (session.user as any).id;
 
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  const labels = getLabels(tenant?.businessType);
+
   // For staff, we need their staff profile ID
   const staffProfile = userRole === "STAFF" 
     ? await prisma.staff.findUnique({ where: { userId } })
@@ -28,7 +32,7 @@ export default async function DashboardPage() {
 
   const staffFilter = userRole === "STAFF" && staffProfile ? { staffId: staffProfile.id } : {};
 
-  const [servicesCount, staffCount, bookingsCount, tenant, recentBookings, completedBookings] = await Promise.all([
+  const [servicesCount, staffCount, bookingsCount, recentBookings, completedBookings] = await Promise.all([
     prisma.service.count({ where: { tenantId } }),
     prisma.staff.count({ where: { tenantId } }),
     prisma.booking.count({ 
@@ -38,7 +42,6 @@ export default async function DashboardPage() {
         ...staffFilter
       } 
     }),
-    prisma.tenant.findUnique({ where: { id: tenantId } }),
     prisma.booking.findMany({
       where: { tenantId, ...staffFilter },
       include: { service: true, staff: true },
@@ -61,9 +64,9 @@ export default async function DashboardPage() {
   }, 0);
 
   const stats = [
-    { name: "Services", value: servicesCount, icon: Scissors, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
-    { name: "Team Members", value: staffCount, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: "Total", hidden: userRole === "STAFF" },
-    { name: userRole === "STAFF" ? "My Active Bookings" : "Pending Bookings", value: bookingsCount, icon: CalendarIcon, color: "text-rose-600", bg: "bg-rose-50/50", trend: "Waiting" },
+    { name: labels.service + "s", value: servicesCount, icon: Scissors, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
+    { name: labels.staff + " Team", value: staffCount, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: "Total", hidden: userRole === "STAFF" },
+    { name: userRole === "STAFF" ? `My Active ${labels.appointment}s` : `Pending ${labels.appointment}s`, value: bookingsCount, icon: CalendarIcon, color: "text-rose-600", bg: "bg-rose-50/50", trend: "Waiting" },
     { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
   ].filter(s => !s.hidden);
 

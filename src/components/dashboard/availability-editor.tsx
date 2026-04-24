@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { updateStaffAvailability, updateBusinessHours } from "@/app/actions/dashboard";
 import { Clock, Save, Trash2, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
@@ -65,11 +66,14 @@ export function AvailabilityEditor({
       }
 
       if (result.success) {
+        toast.success('Schedule saved successfully!');
         setMessage({ type: 'success', text: 'Schedule saved successfully!' });
       } else {
+        toast.error(result.error || 'Failed to save');
         setMessage({ type: 'error', text: result.error || 'Failed to save' });
       }
     } catch (error) {
+      toast.error('An unexpected error occurred');
       setMessage({ type: 'error', text: 'An unexpected error occurred' });
     } finally {
       setLoading(false);

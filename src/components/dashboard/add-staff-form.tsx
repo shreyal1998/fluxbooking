@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UserPlus, AlertCircle, Loader2, Search, ChevronDown } from "lucide-react";
+import { UserPlus, AlertCircle, Loader2, Search, ChevronDown, Scissors, Check } from "lucide-react";
 import { addStaff } from "@/app/actions/dashboard";
 import { COUNTRIES } from "@/config/countries";
+import { toast } from "sonner";
 
-export function AddStaffForm({ users }: { users: any[] }) {
+export function AddStaffForm({ users, services }: { users: any[], services: any[] }) {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [showPasswordField, setShowPasswordField] = useState(true);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   
   // Country Code State
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -48,6 +50,14 @@ export function AddStaffForm({ users }: { users: any[] }) {
     setGeneralError(null);
   };
 
+  const toggleService = (serviceId: string) => {
+    setSelectedServices(prev => 
+      prev.includes(serviceId) 
+        ? prev.filter(id => id !== serviceId) 
+        : [...prev, serviceId]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -80,14 +90,20 @@ export function AddStaffForm({ users }: { users: any[] }) {
       return;
     }
 
+    // Append selected services
+    selectedServices.forEach(id => formData.append("services", id));
+
     const result = await addStaff(formData);
 
     if (result?.error) {
       setGeneralError(result.error);
+      toast.error(result.error);
       setLoading(false);
     } else {
+      toast.success("Staff member added successfully!");
       (e.target as HTMLFormElement).reset();
       setShowPasswordField(true);
+      setSelectedServices([]);
       setLoading(false);
     }
   };
@@ -103,43 +119,45 @@ export function AddStaffForm({ users }: { users: any[] }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm sticky top-8 text-left">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-        <UserPlus className="h-5 w-5 text-indigo-600" />
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft sticky top-8 text-left transition-colors">
+      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
+        <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+           <UserPlus className="h-5 w-5" />
+        </div>
         Add Staff Member
       </h3>
 
       {generalError && (
-        <div className="mb-6 p-4 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold border border-rose-100">
+        <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-bold border border-rose-100 dark:border-rose-900/30">
           {generalError}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Full Name</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Full Name</label>
           <input
             name="name"
             type="text"
             required
             onChange={() => clearFieldError("name")}
             placeholder="e.g., Sarah Smith"
-            className={`mt-1 block w-full rounded-md border px-3 py-2 text-sm focus:outline-none transition-all ${
-              fieldErrors.name ? "border-rose-300 bg-rose-50 focus:border-rose-500" : "border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"
+            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
+              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
             }`}
           />
           <InputError message={fieldErrors.name} />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-slate-700">User Account</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">User Account</label>
           <select
             name="userId"
             onChange={(e) => {
               setShowPasswordField(e.target.value === "");
               clearFieldError("userId");
             }}
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
             <option value="">Create new login account</option>
             {users.map((user) => (
@@ -152,8 +170,8 @@ export function AddStaffForm({ users }: { users: any[] }) {
 
         {showPasswordField && (
           <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
-               <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-3">Login Credentials</p>
+             <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border border-indigo-100 dark:border-indigo-900/30">
+               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Login Credentials</p>
                <div className="space-y-3">
                   <div>
                     <input
@@ -161,30 +179,28 @@ export function AddStaffForm({ users }: { users: any[] }) {
                       type="email"
                       onChange={() => clearFieldError("email")}
                       placeholder="Staff Email"
-                      className={`block w-full rounded-lg border px-3 py-2 text-xs focus:outline-none transition-all ${
-                        fieldErrors.email ? "border-rose-300 bg-rose-50 focus:border-rose-500" : "border-slate-200 focus:border-indigo-500"
+                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
+                        fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                       }`}
                     />
                     <InputError message={fieldErrors.email} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Staff Phone (Optional)</label>
                     <div className="flex gap-2">
                        <div className="relative" ref={dropdownRef}>
                           <button
                             type="button"
                             onClick={() => setOpenDropdown(!openDropdown)}
-                            className="h-10 px-3 bg-slate-100 border border-slate-200 rounded-lg flex items-center gap-2 text-xs font-black text-slate-500 hover:border-indigo-500 transition-all cursor-pointer"
+                            className="h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-2 text-xs font-black text-slate-500 hover:border-indigo-500 transition-all cursor-pointer"
                           >
                             <span>+{selectedCountry.phoneCode}</span>
                             <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${openDropdown ? 'rotate-180' : ''}`} />
                           </button>
-                          {/* Hidden input to pass selected country code to server */}
                           <input type="hidden" name="staffCountryCode" value={selectedCountry.code} />
 
                           {openDropdown && (
-                            <div className="absolute z-[110] left-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 max-h-60 flex flex-col">
-                              <div className="px-3 pb-2 border-b border-slate-50 mb-1 sticky top-0 bg-white">
+                            <div className="absolute z-[110] left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col">
+                              <div className="px-3 pb-2 border-b border-slate-50 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-800">
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                                   <input 
@@ -193,7 +209,7 @@ export function AddStaffForm({ users }: { users: any[] }) {
                                     placeholder="Search..."
                                     value={countrySearch}
                                     onChange={(e) => setCountrySearch(e.target.value)}
-                                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 border-none rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20"
+                                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border-none rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20 dark:text-white"
                                   />
                                 </div>
                               </div>
@@ -203,7 +219,7 @@ export function AddStaffForm({ users }: { users: any[] }) {
                                     key={c.code}
                                     type="button"
                                     onClick={() => { setSelectedCountry(c); setOpenDropdown(false); setCountrySearch(""); }}
-                                    className={`flex items-center justify-between w-full px-4 py-2 text-[10px] font-bold ${selectedCountry.code === c.code ? 'bg-indigo-50 text-indigo-600' : 'text-slate-700 hover:bg-slate-50'}`}
+                                    className={`flex items-center justify-between w-full px-4 py-2 text-[10px] font-bold ${selectedCountry.code === c.code ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
                                   >
                                     <span className="truncate mr-2">{c.name}</span>
                                     <span className="text-slate-400">+{c.phoneCode}</span>
@@ -216,58 +232,96 @@ export function AddStaffForm({ users }: { users: any[] }) {
                        <input
                         name="phone"
                         type="tel"
-                        placeholder="e.g., 9876543210"
-                        className="flex-1 h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500"
+                        placeholder="Staff Phone (Optional)"
+                        className="flex-1 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:border-indigo-500"
                        />
                     </div>
                   </div>
-                  <div>
-                    <input
-                      name="password"
-                      type="password"
-                      onChange={() => clearFieldError("password")}
-                      placeholder="Initial Password"
-                      className={`block w-full rounded-lg border px-3 py-2 text-xs focus:outline-none transition-all ${
-                        fieldErrors.password ? "border-rose-300 bg-rose-50 focus:border-rose-500" : "border-slate-200 focus:border-indigo-500"
-                      }`}
-                    />
-                    <InputError message={fieldErrors.password} />
-                  </div>
-                  <div>
-                    <input
-                      name="confirmPassword"
-                      type="password"
-                      onChange={() => clearFieldError("confirmPassword")}
-                      placeholder="Confirm Password"
-                      className={`block w-full rounded-lg border px-3 py-2 text-xs focus:outline-none transition-all ${
-                        fieldErrors.confirmPassword ? "border-rose-300 bg-rose-50 focus:border-rose-500" : "border-slate-200 focus:border-indigo-500"
-                      }`}
-                    />
-                    <InputError message={fieldErrors.confirmPassword} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        name="password"
+                        type="password"
+                        onChange={() => clearFieldError("password")}
+                        placeholder="Password"
+                        className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
+                          fieldErrors.password ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
+                        }`}
+                      />
+                      <InputError message={fieldErrors.password} />
+                    </div>
+                    <div>
+                      <input
+                        name="confirmPassword"
+                        type="password"
+                        onChange={() => clearFieldError("confirmPassword")}
+                        placeholder="Confirm"
+                        className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
+                          fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
+                        }`}
+                      />
+                      <InputError message={fieldErrors.confirmPassword} />
+                    </div>
                   </div>
                </div>
              </div>
           </div>
         )}
 
+        {/* Service Selection */}
         <div>
-          <label className="block text-sm font-medium text-slate-700">Bio / Specialization</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 flex items-center gap-2">
+            <Scissors className="h-3.5 w-3.5" />
+            Assigned Services
+          </label>
+          <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-hide">
+            {services.map((service) => (
+              <button
+                key={service.id}
+                type="button"
+                onClick={() => toggleService(service.id)}
+                className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                  selectedServices.includes(service.id)
+                    ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20"
+                    : "border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: service.color }}></div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{service.name}</span>
+                </div>
+                {selectedServices.includes(service.id) && <Check className="h-4 w-4 text-indigo-600" />}
+              </button>
+            ))}
+          </div>
+          {services.length === 0 && (
+            <p className="text-[10px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+              No services created yet.
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Bio / Specialization</label>
           <textarea
             name="bio"
             rows={2}
             placeholder="e.g., Expert colorist"
-            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
           />
         </div>
 
-        <p className="text-[10px] text-slate-400 italic">Default availability: Mon-Fri, 9 AM - 5 PM. Customize later in list.</p>
-        
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-all"
+          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all active:scale-[0.98]"
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Staff Member"}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+            <>
+              <Check className="h-5 w-5" />
+              Create Staff Member
+            </>
+          )}
         </button>
       </form>
     </div>

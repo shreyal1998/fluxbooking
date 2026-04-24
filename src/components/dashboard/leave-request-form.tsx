@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { submitLeaveRequest } from "@/app/actions/dashboard";
 import { Calendar, Clock, Send, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+
+const InputError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+};
 
 export function LeaveRequestForm() {
   const [loading, setLoading] = useState(false);
@@ -45,22 +56,14 @@ export function LeaveRequestForm() {
     const result = await submitLeaveRequest(formData);
 
     if (result.success) {
+      toast.success("Leave request submitted successfully!");
       setMessage({ type: 'success', text: "Request submitted! Waiting for Admin approval." });
       (e.target as HTMLFormElement).reset();
     } else {
+      toast.error(result.error || "Failed to submit request");
       setMessage({ type: 'error', text: result.error || "Failed to submit request" });
     }
     setLoading(false);
-  };
-
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
   };
 
   return (

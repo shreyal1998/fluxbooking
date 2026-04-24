@@ -15,28 +15,37 @@ import {
   UserCircle
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
+import { getLabels } from "@/lib/labels";
+import { BusinessType } from "@prisma/client";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ 
+  children,
+  businessType 
+}: { 
+  children: React.ReactNode,
+  businessType?: BusinessType
+}) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role;
+  const labels = getLabels(businessType);
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { 
-      name: "Services", 
+      name: labels.service + "s", 
       href: "/dashboard/services", 
       icon: Scissors,
       adminOnly: true 
     },
     { 
-      name: "Staff", 
+      name: labels.staff + " Team", 
       href: "/dashboard/staff", 
       icon: Users,
       adminOnly: true 
     },
     { 
-      name: "Customers", 
+      name: labels.customer + "s", 
       href: "/dashboard/customers", 
       icon: UserCircle
     },
