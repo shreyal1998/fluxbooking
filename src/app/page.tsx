@@ -44,8 +44,8 @@ export default function Home() {
             <span className="font-bold text-xl tracking-tight text-slate-900">FluxBooking</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="#features">Features</Link>
-            <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="#pricing">Pricing</Link>
+            <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/#features">Features</Link>
+            <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/#pricing">Pricing</Link>
             <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/login">Login</Link>
             <Link
               href="/register"
@@ -84,7 +84,7 @@ export default function Home() {
                 Start 14-Day Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <Link
-                href="#pricing"
+                href="/#pricing"
                 className="w-full sm:w-auto inline-flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-10 text-base font-bold text-slate-900 transition-all hover:bg-slate-50 hover:border-slate-300"
               >
                 View Plans
@@ -307,8 +307,8 @@ export default function Home() {
             <div>
               <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest">Platform</h5>
               <ul className="space-y-4 text-xs font-bold text-slate-400">
-                <li><Link href="#features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="/#features" className="hover:text-white transition-colors">Features</Link></li>
+                <li><Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Register</Link></li>
               </ul>
             </div>
