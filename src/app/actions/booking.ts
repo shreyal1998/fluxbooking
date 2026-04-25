@@ -337,7 +337,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
         return { error: "Unauthorized" };
       }
       // CRITICAL: Staff members can only reschedule their own appointments and cannot reassign them to others
-      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) {
+      if (staffId && staffId !== staffProfile.id) {
         return { error: "Staff members can only reschedule their own appointments and cannot reassign them to others." };
       }
     }
