@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FluxBooking - Universal Booking SaaS",
+  title: "FluxBooking - Book. Manage. Grow.",
   description: "The universal booking system for every business.",
 };
 
