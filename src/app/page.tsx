@@ -32,20 +32,26 @@ const Github = ({ className }: { className?: string }) => (
 export default function Home() {
   const [isYearly, setIsYearly] = useState(false);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.history.replaceState(null, '', '/');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white selection:bg-indigo-100 selection:text-indigo-900">
       {/* Sticky Glass Header */}
       <header className="fixed top-0 w-full z-50 glass">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
+          <button onClick={scrollToTop} className="flex items-center gap-2 group outline-none cursor-pointer">
             <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-xl tracking-tight text-slate-900">FluxBooking</span>
-          </Link>
+          </button>
           <nav className="hidden md:flex items-center gap-8">
             <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/#features">Features</Link>
             <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/#pricing">Pricing</Link>
+            <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/docs">Docs</Link>
             <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/login">Login</Link>
             <Link
               href="/register"
@@ -291,12 +297,12 @@ export default function Home() {
         <div className="container px-4 mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-1 md:col-span-2 space-y-6">
-              <Link href="/" className="flex items-center gap-2">
+              <button onClick={scrollToTop} className="flex items-center gap-2 outline-none cursor-pointer">
                 <div className="bg-indigo-600 p-1.5 rounded-lg">
                   <Calendar className="h-5 w-5 text-white" />
                 </div>
-                <span className="font-bold text-xl tracking-tight">FluxBooking</span>
-              </Link>
+                <span className="font-bold text-xl tracking-tight text-white">FluxBooking</span>
+              </button>
               <p className="text-slate-400 text-sm max-w-sm">The world's most versatile booking platform for growing businesses.</p>
               <div className="flex gap-4">
                  <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Twitter className="h-4 w-4" /></Link>
@@ -315,7 +321,8 @@ export default function Home() {
             <div>
               <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest">Support</h5>
               <ul className="space-y-4 text-xs font-bold text-slate-400">
-                <li><Link href="#" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link href="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link href="/help" className="hover:text-white transition-colors">Help</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link href="#" className="hover:text-white transition-colors">Contact</Link></li>
               </ul>

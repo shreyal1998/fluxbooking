@@ -1,0 +1,85 @@
+import { ArrowRight, CheckCircle2, Zap, Shield, Users } from "lucide-react";
+import Link from "next/link";
+
+export default function DocsPage() {
+  return (
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Hero Header */}
+      <div className="space-y-4">
+        <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          Welcome to <span className="text-indigo-600">FluxBooking</span>
+        </h1>
+        <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
+          Learn how to master the booking platform built for high-performance businesses. 
+          Everything you need to scale your team and services.
+        </p>
+      </div>
+
+      {/* Intro Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+        <div className="p-8 rounded-[2rem] border-2 border-slate-50 bg-white hover:border-indigo-100 transition-all group">
+          <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+            <Zap className="h-6 w-6" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-2">Quick Start</h3>
+          <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">
+            Get your business online in under 5 minutes. Configure your URL, staff, and services.
+          </p>
+          <Link href="/docs/quick-start" className="inline-flex items-center gap-2 text-indigo-600 text-sm font-black group">
+            Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+
+        <div className="p-8 rounded-[2rem] border-2 border-slate-50 bg-white hover:border-emerald-100 transition-all group">
+          <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+            <Shield className="h-6 w-6" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-2">Multi-Tenancy</h3>
+          <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">
+            Understand how each business gets an isolated, secure environment with custom URLs.
+          </p>
+          <Link href="/docs/multi-tenancy" className="inline-flex items-center gap-2 text-emerald-600 text-sm font-black group">
+            Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Core Benefits List */}
+      <div className="space-y-6 pt-8">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Why use FluxBooking?</h2>
+        <div className="space-y-4">
+          {[
+            "Blazing fast booking flow for your customers",
+            "Individual calendars for every staff member",
+            "Automatic email and SMS notifications",
+            "Secure payments via Lemon Squeezy",
+            "Full control over branding and colors"
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-50 bg-slate-50/50">
+              <CheckCircle2 className="h-5 w-5 text-indigo-500" />
+              <span className="text-sm font-bold text-slate-700">{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Call to Action */}
+      <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white flex flex-col items-center text-center space-y-6">
+        <h3 className="text-2xl font-black tracking-tight">Ready to start your journey?</h3>
+        <p className="text-slate-400 text-sm max-w-sm font-medium">
+          Join 500+ businesses already scaling their operations with FluxBooking.
+        </p>
+        <Link 
+          href="/register" 
+          className="h-14 px-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black transition-all hover:bg-indigo-700 hover:scale-[1.05] active:scale-95 shadow-xl shadow-indigo-500/20"
+        >
+          Get Started for Free
+        </Link>
+      </div>
+
+      <div className="pt-12 border-t border-slate-100 flex justify-end">
+        <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start Guide →</Link>
+      </div>
+    </div>
+  );
+}
