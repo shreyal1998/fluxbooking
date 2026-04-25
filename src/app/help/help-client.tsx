@@ -15,18 +15,19 @@ import {
   CreditCard,
   Zap,
   Users,
-  Bug
+  Bug,
+  AlertCircle
 } from "lucide-react";
 
 const REASONS = [
-  { id: "booking", label: "Booking Issue", icon: Calendar },
-  { id: "scheduling", label: "Scheduling & Availability", icon: Clock },
-  { id: "billing", label: "Billing & Subscription", icon: CreditCard },
-  { id: "branding", label: "Branding & Customization", icon: Zap },
-  { id: "staff", label: "Staff Management", icon: Users },
-  { id: "feature", label: "Feature Request", icon: MessageSquare },
-  { id: "bug", label: "Technical Bug", icon: Bug },
-  { id: "other", label: "Other", icon: LifeBuoy },
+  { id: "booking", label: "Booking Issue", icon: Calendar, placeholder: "Please provide your appointment details (date or time) and describe what went wrong..." },
+  { id: "scheduling", label: "Scheduling & Availability", icon: Clock, placeholder: "Describe the issue with your hours or staff availability..." },
+  { id: "billing", label: "Billing & Subscription", icon: CreditCard, placeholder: "Tell us about your billing inquiry or plan change request..." },
+  { id: "branding", label: "Branding & Customization", icon: Zap, placeholder: "Describe the custom domain or branding issue you are facing..." },
+  { id: "staff", label: "Staff Management", icon: Users, placeholder: "Tell us about the issue with adding or managing team members..." },
+  { id: "feature", label: "Feature Request", icon: MessageSquare, placeholder: "What new feature would you like to see? How would it help your business?" },
+  { id: "bug", label: "Technical Bug", icon: Bug, placeholder: "Please describe the steps to reproduce the bug and what happened..." },
+  { id: "other", label: "Other", icon: LifeBuoy, placeholder: "Describe your inquiry in detail..." },
 ];
 
 export default function HelpClient() {
@@ -34,6 +35,8 @@ export default function HelpClient() {
   const [loading, setLoading] = useState(false);
   const [selectedReason, setSelectedReason] = useState<typeof REASONS[0] | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,13 +54,55 @@ export default function HelpClient() {
     window.history.replaceState(null, '', '/help');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const clearFieldError = (field: string) => {
+    if (fieldErrors[field]) {
+      const newErrors = { ...fieldErrors };
+      delete newErrors[field];
+      setFieldErrors(newErrors);
+    }
+    setGeneralError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedReason) return;
     setLoading(true);
+    setFieldErrors({});
+    setGeneralError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const subject = formData.get("subject") as string;
+    const message = formData.get("message") as string;
+
+    const errors: Record<string, string> = {};
+    if (!name) errors.name = "Your name is required";
+    if (!email) errors.email = "Email address is required";
+    else if (!/\S+@\S+\.\S+/.test(email)) errors.email = "Please enter a valid email";
+    if (!subject) errors.subject = "Subject is required";
+    if (!selectedReason) errors.reason = "Please select a reason";
+    if (!message) errors.message = "Message cannot be empty";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
+
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     setLoading(false);
     setSubmitted(true);
+  };
+
+  const InputError = ({ message }: { message?: string }) => {
+    if (!message) return null;
+    return (
+      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+        <AlertCircle className="h-3 w-3" />
+        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      </div>
+    );
   };
 
   if (submitted) {
@@ -102,10 +147,10 @@ export default function HelpClient() {
             <div className="space-y-4">
               <Link 
                 href="/" 
-                className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full border border-slate-200 bg-white text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all group"
+                className="inline-flex items-center gap-2 mb-10 px-5 py-2.5 rounded-full border border-indigo-100 bg-indigo-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-950 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 hover:shadow-xl hover:shadow-indigo-500/20 transition-all group"
               >
-                <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" />
-                fluxbooking.com
+                <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" />
+                FLUXBOOKING.COM
               </Link>
               <h1 className="text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
                 Help <span className="text-indigo-600">Center</span>
@@ -134,20 +179,50 @@ export default function HelpClient() {
           <div className="bg-white rounded-[3rem] p-10 lg:p-12 shadow-2xl shadow-indigo-500/5 border border-slate-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-50 rounded-bl-[5rem] -mr-16 -mt-16"></div>
             
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10" noValidate>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Your Name</label>
-                  <input required type="text" placeholder="John Doe" className="w-full h-14 px-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white outline-none transition-all font-bold text-slate-900" />
+                  <input 
+                    name="name"
+                    required 
+                    type="text" 
+                    onChange={() => clearFieldError("name")}
+                    placeholder="John Doe" 
+                    className={`w-full h-14 px-6 rounded-2xl border-2 outline-none transition-all font-bold dark:text-white ${
+                      fieldErrors.name ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-transparent bg-slate-50 focus:border-indigo-100 focus:bg-white"
+                    }`}
+                  />
+                  <InputError message={fieldErrors.name} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Email Address</label>
-                  <input required type="email" placeholder="john@example.com" className="w-full h-14 px-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white outline-none transition-all font-bold text-slate-900" />
+                  <input 
+                    name="email"
+                    required 
+                    type="email" 
+                    onChange={() => clearFieldError("email")}
+                    placeholder="john@example.com" 
+                    className={`w-full h-14 px-6 rounded-2xl border-2 outline-none transition-all font-bold dark:text-white ${
+                      fieldErrors.email ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-transparent bg-slate-50 focus:border-indigo-100 focus:bg-white"
+                    }`}
+                  />
+                  <InputError message={fieldErrors.email} />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Subject / Title</label>
-                <input required type="text" placeholder="How do I set up my custom domain?" className="w-full h-14 px-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white outline-none transition-all font-bold text-slate-900" />
+                <input 
+                  name="subject"
+                  required 
+                  type="text" 
+                  onChange={() => clearFieldError("subject")}
+                  placeholder="How do I set up my custom domain?" 
+                  className={`w-full h-14 px-6 rounded-2xl border-2 outline-none transition-all font-bold dark:text-white ${
+                    fieldErrors.subject ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-transparent bg-slate-50 focus:border-indigo-100 focus:bg-white"
+                  }`}
+                />
+                <InputError message={fieldErrors.subject} />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Reason for Inquiry</label>
@@ -155,13 +230,15 @@ export default function HelpClient() {
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full h-14 px-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white outline-none transition-all font-bold text-slate-900 flex items-center justify-between group"
+                    className={`w-full h-14 px-6 rounded-2xl border-2 outline-none transition-all font-bold flex items-center justify-between group ${
+                      fieldErrors.reason ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-transparent bg-slate-50 focus:border-indigo-100 focus:bg-white"
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       {selectedReason ? (
                         <>
                           <selectedReason.icon className="h-4 w-4 text-indigo-500" />
-                          <span>{selectedReason.label}</span>
+                          <span className="text-slate-900">{selectedReason.label}</span>
                         </>
                       ) : (
                         <span className="text-slate-300">Select a reason...</span>
@@ -169,6 +246,7 @@ export default function HelpClient() {
                     </div>
                     <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
+                  <InputError message={fieldErrors.reason} />
 
                   {isDropdownOpen && (
                     <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -180,6 +258,7 @@ export default function HelpClient() {
                             onClick={() => {
                               setSelectedReason(reason);
                               setIsDropdownOpen(false);
+                              clearFieldError("reason");
                             }}
                             className={`w-full px-6 py-3 flex items-center gap-3 text-sm font-bold transition-colors text-left ${
                               selectedReason?.id === reason.id 
@@ -198,7 +277,17 @@ export default function HelpClient() {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Message</label>
-                <textarea required rows={5} placeholder="Describe your issue in detail..." className="w-full p-6 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white outline-none font-bold text-slate-900 resize-none"></textarea>
+                <textarea 
+                  name="message"
+                  required 
+                  rows={5} 
+                  onChange={() => clearFieldError("message")}
+                  placeholder={selectedReason?.placeholder || "Describe your issue in detail..."} 
+                  className={`w-full p-6 rounded-2xl border-2 outline-none font-bold resize-none ${
+                    fieldErrors.message ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-transparent bg-slate-50 focus:border-indigo-100 focus:bg-white"
+                  }`}
+                ></textarea>
+                <InputError message={fieldErrors.message} />
               </div>
               <button disabled={loading} className="w-full h-16 bg-indigo-600 text-white rounded-2xl flex items-center justify-center gap-3 font-black text-base shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 disabled:bg-slate-300">
                 {loading ? <div className="h-6 w-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div> : <><Send className="h-5 w-5" /> Send Request</>}

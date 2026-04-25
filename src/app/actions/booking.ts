@@ -336,6 +336,10 @@ export async function updateBooking(bookingId: string, formData: FormData) {
       if (!staffProfile || booking.staffId !== staffProfile.id) {
         return { error: "Unauthorized" };
       }
+      // CRITICAL: Staff members can only reschedule their own appointments and cannot reassign them to others
+      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) {
+        return { error: "Staff members can only reschedule their own appointments and cannot reassign them to others." };
+      }
     }
 
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -360,6 +364,76 @@ export async function updateBooking(bookingId: string, formData: FormData) {
     return { success: true };
   } catch (error) {
     return { error: "Failed to update booking" };
+  }
+}
+
+export async function rescheduleBooking(
+  bookingId: string, 
+  newStartTime: Date, 
+  newStaffId?: string
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const tenantId = (session.user as any).tenantId;
+  const userRole = (session.user as any).role;
+  const userId = (session.user as any).id;
+
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId, tenantId },
+      include: { service: true }
+    });
+
+    if (!booking) return { error: "Booking not found" };
+
+    // Security check for Staff
+    if (userRole === "STAFF") {
+      const staffProfile = await prisma.staff.findUnique({ where: { userId } });
+      if (!staffProfile || booking.staffId !== staffProfile.id) {
+        return { error: "Unauthorized" };
+      }
+      // CRITICAL: Staff members can only reschedule their own appointments and cannot reassign them to others
+      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) {
+        return { error: "Staff members can only reschedule their own appointments and cannot reassign them to others." };
+      }
+    }
+
+    const duration = booking.service.durationMinutes;
+    const endTime = addMinutes(newStartTime, duration);
+
+    // Collision Check (Simplified for drag-drop)
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        id: { not: bookingId },
+        staffId: newStaffId || booking.staffId,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        OR: [
+          { startTime: { lt: endTime, gte: newStartTime } },
+          { endTime: { gt: newStartTime, lte: endTime } }
+        ]
+      }
+    });
+
+    if (conflict) {
+      return { error: "This slot overlaps with an existing appointment." };
+    }
+
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        startTime: newStartTime,
+        endTime,
+        staffId: newStaffId || booking.staffId
+      }
+    });
+
+    revalidatePath("/dashboard/appointments");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("Reschedule error:", error);
+    return { error: "Failed to reschedule" };
   }
 }
 

@@ -12,25 +12,25 @@ const steps = [
   {
     icon: Settings,
     title: "Configure your Business Profile",
-    description: "Set your business name, pick a custom URL (slug), and choose your base currency and country.",
+    description: "Set your business name, pick a unique URL (Slug), and choose your base currency. This drives your public branding.",
     color: "bg-blue-50 text-blue-600"
   },
   {
     icon: Users,
-    title: "Add your Team Members",
-    description: "Invite your staff and set their individual availability. Each member gets their own booking calendar.",
+    title: "Onboard Staff & Schedules",
+    description: "Invite team members and set their individual availability. Define the difference between Shop Hours and Staff Working Hours.",
     color: "bg-indigo-50 text-indigo-600"
   },
   {
     icon: CreditCard,
-    title: "Create your Services",
-    description: "Define what you offer, the duration of each service, and your pricing.",
+    title: "Define Services & Capacity",
+    description: "Set prices, durations, and buffer times. Configure capacity to allow for multiple bookings per slot if needed.",
     color: "bg-emerald-50 text-emerald-600"
   },
   {
     icon: Rocket,
-    title: "Go Live",
-    description: "Share your booking link with customers and start accepting appointments immediately.",
+    title: "Share your Booking URL",
+    description: "Your business is now live at fluxbooking.com/b/[slug]. Start accepting appointments and managing your flow.",
     color: "bg-violet-50 text-violet-600"
   }
 ];

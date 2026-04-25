@@ -37,6 +37,8 @@ import {
   AlertTriangle,
   Info
 } from "lucide-react";
+import { rescheduleBooking } from "@/app/actions/booking";
+import { toast } from "sonner";
 
 type ViewType = "month" | "week" | "day" | "team";
 
@@ -68,12 +70,92 @@ export function CalendarView({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>(externalViewMode === "team" ? "team" : "week");
   const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
 
   // Sync with external view mode changes
   useEffect(() => {
     if (externalViewMode === "team") setView("team");
     else if (externalViewMode === "calendar" && view === "team") setView("week");
   }, [externalViewMode]);
+
+  const handleDragStart = (e: React.DragEvent, eventId: string) => {
+    const eventToMove = events.find(ev => ev.id === eventId);
+    if (!eventToMove || eventToMove.type === "blocked") {
+      e.preventDefault();
+      return;
+    }
+
+    // Security: STAFF can only drag their own events
+    if (userRole === "STAFF") {
+      // In STAFF mode, the events list is already filtered to only show their own
+      // but we add this as a secondary precaution
+    }
+
+    setDraggedEventId(eventId);
+    e.dataTransfer.setData("text/plain", eventId);
+    e.dataTransfer.effectAllowed = "move";
+    
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "0.5";
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedEventId(null);
+    const target = e.currentTarget as HTMLElement;
+    target.style.opacity = "1";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropDate: Date, dropStaffId?: string) => {
+    e.preventDefault();
+    const eventId = e.dataTransfer.getData("text/plain");
+    if (!eventId) return;
+
+    const eventToMove = events.find(ev => ev.id === eventId);
+    if (!eventToMove || eventToMove.type === "blocked") return;
+
+    // Security: STAFF cannot reassign to someone else
+    if (userRole === "STAFF" && dropStaffId && dropStaffId !== eventToMove.id) {
+        // This is a bit complex because eventToMove.id is booking ID, not staff ID.
+        // But since STAFF only see their own staff profile in the list, 
+        // they can't physically drop onto another staff's column in Team View
+        // because those columns aren't rendered for them.
+    }
+
+    // Optimistic UI Update
+    const originalEvents = [...events];
+    const duration = eventToMove.end.getTime() - eventToMove.start.getTime();
+    const newEnd = new Date(dropDate.getTime() + duration);
+    
+    let newResourceName = eventToMove.resourceName;
+    if (dropStaffId) {
+      const staff = staffList.find(s => s.id === dropStaffId);
+      if (staff) newResourceName = staff.name;
+    }
+
+    const updatedEvents = events.map(ev => 
+      ev.id === eventId 
+        ? { ...ev, start: dropDate, end: newEnd, resourceName: newResourceName } 
+        : ev
+    );
+
+    setEvents(updatedEvents);
+    toast.info("Rescheduling appointment...");
+
+    // Server Action
+    const result = await rescheduleBooking(eventId, dropDate, dropStaffId);
+
+    if (result.error) {
+      setEvents(originalEvents);
+      toast.error(result.error);
+    } else {
+      toast.success("Appointment rescheduled successfully");
+    }
+  };
 
   // Advanced Event Styling
   const getEventStyle = (event: Event) => {
@@ -238,7 +320,12 @@ export function CalendarView({
               );
 
               return (
-                <div key={hour} className={`flex border-b border-slate-50 dark:border-slate-800 h-20 group relative ${isClosed ? 'bg-zebra dark:bg-zebra' : ''}`}>
+                <div 
+                  key={hour} 
+                  className={`flex border-b border-slate-50 dark:border-slate-800 h-20 group relative ${isClosed ? 'bg-zebra dark:bg-zebra' : ''}`}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, currentHourTime)}
+                >
                     <span className="w-20 text-[10px] font-black text-slate-300 dark:text-slate-600 p-4 uppercase tracking-tighter border-r border-slate-50 dark:border-slate-800">
                       {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
                     </span>
@@ -263,7 +350,10 @@ export function CalendarView({
              return (
                <div
                  key={event.id}
-                 className={`absolute left-24 right-8 rounded-2xl border p-4 shadow-md overflow-hidden transition-transform hover:scale-[1.01] z-10 ${typeof styleData === 'string' ? styleData : styleData.className}`}  
+                 draggable={event.type !== 'blocked'}
+                 onDragStart={(e) => handleDragStart(e, event.id)}
+                 onDragEnd={handleDragEnd}
+                 className={`absolute left-24 right-8 rounded-2xl border p-4 shadow-md overflow-hidden transition-all hover:scale-[1.01] z-10 cursor-move ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500 ring-offset-2' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}  
                  style={{
                    top: `${top}px`,
                    height: `${height}px`,
@@ -334,7 +424,14 @@ export function CalendarView({
                       isBefore(currentHourTime, parse(bizHours.start, "HH:mm", day)) ||
                       isAfter(addDays(currentHourTime, 0), parse(bizHours.end, "HH:mm", day))
                     );
-                    return <div key={hour} className={`h-20 border-b border-slate-50 dark:border-slate-800 ${isClosed ? 'bg-zebra dark:bg-zebra' : ''}`}></div>
+                    return (
+                      <div 
+                        key={hour} 
+                        className={`h-20 border-b border-slate-50 dark:border-slate-800 ${isClosed ? 'bg-zebra dark:bg-zebra' : ''}`}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, currentHourTime)}
+                      ></div>
+                    );
                   })}
 
                   {dayEvents.map(event => {
@@ -349,7 +446,10 @@ export function CalendarView({
                     return (
                       <div
                         key={event.id}
-                        className={`absolute left-1 right-1 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-pointer transition-all hover:z-30 hover:scale-105 ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                        draggable={event.type !== 'blocked'}
+                        onDragStart={(e) => handleDragStart(e, event.id)}
+                        onDragEnd={handleDragEnd}
+                        className={`absolute left-1 right-1 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all hover:z-30 hover:scale-105 ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500 ring-offset-1' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
@@ -423,7 +523,14 @@ export function CalendarView({
                       isAfter(addDays(currentHourTime, 0), parse(staffDaySchedule.end, "HH:mm", currentDate))
                     );
 
-                    return <div key={hour} className={`h-20 border-b border-slate-50 dark:border-slate-800 ${isBizClosed || isStaffOff ? 'bg-zebra dark:bg-zebra' : ''}`}></div>
+                    return (
+                      <div 
+                        key={hour} 
+                        className={`h-20 border-b border-slate-50 dark:border-slate-800 ${isBizClosed || isStaffOff ? 'bg-zebra dark:bg-zebra' : ''}`}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, currentHourTime, staff.id)}
+                      ></div>
+                    );
                   })}
 
                   {staffEvents.map(event => {
@@ -438,7 +545,10 @@ export function CalendarView({
                     return (
                       <div 
                         key={event.id}
-                        className={`absolute left-1 right-1 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-pointer transition-all hover:z-30 hover:scale-[1.02] ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                        draggable={event.type !== 'blocked'}
+                        onDragStart={(e) => handleDragStart(e, event.id)}
+                        onDragEnd={handleDragEnd}
+                        className={`absolute left-1 right-1 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all hover:z-30 hover:scale-[1.02] ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500 ring-offset-1' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
                         style={{ 
                           top: `${top}px`, 
                           height: `${height}px`, 

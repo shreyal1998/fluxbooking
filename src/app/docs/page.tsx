@@ -17,31 +17,45 @@ export default function DocsPage() {
 
       {/* Intro Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-        <div className="p-8 rounded-[2rem] border-2 border-slate-50 bg-white hover:border-indigo-100 transition-all group">
-          <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-            <Zap className="h-6 w-6" />
+        {/* Quick Start Card (Indigo) */}
+        <Link href="/docs/quick-start" className="block group">
+          <div className="p-8 h-full rounded-[2.5rem] border border-indigo-100/50 bg-indigo-50/50 shadow-sm hover:bg-white hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all relative overflow-hidden">
+            <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-md mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all relative z-10">
+              <Zap className="h-6 w-6" />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Quick Start</h3>
+              <p className="text-slate-600 text-sm font-medium leading-relaxed mb-6">
+                Launch your Business (Tenant) in under 5 minutes. Configure your unique Slug, onboard staff, and define your services.
+              </p>
+              <div className="inline-flex items-center gap-2 text-indigo-600 text-sm font-black">
+                Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+            {/* Visual Flourish */}
+            <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-indigo-100/50 rounded-full blur-2xl group-hover:bg-indigo-200/50 transition-colors"></div>
           </div>
-          <h3 className="text-xl font-black text-slate-900 mb-2">Quick Start</h3>
-          <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">
-            Get your business online in under 5 minutes. Configure your URL, staff, and services.
-          </p>
-          <Link href="/docs/quick-start" className="inline-flex items-center gap-2 text-indigo-600 text-sm font-black group">
-            Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
+        </Link>
 
-        <div className="p-8 rounded-[2rem] border-2 border-slate-50 bg-white hover:border-emerald-100 transition-all group">
-          <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-            <Shield className="h-6 w-6" />
+        {/* Multi-Tenancy Card (Emerald) */}
+        <Link href="/docs/multi-tenancy" className="block group">
+          <div className="p-8 h-full rounded-[2.5rem] border border-emerald-100/50 bg-emerald-50/50 shadow-sm hover:bg-white hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all relative overflow-hidden">
+            <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-md mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all relative z-10">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Data Isolation</h3>
+              <p className="text-slate-600 text-sm font-medium leading-relaxed mb-6">
+                Understand how our Tenant-based architecture uses tenantId scoping to keep your business data secure and private.
+              </p>
+              <div className="inline-flex items-center gap-2 text-emerald-600 text-sm font-black">
+                Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+            {/* Visual Flourish */}
+            <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-emerald-100/50 rounded-full blur-2xl group-hover:bg-emerald-200/50 transition-colors"></div>
           </div>
-          <h3 className="text-xl font-black text-slate-900 mb-2">Multi-Tenancy</h3>
-          <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">
-            Understand how each business gets an isolated, secure environment with custom URLs.
-          </p>
-          <Link href="/docs/multi-tenancy" className="inline-flex items-center gap-2 text-emerald-600 text-sm font-black group">
-            Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
+        </Link>
       </div>
 
       {/* Core Benefits List */}

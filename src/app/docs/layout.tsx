@@ -73,10 +73,10 @@ export default function DocsLayout({
         <div className="p-8">
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 mb-10 px-4 py-2 rounded-full border border-slate-200 bg-white text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md hover:shadow-indigo-500/5 transition-all group"
+            className="inline-flex items-center gap-2 mb-10 px-5 py-2.5 rounded-full border border-indigo-100 bg-indigo-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-950 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 hover:shadow-xl hover:shadow-indigo-500/20 transition-all group"
           >
-            <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" />
-            fluxbooking.com
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" />
+            FLUXBOOKING.COM
           </Link>
 
           <button 
