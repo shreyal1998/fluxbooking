@@ -46,19 +46,19 @@ export function Footer() {
           <div>
             <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest">Platform</h5>
             <ul className="space-y-4 text-xs font-bold text-slate-400">
-              <li><Link href="/#features" className="hover:text-white transition-colors">Features</Link></li>
-              <li><Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-              <li><Link href="/register" className="hover:text-white transition-colors">Register</Link></li>
-              <li><Link href="/login" className="hover:text-white transition-colors">Login</Link></li>
+              <li><Link href="/#features" className="hover:text-white hover:underline transition-all">Features</Link></li>
+              <li><Link href="/#pricing" className="hover:text-white hover:underline transition-all">Pricing</Link></li>
+              <li><Link href="/register" className="hover:text-white hover:underline transition-all">Register</Link></li>
+              <li><Link href="/login" className="hover:text-white hover:underline transition-all">Login</Link></li>
             </ul>
           </div>
           <div>
             <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest">Support</h5>
             <ul className="space-y-4 text-xs font-bold text-slate-400">
-              <li><Link href="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
-              <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link href="/docs" className="hover:text-white hover:underline transition-all">Documentation</Link></li>
+              <li><Link href="/help" className="hover:text-white hover:underline transition-all">Help Center</Link></li>
+              <li><Link href="/privacy" className="hover:text-white hover:underline transition-all">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-white hover:underline transition-all">Terms of Service</Link></li>
             </ul>
           </div>
         </div>

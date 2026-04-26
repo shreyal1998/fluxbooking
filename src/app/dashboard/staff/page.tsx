@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { Users, Clock, Shield } from "lucide-react";
 import { StaffList } from "@/components/dashboard/staff-list";
 import { LeaveRequestsManager } from "@/components/dashboard/leave-requests-manager";
-import { AddStaffForm } from "@/components/dashboard/add-staff-form";
+import { TeamHeader } from "@/components/dashboard/team-header";
 import Link from "next/link";
 
 export default async function StaffPage() {
@@ -16,7 +16,7 @@ export default async function StaffPage() {
   const [staffMembers, users, pendingRequests, tenant, services] = await Promise.all([
     prisma.staff.findMany({
       where: { tenantId },
-      orderBy: { createdAt: "asc" }, // Order by creation to determine who is "active"
+      orderBy: { createdAt: "asc" },
       include: { 
         user: true,
         services: true
@@ -56,14 +56,12 @@ export default async function StaffPage() {
     })
   ]);
 
-  // ENFORCE PLAN LIMITS FOR UI
-  const limits = { FREE: 1, TEAM: 5, PRO: 1000 };
+  const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
   let currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
   if (tenant?.planStatus === "TRIALING" && currentLimit < 5) currentLimit = 5;
 
   const isLimitExceeded = staffMembers.length > currentLimit;
 
-  // Enhance requests with conflict flags
   const requestsWithConflicts = pendingRequests.map(req => {
     const hasConflicts = req.staff.bookings.some(booking => {
       const bStart = new Date(booking.startTime);
@@ -74,13 +72,8 @@ export default async function StaffPage() {
   });
 
   return (
-    <div className="space-y-12 max-w-7xl animate-fade-in">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Staff Management</h2>
-          <p className="text-slate-500 font-medium mt-1">Manage your team, roles, and leave requests.</p>
-        </div>
-      </div>
+    <div className="space-y-12 max-w-7xl animate-fade-in transition-colors">
+      <TeamHeader users={users} services={services} />
 
       {/* Plan Limit Warning */}
       {isLimitExceeded && (
@@ -91,7 +84,7 @@ export default async function StaffPage() {
             </div>
             <div>
               <h4 className="font-bold text-amber-900 text-sm">Plan Limit Exceeded</h4>
-              <p className="text-xs text-amber-700">Your {tenant?.plan === 'FREE' && tenant?.planStatus !== 'TRIALING' ? 'Free' : tenant?.plan} plan allows up to {currentLimit} staff member(s). Only your first {currentLimit} staff member(s) are active for bookings.</p>
+              <p className="text-xs text-amber-700">Your {tenant?.plan === 'FREE' && tenant?.planStatus !== 'TRIALING' ? 'Free' : tenant?.plan} plan allows up to {currentLimit} staff member(s).</p>
             </div>
           </div>
           <Link href="/dashboard/settings" className="px-6 py-2 bg-amber-600 text-white text-xs font-black rounded-xl hover:bg-amber-700 transition-all shadow-lg shadow-amber-200">
@@ -105,31 +98,23 @@ export default async function StaffPage() {
            <div className="h-8 w-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
              <Clock className="h-4 w-4" />
            </div>
-           <h3 className="text-xl font-bold text-slate-900">Pending Leave Requests</h3>
-           <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black">
+           <h3 className="text-xl font-semibold text-slate-900">Pending Leave Requests</h3>
+           <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
              {pendingRequests.length}
            </span>
         </div>
         <LeaveRequestsManager initialRequests={requestsWithConflicts} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Add Staff Form */}
-        <div className="lg:col-span-1">
-          <AddStaffForm users={users} services={services} />
-        </div>
-
-        {/* Staff List */}
-        <div className="lg:col-span-2 space-y-4">
-          {staffMembers.length === 0 ? (
-            <div className="bg-white p-12 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center">
-              <Users className="h-12 w-12 text-slate-300 mb-4" />
-              <p className="text-slate-500">No staff members added yet. Add your team to start taking appointments.</p>
-            </div>
-          ) : (
-            <StaffList staffMembers={staffMembers} currentLimit={currentLimit} services={services} />
-          )}
-        </div>
+      <div className="w-full">
+        {staffMembers.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 p-24 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
+            <Users className="h-16 w-16 text-slate-200 dark:text-slate-800 mb-6" />
+            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-sm">No team members added yet. Add your team to start taking appointments.</p>
+          </div>
+        ) : (
+          <StaffList staffMembers={staffMembers} currentLimit={currentLimit} services={services} />
+        )}
       </div>
     </div>
   );

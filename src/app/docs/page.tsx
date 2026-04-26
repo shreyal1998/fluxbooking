@@ -9,7 +9,7 @@ export default function DocsPage() {
         <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">
           Welcome to <span className="text-indigo-600">FluxBooking</span>
         </h1>
-        <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
+        <p className="text-xl text-slate-500 font-normal leading-relaxed max-w-2xl">
           Learn how to master the booking platform built for high-performance businesses. 
           Everything you need to scale your team and services.
         </p>
@@ -24,9 +24,9 @@ export default function DocsPage() {
               <Zap className="h-6 w-6" />
             </div>
             <div className="relative z-10">
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Quick Start</h3>
-              <p className="text-slate-600 text-sm font-medium leading-relaxed mb-6">
-                Launch your Business (Tenant) in under 5 minutes. Configure your unique Slug, onboard staff, and define your services.
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Quick start</h3>
+              <p className="text-slate-500 text-sm font-normal leading-relaxed mb-6">
+                Launch your business in under 5 minutes. Configure your unique URL, onboard your team, and define your services.
               </p>
               <div className="inline-flex items-center gap-2 text-indigo-600 text-sm font-black">
                 Learn more <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />

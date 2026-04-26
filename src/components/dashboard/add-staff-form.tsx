@@ -6,7 +6,15 @@ import { addStaff } from "@/app/actions/dashboard";
 import { COUNTRIES } from "@/config/countries";
 import { toast } from "sonner";
 
-export function AddStaffForm({ users, services }: { users: any[], services: any[] }) {
+export function AddStaffForm({ 
+  users, 
+  services, 
+  onSuccess 
+}: { 
+  users: any[], 
+  services: any[], 
+  onSuccess?: () => void 
+}) {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -72,14 +80,14 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
     const confirmPassword = formData.get("confirmPassword") as string;
 
     const errors: Record<string, string> = {};
-    if (!name) errors.name = "Staff name is required";
+    if (!name) errors.name = "Team member name is required";
     
     if (!userId) {
       if (!email) errors.email = "Email is required for new account";
       if (!password) errors.password = "Password is required";
       else if (password.length < 6) errors.password = "Password must be at least 6 characters";
       
-      if (password !== confirmPassword) {
+      if (password && password !== confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
     }
@@ -100,11 +108,12 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
       toast.error(result.error);
       setLoading(false);
     } else {
-      toast.success("Staff member added successfully!");
+      toast.success("Team member added successfully!");
       (e.target as HTMLFormElement).reset();
       setShowPasswordField(true);
       setSelectedServices([]);
       setLoading(false);
+      if (onSuccess) onSuccess();
     }
   };
 
@@ -119,14 +128,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft sticky top-8 text-left transition-colors">
-      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-           <UserPlus className="h-5 w-5" />
-        </div>
-        Add Staff Member
-      </h3>
-
+    <div className="px-8 py-6 transition-colors text-left bg-white dark:bg-slate-900">
       {generalError && (
         <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-bold border border-rose-100 dark:border-rose-900/30">
           {generalError}
@@ -157,7 +159,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
               setShowPasswordField(e.target.value === "");
               clearFieldError("userId");
             }}
-            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+            className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all appearance-none cursor-pointer"
           >
             <option value="">Create new login account</option>
             {users.map((user) => (
@@ -178,7 +180,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
                       name="email"
                       type="email"
                       onChange={() => clearFieldError("email")}
-                      placeholder="Staff Email"
+                      placeholder="Email"
                       className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
                         fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                       }`}
@@ -199,7 +201,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
                           <input type="hidden" name="staffCountryCode" value={selectedCountry.code} />
 
                           {openDropdown && (
-                            <div className="absolute z-[110] left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col">
+                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col">
                               <div className="px-3 pb-2 border-b border-slate-50 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-800">
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
@@ -232,7 +234,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
                        <input
                         name="phone"
                         type="tel"
-                        placeholder="Staff Phone (Optional)"
+                        placeholder="Phone (Optional)"
                         className="flex-1 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:border-indigo-500"
                        />
                     </div>
@@ -275,7 +277,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
             Assigned Services
           </label>
           <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-hide">
-            {services.map((service) => (
+            {services.map((service: any) => (
               <button
                 key={service.id}
                 type="button"
@@ -319,7 +321,7 @@ export function AddStaffForm({ users, services }: { users: any[], services: any[
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
               <Check className="h-5 w-5" />
-              Create Staff Member
+              Add Member
             </>
           )}
         </button>

@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ArrowUp } from "lucide-react";
 
 export function ScrollToTop() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
+  // 1. EARLY EXIT: Identify pages where the utility should NEVER appear
+  const hideOnPages = ["/register", "/login", "/dashboard"];
+  const shouldHide = hideOnPages.some(path => pathname === path || pathname.startsWith(path + "/"));
+
   useEffect(() => {
+    if (shouldHide) return;
+
     const toggleVisibility = () => {
       if (window.scrollY > 300) {
         setIsVisible(true);
@@ -18,14 +26,17 @@ export function ScrollToTop() {
     window.addEventListener("scroll", toggleVisibility);
     toggleVisibility();
     return () => window.removeEventListener("scroll", toggleVisibility);
-  }, []);
+  }, [shouldHide]);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
   };
+
+  // 2. Absolute Block: Return nothing if on a hidden page
+  if (shouldHide) return null;
 
   return (
     <div 

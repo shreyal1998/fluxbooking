@@ -72,7 +72,10 @@ export function BillingSettings({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {PLANS.map((plan) => {
               const isCurrent = currentPlan === plan.id;
-              const yearlyTotal = (plan.price.amount * 10).toFixed(2);
+              const monthlyPrice = plan.price.amount;
+              // Landing page uses "Pay for 10 months" logic for yearly
+              const yearlyTotal = (monthlyPrice * 10).toFixed(2);
+              const yearlyMonthlyAverage = ((monthlyPrice * 10) / 12).toFixed(2);
 
               return (
                 <div 
@@ -90,15 +93,15 @@ export function BillingSettings({
                   )}
                   
                   <div className="mb-4">
-                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-wider text-xs">{plan.name}</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs">{plan.name}</h4>
                     <div className="mt-2 flex items-baseline gap-1">
                       <span className="text-3xl font-black text-slate-900 dark:text-white">
-                        ${interval === "YEAR" ? (plan.price.amount * 10 / 12).toFixed(2) : plan.price.amount}
+                        ${plan.price.amount === 0 ? '0' : (interval === "YEAR" ? yearlyTotal : monthlyPrice)}
                       </span>
-                      <span className="text-slate-400 text-xs font-medium">/mo</span>
+                      <span className="text-slate-400 text-xs font-medium">/{interval === "YEAR" ? 'yr' : 'mo'}</span>
                     </div>
                     {interval === "YEAR" && plan.price.amount > 0 && (
-                      <p className="text-[10px] text-emerald-500 font-bold mt-1">Billed annually (${yearlyTotal}/yr)</p>
+                      <p className="text-[10px] text-emerald-500 font-bold mt-1">Includes 2 months free</p>
                     )}
                   </div>
 

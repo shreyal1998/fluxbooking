@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { format, addDays, startOfToday } from "date-fns";
 import { 
   ChevronRight, 
@@ -13,9 +14,10 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
-  Users
+  Users,
+  RefreshCcw
 } from "lucide-react";
-import { createBooking } from "@/app/actions/booking";
+import { createBooking, rescheduleBookingByCustomer } from "@/app/actions/booking";
 import { toast } from "sonner";
 
 interface Service {
@@ -55,6 +57,10 @@ export function BookingForm({
   staff: Staff[];
   primaryColor?: string;
 }) {
+  const searchParams = useSearchParams();
+  const rescheduleId = searchParams.get("reschedule");
+  const isRescheduling = !!rescheduleId;
+
   const [hasMounted, setHasMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -137,20 +143,37 @@ export function BookingForm({
       return;
     }
 
-    formData.append("tenantId", tenantId);
-    formData.append("serviceId", selectedService.id);
-    formData.append("staffId", selectedSlot.staffId);
-    formData.append("date", format(selectedDate, "yyyy-MM-dd"));
-    formData.append("time", selectedSlot.time);
-
-    const result = await createBooking(formData);
-    setSubmitting(false);
-
-    if (result.success) {
-      toast.success("Booking confirmed! Please check your email.");
-      setSuccess(true);
+    if (isRescheduling && rescheduleId) {
+      // HANDLE RESCHEDULE
+      const result = await rescheduleBookingByCustomer(
+        rescheduleId,
+        format(selectedDate, "yyyy-MM-dd"),
+        selectedSlot.time
+      );
+      setSubmitting(false);
+      if (result.success) {
+        toast.success("Appointment rescheduled successfully!");
+        setSuccess(true);
+      } else {
+        toast.error(result.error);
+      }
     } else {
-      toast.error(result.error);
+      // HANDLE NEW BOOKING
+      formData.append("tenantId", tenantId);
+      formData.append("serviceId", selectedService.id);
+      formData.append("staffId", selectedSlot.staffId);
+      formData.append("date", format(selectedDate, "yyyy-MM-dd"));
+      formData.append("time", selectedSlot.time);
+
+      const result = await createBooking(formData);
+      setSubmitting(false);
+
+      if (result.success) {
+        toast.success("Booking confirmed! Please check your email.");
+        setSuccess(true);
+      } else {
+        toast.error(result.error);
+      }
     }
   };
 
@@ -161,7 +184,7 @@ export function BookingForm({
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-3xl font-black text-slate-900">Booking Confirmed!</h3>
+          <h3 className="text-3xl font-black text-slate-900">{isRescheduling ? "Update Successful!" : "Booking Confirmed!"}</h3>
           <p className="text-slate-500 font-medium">We've sent a confirmation email with all the details.</p>
         </div>
         <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 text-left max-w-sm mx-auto">
@@ -179,11 +202,11 @@ export function BookingForm({
            </div>
         </div>
         <button 
-          onClick={() => window.location.reload()}
+          onClick={() => window.location.href = window.location.pathname}
           className="text-sm font-bold transition-colors"
           style={{ color: primaryColor }}
         >
-          Book another appointment
+          {isRescheduling ? "Back to booking" : "Book another appointment"}
         </button>
       </div>
     );
@@ -191,6 +214,14 @@ export function BookingForm({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Reschedule Badge */}
+      {isRescheduling && (
+        <div className="px-8 py-3 bg-indigo-600 text-white flex items-center justify-center gap-2">
+           <RefreshCcw className="h-4 w-4 animate-spin-slow" />
+           <span className="text-xs font-black uppercase tracking-widest">Rescheduling Mode Active</span>
+        </div>
+      )}
+
       {/* Step Indicator */}
       <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-slate-50">
         <div className="flex items-center gap-4">
@@ -220,9 +251,9 @@ export function BookingForm({
           <div className="space-y-8 animate-fade-in">
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Sparkles className="h-6 w-6" style={{ color: primaryColor }} /> Select a Service
+                <Sparkles className="h-6 w-6" style={{ color: primaryColor }} /> {isRescheduling ? "Confirm Service" : "Select a Service"}
               </h2>
-              <p className="text-slate-500 font-medium mt-1">Choose the service you'd like to book.</p>
+              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? "Verify the service for your new appointment time." : "Choose the service you'd like to book."}</p>
             </div>
             <div className="grid gap-4">
               {services.map((service) => (
@@ -275,7 +306,7 @@ export function BookingForm({
             
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Pick a time</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{isRescheduling ? "Select new time" : "Pick a time"}</h2>
                 <p className="text-slate-500 font-medium mt-1">Available slots for {selectedService?.name}.</p>
               </div>
 
@@ -379,8 +410,8 @@ export function BookingForm({
             </button>
 
             <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">Your Details</h2>
-              <p className="text-slate-500 font-medium mt-1">Review and confirm your appointment.</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">{isRescheduling ? "Confirm Change" : "Your Details"}</h2>
+              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? "Verify your new appointment details." : "Review and confirm your appointment."}</p>
             </div>
 
             <div className="bg-opacity-5 rounded-3xl p-6 border space-y-4" style={{ backgroundColor: `${primaryColor}05`, borderColor: `${primaryColor}20` }}>
@@ -389,7 +420,7 @@ export function BookingForm({
                      <Users className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>Appointment</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>{isRescheduling ? "Updated Service" : "Appointment"}</p>
                     <p className="font-bold text-slate-900">{selectedService?.name} with {selectedSlot?.staffName}</p>
                   </div>
                </div>
@@ -398,44 +429,45 @@ export function BookingForm({
                      <Calendar className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>Date & Time</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>New Date & Time</p>
                     <p className="font-bold text-slate-900">{format(selectedDate, "EEEE, MMMM d")} at {selectedSlot?.time}</p>
                   </div>
                </div>
             </div>
 
             <form onSubmit={handleConfirm} className="space-y-5" noValidate>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">Your Name</label>
-                  <input
-                    name="customerName"
-                    type="text"
-                    required
-                    onChange={() => clearFieldError("customerName")}
-                    className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                      fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:ring-indigo-500/10"
-                    }`}
-                    style={{ borderColor: fieldErrors.customerName ? undefined : (fieldErrors.customerName ? undefined : undefined) }}
-                    placeholder="Enter your full name"
-                  />
-                  <InputError message={fieldErrors.customerName} />
+              {!isRescheduling && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">Your Name</label>
+                    <input
+                      name="customerName"
+                      type="text"
+                      required
+                      onChange={() => clearFieldError("customerName")}
+                      className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
+                        fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                      }`}
+                      placeholder="Enter your full name"
+                    />
+                    <InputError message={fieldErrors.customerName} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">Email Address</label>
+                    <input
+                      name="customerEmail"
+                      type="email"
+                      required
+                      onChange={() => clearFieldError("customerEmail")}
+                      className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
+                        fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                      }`}
+                      placeholder="name@example.com"
+                    />
+                    <InputError message={fieldErrors.customerEmail} />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">Email Address</label>
-                  <input
-                    name="customerEmail"
-                    type="email"
-                    required
-                    onChange={() => clearFieldError("customerEmail")}
-                    className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                      fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:ring-indigo-500/10"
-                    }`}
-                    placeholder="name@example.com"
-                  />
-                  <InputError message={fieldErrors.customerEmail} />
-                </div>
-              </div>
+              )}
 
               <button
                 type="submit"
@@ -446,11 +478,11 @@ export function BookingForm({
                 {submitting ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" /> 
-                    <span>Processing...</span>
+                    <span>Updating Appointment...</span>
                   </>
                 ) : (
                   <>
-                    <span>Confirm Booking</span>
+                    <span>{isRescheduling ? "Confirm New Time" : "Confirm Booking"}</span>
                     <ArrowRight className="h-5 w-5" />
                   </>
                 )}

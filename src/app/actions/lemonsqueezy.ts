@@ -20,16 +20,25 @@ export async function createLemonSqueezyCheckout(variantId: string) {
   const apiKey = process.env.LEMON_SQUEEZY_API_KEY;
   const storeId = process.env.LEMON_SQUEEZY_STORE_ID;
 
-  if (!apiKey || !storeId) {
-    return { error: "Lemon Squeezy is not configured on the server." };
+  if (!variantId || variantId.includes("placeholder")) {
+    return { error: "This plan is not correctly configured in your environment variables." };
   }
+
+  if (!apiKey || !storeId) {
+    return { error: "Lemon Squeezy credentials (API Key or Store ID) are missing from the server." };
+  }
+
+  console.log("--- LEMON SQUEEZY DEBUG ---");
+  console.log("Store ID:", storeId);
+  console.log("Attempting Variant ID:", variantId);
+  console.log("---------------------------");
 
   try {
     const response = await fetch(`${LEMON_SQUEEZY_API_BASE}/checkouts`, {
       method: "POST",
       headers: {
         "Accept": "application/vnd.api+json",
-        "Content-Type": "application/vnd.api+json",
+        "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
@@ -40,7 +49,6 @@ export async function createLemonSqueezyCheckout(variantId: string) {
               email: userEmail,
               custom: {
                 tenantId: tenantId,
-                type: "SUBSCRIPTION"
               }
             },
             product_options: {
@@ -49,10 +57,10 @@ export async function createLemonSqueezyCheckout(variantId: string) {
           },
           relationships: {
             store: {
-              data: { type: "stores", id: storeId }
+              data: { type: "stores", id: storeId.toString() }
             },
             variant: {
-              data: { type: "variants", id: variantId }
+              data: { type: "variants", id: variantId.toString() }
             }
           }
         }

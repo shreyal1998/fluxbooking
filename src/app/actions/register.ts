@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { BusinessType, UserRole, SubscriptionPlan, SubscriptionInterval } from "@prisma/client";
 import { COUNTRIES } from "@/config/countries";
+import { sendWelcomeEmail } from "@/lib/mail";
 
 export async function registerBusiness(formData: FormData) {
   const name = formData.get("name") as string;
@@ -80,6 +81,13 @@ export async function registerBusiness(formData: FormData) {
       });
 
       return { tenant, user };
+    });
+
+    // Send Welcome Email
+    await sendWelcomeEmail({
+      adminName: result.user.name || "Business Owner",
+      adminEmail: result.user.email,
+      businessName: result.tenant.name,
     });
 
     return { success: true };

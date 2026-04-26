@@ -18,7 +18,11 @@ function RegisterContent() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [countrySearch, setCountrySearch] = useState("");
   const [dropdownDirection, setDropdownDirection] = useState<"up" | "down">("down");
-  const dropdownRef = useRef<HTMLFormElement>(null);
+  
+  // Specific Refs for each dropdown to ensure "Click Outside" works perfectly
+  const countryRef = useRef<HTMLDivElement>(null);
+  const typeRef = useRef<HTMLDivElement>(null);
+  
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,13 +42,20 @@ function RegisterContent() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      
+      // If country dropdown is open, check if click is outside it
+      if (openDropdown === "country" && countryRef.current && !countryRef.current.contains(target)) {
+        setOpenDropdown(null);
+      }
+      // If type dropdown is open, check if click is outside it
+      if (openDropdown === "type" && typeRef.current && !typeRef.current.contains(target)) {
         setOpenDropdown(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [openDropdown]);
 
   const toggleDropdown = (e: React.MouseEvent, name: string) => {
     const button = e.currentTarget as HTMLButtonElement;
@@ -114,7 +125,6 @@ function RegisterContent() {
     const result = await registerBusiness(formData);
 
     if (result.error) {
-      // Map server errors to specific fields
       if (result.error.includes("email")) {
         setFieldErrors({ email: "An account with this email already exists" });
       } else if (result.error.includes("URL")) {
@@ -142,11 +152,11 @@ function RegisterContent() {
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
       <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100">
         <div className="flex flex-col items-center">
-          <Link href="/" className="flex items-center gap-2 mb-6 group">
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform">
+          <Link href="/" className="flex items-center gap-2 mb-6 group outline-none">
+            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
               <Calendar className="h-6 w-6 text-white" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900">FluxBooking</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900">FluxBooking</span>
           </Link>
           <h2 className="text-center text-3xl font-black text-slate-900 tracking-tight">
             Join FluxBooking
@@ -159,7 +169,7 @@ function RegisterContent() {
           </p>
         </div>
 
-        <form ref={dropdownRef} className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
           {generalError && (
             <div className="bg-rose-50 text-rose-600 p-4 rounded-2xl text-sm font-bold border border-rose-100">
               {generalError}
@@ -273,18 +283,18 @@ function RegisterContent() {
               <InputError message={fieldErrors.businessName} />
             </div>
 
-            <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            <div className="space-y-2">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
                 Country
               </label>
-              <div className="relative">
+              <div className="relative" ref={countryRef}>
                 <input type="hidden" name="country" value={selectedCountry?.code || ""} />
                 <button
                   type="button"
                   onClick={(e) => toggleDropdown(e, "country")}
-                  className={`flex items-center justify-between w-full rounded-2xl border-2 px-4 py-3 text-slate-900 focus:bg-white focus:border-indigo-600 transition-all sm:text-sm font-bold ${
-                    fieldErrors.country ? "border-rose-100 bg-rose-50" : "border-slate-50 bg-slate-50"
-                  }`}
+                  className={`flex items-center justify-between w-full rounded-2xl border-2 px-4 py-3 text-slate-900 focus:bg-white transition-all sm:text-sm font-bold ${
+                    openDropdown === "country" ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-slate-50 bg-slate-50"
+                  } ${fieldErrors.country ? "border-rose-100 bg-rose-50" : ""}`}
                 >
                   <span className={!selectedCountry ? "text-slate-400" : ""}>
                     {selectedCountry ? selectedCountry.name : "Select Country"}
@@ -352,11 +362,11 @@ function RegisterContent() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
                   Type
                 </label>
-                <div className="relative">
+                <div className="relative" ref={typeRef}>
                   <input type="hidden" name="businessType" value={selectedBusinessType || ""} />
                   <button
                     type="button"

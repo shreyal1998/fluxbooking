@@ -5,14 +5,15 @@ import { BookingForm } from "./booking-form";
 import { Calendar, ShieldCheck, Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
 export default async function PublicBookingPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const tenant = await prisma.tenant.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
+...
     include: {
       services: {
         orderBy: { name: "asc" }

@@ -43,12 +43,15 @@ export default function Home() {
       {/* Sticky Glass Header */}
       <header className="fixed top-0 w-full z-50 glass">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={scrollToTop} className="flex items-center gap-2 group outline-none cursor-pointer">
+          <Link 
+            href="/"
+            className="flex items-center gap-2 group outline-none cursor-pointer"
+          >
             <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-xl tracking-tight text-slate-900">FluxBooking</span>
-          </button>
+          </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/#features">Features</Link>
             <Link className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors" href="/#pricing">Pricing</Link>

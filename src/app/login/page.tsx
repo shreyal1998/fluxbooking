@@ -72,11 +72,11 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
       <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100">
         <div className="flex flex-col items-center">
-          <Link href="/" className="flex items-center gap-2 mb-6 group">
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform">
-              <Calendar className="h-6 w-6 text-white" />
+          <Link href="/" className="flex items-center gap-2 mb-6 group outline-none">
+            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
+              <Calendar className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900">FluxBooking</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900">FluxBooking</span>
           </Link>
           <h2 className="text-center text-3xl font-black text-slate-900 tracking-tight">
             Welcome back

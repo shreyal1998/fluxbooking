@@ -9,18 +9,25 @@ import {
   endOfDay, 
   isBefore, 
   isAfter, 
-  isEqual
+  isEqual,
+  startOfToday,
+  addDays
 } from "date-fns";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { 
+  sendBookingConfirmation, 
+  sendBookingRescheduledEmail, 
+  sendBookingCancelledEmail 
+} from "@/lib/mail";
 
 export async function getAvailableSlots(
   tenantId: string, 
   serviceId: string, 
   dateStr: string,
   staffId?: string,
-  excludeBookingId?: string // Important for editing/rescheduling
+  excludeBookingId?: string
 ) {
   const service = await prisma.service.findUnique({
     where: { id: serviceId }
@@ -43,18 +50,15 @@ export async function getAvailableSlots(
   const [staffMembersAll, tenant] = await Promise.all([
     prisma.staff.findMany({ 
       where: staffQuery,
-      orderBy: { createdAt: "asc" } // Get in order of creation
+      orderBy: { createdAt: "asc" }
     }),
     prisma.tenant.findUnique({ where: { id: tenantId } })
   ]);
 
-  // ENFORCE PLAN LIMITS
   const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
-
   let currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
   if (tenant?.planStatus === "TRIALING" && currentLimit < 5) currentLimit = 5;
 
-  // Only use staff within the allowed limit
   const staffMembers = staffMembersAll.slice(0, currentLimit);
 
   const businessHours = tenant?.businessHoursJson 
@@ -62,7 +66,6 @@ export async function getAvailableSlots(
     : null;
 
   const businessDaySchedule = businessHours?.[dayName];
-
   const allAvailableSlots: { time: string; staffId: string; staffName: string }[] = [];
 
   for (const staff of staffMembers) {
@@ -71,10 +74,8 @@ export async function getAvailableSlots(
       : staff.availabilityJson;
     const daySchedule = availability[dayName];
 
-    // If staff is not working OR business is explicitly closed that day, skip
     if (!daySchedule || (businessHours && !businessDaySchedule)) continue;
 
-    // Get existing bookings for this staff on this day
     const bookings = await prisma.booking.findMany({
       where: {
         staffId: staff.id,
@@ -82,17 +83,12 @@ export async function getAvailableSlots(
           gte: startOfDay(targetDate),
           lte: endOfDay(targetDate),
         },
-        status: {
-          in: ["PENDING", "CONFIRMED"]
-        },
+        status: { in: ["PENDING", "CONFIRMED"] },
         NOT: excludeBookingId ? { id: excludeBookingId } : undefined
       },
-      include: {
-        service: true
-      }
+      include: { service: true }
     });
 
-    // Get blocked slots (approved leaves, vacations, etc.)
     const blocked = await prisma.blockedSlot.findMany({
       where: {
         staffId: staff.id,
@@ -103,8 +99,6 @@ export async function getAvailableSlots(
 
     const workStart = parse(daySchedule.start, "HH:mm", targetDate);
     const workEnd = parse(daySchedule.end, "HH:mm", targetDate);
-
-    // Business constraints
     const bizStart = businessDaySchedule ? parse(businessDaySchedule.start, "HH:mm", targetDate) : null;
     const bizEnd = businessDaySchedule ? parse(businessDaySchedule.end, "HH:mm", targetDate) : null;
 
@@ -117,26 +111,18 @@ export async function getAvailableSlots(
       const slotEnd = addMinutes(currentSlot, duration);
       const slotEndWithBuffer = addMinutes(currentSlot, totalDuration);
       
-      // Intersection Logic: Slot must be within Business Hours IF they are set
       const isWithinBusinessHours = !businessDaySchedule || (
         (isBefore(bizStart!, currentSlot) || isEqual(bizStart!, currentSlot)) &&
         (isAfter(bizEnd!, slotEnd) || isEqual(bizEnd!, slotEnd))
       );
 
-      // Check for conflicts with other bookings
-      // A booking conflict exists if the new slot (including buffer) overlaps with an existing booking
-      // OR if an existing booking's buffer overlaps with the new slot
       const hasConflict = bookings.some(booking => {
         const bStart = new Date(booking.startTime);
-        // Important: We need to consider the buffer of the existing booking too
-        const bService = booking.service;
-        const bBuffer = (bService as any)?.bufferTime || 0;
+        const bBuffer = (booking.service as any)?.bufferTime || 0;
         const bEndWithBuffer = addMinutes(new Date(booking.endTime), bBuffer);
-        
         return isBefore(currentSlot, bEndWithBuffer) && isAfter(slotEndWithBuffer, bStart);
       });
 
-      // Check for conflicts with blocked slots
       const isBlocked = blocked.some(block => {
         const bStart = new Date(block.startTime);
         const bEnd = new Date(block.endTime);
@@ -150,51 +136,37 @@ export async function getAvailableSlots(
           staffName: staff.name
         });
       }
-
-      // Move to next potential slot
       currentSlot = addMinutes(currentSlot, 30);
     }
   }
 
-  // Sort all slots by time
   allAvailableSlots.sort((a, b) => a.time.localeCompare(b.time));
 
-  // If no specific staffId was requested, deduplicate the times for a cleaner UI
   if (!staffId) {
     const uniqueSlots: typeof allAvailableSlots = [];
     const seenTimes = new Set<string>();
 
     for (const slot of allAvailableSlots) {
       if (!seenTimes.has(slot.time)) {
-        // Workload Balancing: Find all staff members available at this exact time
         const availableStaffAtThisTime = allAvailableSlots.filter(s => s.time === slot.time);
-        
         if (availableStaffAtThisTime.length > 1) {
-          // Find the staff member from this sub-list who has the fewest total bookings for the target day
-          // This is a simple but effective way to balance the team's load
           const staffBookingCounts = await Promise.all(
             availableStaffAtThisTime.map(async (s) => ({
               slot: s,
               count: await prisma.booking.count({
                 where: {
                   staffId: s.staffId,
-                  startTime: {
-                    gte: startOfDay(targetDate),
-                    lte: endOfDay(targetDate),
-                  },
+                  startTime: { gte: startOfDay(targetDate), lte: endOfDay(targetDate) },
                   status: { in: ["PENDING", "CONFIRMED", "COMPLETED"] }
                 }
               })
             }))
           );
-
-          // Sort by count and pick the "laziest" (least busy) staff member
           staffBookingCounts.sort((a, b) => a.count - b.count);
           uniqueSlots.push(staffBookingCounts[0].slot);
         } else {
           uniqueSlots.push(slot);
         }
-        
         seenTimes.add(slot.time);
       }
     }
@@ -206,7 +178,6 @@ export async function getAvailableSlots(
 
 export async function createBooking(formData: FormData) {
   const session = await getServerSession(authOptions);
-  
   const tenantId = formData.get("tenantId") as string;
   const serviceId = formData.get("serviceId") as string;
   const staffId = formData.get("staffId") as string;
@@ -215,7 +186,6 @@ export async function createBooking(formData: FormData) {
   const customerName = formData.get("customerName") as string;
   const customerEmail = formData.get("customerEmail") as string;
 
-  // Security check for authenticated Staff users
   if (session && (session.user as any).role === "STAFF") {
     const userId = (session.user as any).id;
     const staffProfile = await prisma.staff.findUnique({ where: { userId } });
@@ -233,62 +203,34 @@ export async function createBooking(formData: FormData) {
   const endTimeWithBuffer = addMinutes(endTime, buffer);
 
   try {
-    // FINAL AVAILABILITY CHECK (Pre-creation)
-    // Check for any conflicting bookings for this staff member
     const conflict = await prisma.booking.findFirst({
       where: {
         staffId,
         status: { in: ["PENDING", "CONFIRMED"] },
-        // Logic: New booking (including its buffer) overlaps with existing booking (including its buffer)
         OR: [
-          {
-            // Existing booking starts during our new slot
-            startTime: {
-              lt: endTimeWithBuffer,
-              gte: startTime
-            }
-          },
-          {
-            // Existing booking ends during our new slot
-            endTime: {
-              gt: startTime,
-              lte: endTimeWithBuffer
-            }
-          },
-          {
-            // New slot is entirely inside an existing booking
-            startTime: { lte: startTime },
-            endTime: { gte: endTimeWithBuffer }
-          }
+          { startTime: { lt: endTimeWithBuffer, gte: startTime } },
+          { endTime: { gt: startTime, lte: endTimeWithBuffer } },
+          { startTime: { lte: startTime }, endTime: { gte: endTimeWithBuffer } }
         ]
       },
       include: { service: true }
     });
 
     if (conflict) {
-      // Re-verify with existing booking's buffer
       const conflictBuffer = conflict.service.bufferTime || 0;
       const conflictEndWithBuffer = addMinutes(new Date(conflict.endTime), conflictBuffer);
-      
       if (isBefore(startTime, conflictEndWithBuffer) && isAfter(endTimeWithBuffer, conflict.startTime)) {
         return { error: "This slot was just taken. Please pick another time." };
       }
     }
 
-    // Check for blocked slots (leaves/personal blocks)
     const isBlocked = await prisma.blockedSlot.findFirst({
-      where: {
-        staffId,
-        startTime: { lt: endTime },
-        endTime: { gt: startTime }
-      }
+      where: { staffId, startTime: { lt: endTime }, endTime: { gt: startTime } }
     });
 
-    if (isBlocked) {
-      return { error: "Staff member is unavailable during this time." };
-    }
+    if (isBlocked) return { error: "Staff member is unavailable during this time." };
 
-    await prisma.booking.create({
+    const booking = await prisma.booking.create({
       data: {
         tenantId,
         serviceId,
@@ -298,8 +240,24 @@ export async function createBooking(formData: FormData) {
         startTime,
         endTime,
         status: "PENDING",
+      },
+      include: {
+        tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true } },
+        service: { select: { name: true } },
       }
     });
+
+    if (booking.tenant.emailNotificationsEnabled) {
+      await sendBookingConfirmation({
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        serviceName: booking.service.name,
+        startTime: booking.startTime,
+        businessName: booking.tenant.name,
+        businessSlug: booking.tenant.slug,
+        bookingId: booking.id,
+      });
+    }
     
     revalidatePath("/dashboard/appointments");
     return { success: true };
@@ -331,16 +289,10 @@ export async function updateBooking(bookingId: string, formData: FormData) {
 
     if (!booking) return { error: "Booking not found" };
 
-    // Security check for Staff
     if (userRole === "STAFF") {
       const staffProfile = await prisma.staff.findUnique({ where: { userId } });
-      if (!staffProfile || booking.staffId !== staffProfile.id) {
-        return { error: "Unauthorized" };
-      }
-      // CRITICAL: Staff members can only reschedule their own appointments and cannot reassign them to others
-      if (staffId && staffId !== staffProfile.id) {
-        return { error: "Staff members can only reschedule their own appointments and cannot reassign them to others." };
-      }
+      if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
+      if (staffId && staffId !== staffProfile.id) return { error: "Staff members can only reschedule their own appointments." };
     }
 
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -351,14 +303,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
 
     await prisma.booking.update({
       where: { id: bookingId },
-      data: {
-        serviceId,
-        staffId,
-        customerName,
-        customerEmail,
-        startTime,
-        endTime,
-      }
+      data: { serviceId, staffId, customerName, customerEmail, startTime, endTime }
     });
 
     revalidatePath("/dashboard/appointments");
@@ -368,11 +313,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
   }
 }
 
-export async function rescheduleBooking(
-  bookingId: string, 
-  newStartTime: Date, 
-  newStaffId?: string
-) {
+export async function rescheduleBooking(bookingId: string, newStartTime: Date, newStaffId?: string) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
@@ -388,22 +329,15 @@ export async function rescheduleBooking(
 
     if (!booking) return { error: "Booking not found" };
 
-    // Security check for Staff
     if (userRole === "STAFF") {
       const staffProfile = await prisma.staff.findUnique({ where: { userId } });
-      if (!staffProfile || booking.staffId !== staffProfile.id) {
-        return { error: "Unauthorized" };
-      }
-      // CRITICAL: Staff members can only reschedule their own appointments and cannot reassign them to others
-      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) {
-        return { error: "Staff members can only reschedule their own appointments and cannot reassign them to others." };
-      }
+      if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
+      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) return { error: "Staff members can only reschedule their own appointments." };
     }
 
     const duration = booking.service.durationMinutes;
     const endTime = addMinutes(newStartTime, duration);
 
-    // Collision Check (Simplified for drag-drop)
     const conflict = await prisma.booking.findFirst({
       where: {
         id: { not: bookingId },
@@ -416,62 +350,145 @@ export async function rescheduleBooking(
       }
     });
 
-    if (conflict) {
-      return { error: "This slot overlaps with an existing appointment." };
-    }
+    if (conflict) return { error: "This slot overlaps with an existing appointment." };
 
     await prisma.booking.update({
       where: { id: bookingId },
-      data: {
-        startTime: newStartTime,
-        endTime,
-        staffId: newStaffId || booking.staffId
-      }
+      data: { startTime: newStartTime, endTime, staffId: newStaffId || booking.staffId }
     });
 
+    const updatedBooking = await prisma.booking.findUnique({
+       where: { id: bookingId },
+       include: { 
+         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true } }, 
+         service: { select: { name: true } } 
+       }
+    });
+
+    if (updatedBooking?.tenant.emailNotificationsEnabled) {
+      await sendBookingRescheduledEmail({
+        customerName: updatedBooking.customerName,
+        customerEmail: updatedBooking.customerEmail,
+        serviceName: updatedBooking.service.name,
+        newStartTime: updatedBooking.startTime,
+        businessName: updatedBooking.tenant.name,
+        businessSlug: updatedBooking.tenant.slug,
+        bookingId: updatedBooking.id,
+      });
+    }
+
     revalidatePath("/dashboard/appointments");
-    revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    console.error("Reschedule error:", error);
     return { error: "Failed to reschedule" };
   }
 }
 
-export async function updateBookingStatus(bookingId: string, status: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) return { error: "Not authenticated" };
-
-  const tenantId = (session.user as any).tenantId;
-  const userRole = (session.user as any).role;
-  const userId = (session.user as any).id;
-
+export async function rescheduleBookingByCustomer(bookingId: string, newDateStr: string, newTimeStr: string) {
   try {
     const booking = await prisma.booking.findUnique({
-      where: { id: bookingId, tenantId },
-      include: { staff: true }
+      where: { id: bookingId },
+      include: { tenant: true, service: true }
     });
 
     if (!booking) return { error: "Booking not found" };
 
-    // Security: Staff can only update their own bookings
-    if (userRole === "STAFF") {
-      const staffProfile = await prisma.staff.findUnique({ where: { userId } });
-      if (!staffProfile || booking.staffId !== staffProfile.id) {
-        return { error: "Unauthorized to update this booking" };
+    const newStartTime = parse(`${newDateStr} ${newTimeStr}`, "yyyy-MM-dd HH:mm", new Date());
+    const duration = booking.service.durationMinutes;
+    const newEndTime = addMinutes(newStartTime, duration);
+    const buffer = booking.service.bufferTime || 0;
+    const endTimeWithBuffer = addMinutes(newEndTime, buffer);
+
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        id: { not: bookingId },
+        staffId: booking.staffId,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        OR: [
+          { startTime: { lt: endTimeWithBuffer, gte: newStartTime } },
+          { endTime: { gt: newStartTime, lte: endTimeWithBuffer } }
+        ]
       }
-    }
+    });
+
+    if (conflict) return { error: "This slot is no longer available. Please pick another time." };
 
     await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: status as any }
+      data: { startTime: newStartTime, endTime: newEndTime }
     });
 
+    if (booking.tenant.emailNotificationsEnabled) {
+      await sendBookingRescheduledEmail({
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        serviceName: booking.service.name,
+        newStartTime: newStartTime,
+        businessName: booking.tenant.name,
+        businessSlug: booking.tenant.slug,
+        bookingId: booking.id,
+      });
+    }
+
     revalidatePath("/dashboard/appointments");
-    revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
-    return { error: "Failed to update booking status" };
+    return { error: "Failed to update appointment time" };
+  }
+}
+
+export async function getSuggestedSlots(tenantId: string, serviceId: string, staffId: string) {
+  try {
+    const suggestions: { date: string; time: string; staffName: string }[] = [];
+    const today = startOfToday();
+
+    for (let i = 0; i < 7; i++) {
+      const targetDate = addDays(today, i);
+      const dateStr = format(targetDate, "yyyy-MM-dd");
+      const slots = await getAvailableSlots(tenantId, serviceId, dateStr, staffId);
+      
+      if (Array.isArray(slots)) {
+        for (const slot of slots) {
+          if (suggestions.length < 3) {
+            const slotTime = parse(`${dateStr} ${slot.time}`, "yyyy-MM-dd HH:mm", new Date());
+            if (slotTime > new Date()) {
+              suggestions.push({ date: dateStr, time: slot.time, staffName: slot.staffName });
+            }
+          }
+          if (suggestions.length === 3) break;
+        }
+      }
+      if (suggestions.length === 3) break;
+    }
+    return suggestions;
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function cancelBookingByCustomer(bookingId: string) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { tenant: true, service: true }
+    });
+
+    if (!booking) return { error: "Booking not found" };
+
+    if (booking.tenant.emailNotificationsEnabled) {
+      await sendBookingCancelledEmail({
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        serviceName: booking.service.name,
+        startTime: booking.startTime,
+        businessName: booking.tenant.name,
+      });
+    }
+
+    await prisma.booking.delete({ where: { id: bookingId } });
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to cancel appointment" };
   }
 }
 
@@ -486,26 +503,60 @@ export async function deleteBooking(bookingId: string) {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId, tenantId },
+      include: { tenant: true, service: true }
     });
 
     if (!booking) return { error: "Booking not found" };
 
-    // Security check for Staff
     if (userRole === "STAFF") {
       const staffProfile = await prisma.staff.findUnique({ where: { userId } });
-      if (!staffProfile || booking.staffId !== staffProfile.id) {
-        return { error: "Unauthorized to delete this booking" };
-      }
+      if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
     }
 
-    await prisma.booking.delete({
-      where: { id: bookingId }
-    });
+    await prisma.booking.delete({ where: { id: bookingId } });
+
+    if (booking.tenant.emailNotificationsEnabled) {
+      await sendBookingCancelledEmail({
+        customerName: booking.customerName,
+        customerEmail: booking.customerEmail,
+        serviceName: booking.service.name,
+        startTime: booking.startTime,
+        businessName: booking.tenant.name,
+      });
+    }
 
     revalidatePath("/dashboard/appointments");
-    revalidatePath("/dashboard");
     return { success: true };
   } catch (error) {
     return { error: "Failed to delete booking" };
+  }
+}
+
+export async function updateBookingStatus(bookingId: string, status: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+  const tenantId = (session.user as any).tenantId;
+  const userRole = (session.user as any).role;
+  const userId = (session.user as any).id;
+
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId, tenantId },
+    });
+    if (!booking) return { error: "Booking not found" };
+    if (userRole === "STAFF") {
+      const staffProfile = await prisma.staff.findUnique({ where: { userId } });
+      if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
+    }
+
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: status as any }
+    });
+
+    revalidatePath("/dashboard/appointments");
+    return { success: true };
+  } catch (error) {
+    return { error: "Failed to update booking status" };
   }
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2, Check } from "lucide-react";
 import { addService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 
-export function AddServiceForm() {
+export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -51,6 +51,7 @@ export function AddServiceForm() {
       toast.success("Service created successfully!");
       (e.target as HTMLFormElement).reset();
       setLoading(false);
+      if (onSuccess) onSuccess();
     }
   };
 
@@ -65,14 +66,7 @@ export function AddServiceForm() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft sticky top-8 transition-colors">
-      <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-          <Plus className="h-5 w-5" />
-        </div>
-        Add New Service
-      </h3>
-      
+    <div className="px-8 py-6 transition-colors text-left bg-white dark:bg-slate-900">
       {generalError && (
         <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-bold border border-rose-100 dark:border-rose-900/30">
           {generalError}
@@ -177,7 +171,7 @@ export function AddServiceForm() {
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
-              <Plus className="h-5 w-5" />
+              <Check className="h-5 w-5" />
               Create Service
             </>
           )}

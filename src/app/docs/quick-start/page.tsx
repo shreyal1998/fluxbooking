@@ -42,7 +42,7 @@ export default function QuickStart() {
         <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">
           Quick <span className="text-indigo-600">Start Guide</span>
         </h1>
-        <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-2xl">
+        <p className="text-xl text-slate-500 font-normal leading-relaxed max-w-2xl">
           Get your booking system up and running in less than 5 minutes. 
           Follow these simple steps to launch your business.
         </p>
@@ -61,7 +61,7 @@ export default function QuickStart() {
             </div>
             <div className="pb-10">
               <h3 className="text-xl font-black text-slate-900 mb-2">Step {index + 1}: {step.title}</h3>
-              <p className="text-slate-500 font-medium leading-relaxed mb-4">
+              <p className="text-slate-500 font-normal leading-relaxed mb-4">
                 {step.description}
               </p>
               <div className="flex items-center gap-4">

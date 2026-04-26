@@ -65,7 +65,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
               {/* Display Assigned Services */}
               {!isLocked && member.services && member.services.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {member.services.map((service: any) => (
+                  {member.services?.map((service: any) => (
                     <span 
                       key={service.id} 
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
@@ -105,7 +105,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
 
       {/* Management Modal */}
       {editingStaff && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-height-[90vh] flex flex-col border border-slate-200 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex items-center gap-4">
