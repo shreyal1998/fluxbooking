@@ -73,9 +73,7 @@ model Tenant {
   subscriptionEndsAt  DateTime?
 
   // Notifications & Credits
-  smsCredits               Int     @default(0)
   emailNotificationsEnabled Boolean @default(true)
-  smsNotificationsEnabled   Boolean @default(false)
 
   users         User[]
   services      Service[]
@@ -84,6 +82,22 @@ model Tenant {
   blockedSlots  BlockedSlot[]
   leaveRequests LeaveRequest[]
   customers     Customer[]
+  locations     Location[]
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  address     String?
+  phone       String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 model Account {

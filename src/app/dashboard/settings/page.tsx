@@ -7,6 +7,7 @@ import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
+import { LocationList } from "@/components/dashboard/location-list";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -15,6 +16,7 @@ export default async function SettingsPage() {
   const tenantId = (session.user as any).tenantId;
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
+    include: { locations: true }
   });
 
   const userRole = (session.user as any).role;
@@ -31,7 +33,6 @@ export default async function SettingsPage() {
         <BillingSettings 
           currentPlan={tenant?.plan || "FREE"} 
           planInterval={tenant?.planInterval || "MONTH"} 
-          smsCredits={tenant?.smsCredits || 0}
         />
       )}
 
@@ -40,6 +41,14 @@ export default async function SettingsPage() {
         <BrandingSettings 
           initialColor={tenant?.primaryColor || "#6366f1"} 
           initialLogo={tenant?.logoUrl || null} 
+        />
+      )}
+
+      {/* Locations Section - ONLY for ADMIN */}
+      {userRole === "ADMIN" && (
+        <LocationList 
+          locations={tenant?.locations || []} 
+          isPro={tenant?.plan === "PRO"} 
         />
       )}
 

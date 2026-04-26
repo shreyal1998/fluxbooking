@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "sonner";
+import { ScrollToTop } from "@/components/scroll-to-top";
+import { ReadingProgress } from "@/components/reading-progress";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +43,8 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <Toaster position="top-center" richColors />
+            <ScrollToTop />
+            <ReadingProgress />
           </AuthProvider>
         </ThemeProvider>
       </body>

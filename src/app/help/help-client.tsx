@@ -2,6 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { sendSupportRequest } from "@/app/actions/support";
+import { Footer } from "@/components/footer";
 import { 
   Calendar, 
   ArrowLeft, 
@@ -31,6 +35,8 @@ const REASONS = [
 ];
 
 export default function HelpClient() {
+  const { data: session } = useSession();
+  const isPro = (session?.user as any)?.plan === "PRO";
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedReason, setSelectedReason] = useState<typeof REASONS[0] | null>(null);
@@ -89,10 +95,22 @@ export default function HelpClient() {
       return;
     }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLoading(false);
-    setSubmitted(true);
+    // Append reason to formData since it's in local state
+    if (selectedReason) {
+      formData.append("reason", selectedReason.label);
+    }
+
+    const result = await sendSupportRequest(formData);
+
+    if (result.error) {
+      setGeneralError(result.error);
+      toast.error(result.error);
+      setLoading(false);
+    } else {
+      toast.success("Message sent successfully!");
+      setSubmitted(true);
+      setLoading(false);
+    }
   };
 
   const InputError = ({ message }: { message?: string }) => {
@@ -130,16 +148,18 @@ export default function HelpClient() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Mini Header */}
-      <header className="h-20 flex items-center px-8 lg:px-12 bg-white/50 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
-        <button 
-          onClick={scrollToTop}
-          className="flex items-center gap-2 group outline-none cursor-pointer"
-        >
-          <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform">
-            <Calendar className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-black text-xl tracking-tight text-slate-900">FluxHelp</span>
-        </button>
+      <header className="sticky top-0 w-full z-50 glass">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Link 
+            href="/"
+            className="flex items-center gap-2 group outline-none cursor-pointer"
+          >
+            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
+              <Calendar className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-slate-900">FluxBooking</span>
+          </Link>
+        </div>
       </header>
       <main className="flex-1 container mx-auto px-4 py-16 lg:py-24 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -147,15 +167,21 @@ export default function HelpClient() {
             <div className="space-y-4">
               <Link 
                 href="/" 
-                className="inline-flex items-center gap-2 mb-10 px-5 py-2.5 rounded-full border border-indigo-100 bg-indigo-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-950 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 hover:shadow-xl hover:shadow-indigo-500/20 transition-all group"
+                className="inline-flex items-center gap-2 mb-10 text-xs font-black uppercase tracking-[0.2em] text-slate-600 hover:text-indigo-600 transition-all group"
               >
                 <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" />
-                FLUXBOOKING.COM
+                Back to Home
               </Link>
               <h1 className="text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
                 Help <span className="text-indigo-600">Center</span>
               </h1>
-              <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-md">
+              {isPro && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 shadow-sm animate-in fade-in zoom-in duration-500">
+                  <Zap className="h-3.5 w-3.5 fill-indigo-600" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Priority Support Active</span>
+                </div>
+              )}
+              <p className="text-xl text-slate-500 font-normal leading-relaxed max-w-md">
                 Have a question about your account, billing, or a technical issue? Our team is ready to assist.
               </p>
             </div>
@@ -165,12 +191,12 @@ export default function HelpClient() {
                  { icon: Clock, title: "Fast Response", desc: "Average 2hr reply time" },
                  { icon: Shield, title: "Secure Portal", desc: "End-to-end encryption" },
                  { icon: LifeBuoy, title: "Expert Support", desc: "Talk to real developers" },
-                 { icon: MessageSquare, title: "Multi-Channel", desc: "Email, SMS, and Chat" }
+                 { icon: MessageSquare, title: "Multi-Channel", desc: "Email and Chat Support" }
                ].map((item, i) => (
-                 <div key={i} className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm space-y-2">
+                 <div key={i} className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm space-y-2 text-left">
                     <item.icon className="h-5 w-5 text-indigo-500" />
-                    <h4 className="font-black text-sm text-slate-900">{item.title}</h4>
-                    <p className="text-[11px] text-slate-500 font-bold leading-relaxed">{item.desc}</p>
+                    <h4 className="font-bold text-sm text-slate-900">{item.title}</h4>
+                    <p className="text-sm text-slate-500 font-normal leading-relaxed">{item.desc}</p>
                  </div>
                ))}
             </div>
@@ -296,6 +322,7 @@ export default function HelpClient() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

@@ -22,24 +22,12 @@ export async function POST(req: Request) {
 
   const session = event.data.object as Stripe.Checkout.Session;
 
-  // Handle successful session (Subscription OR One-time SMS)
+  // Handle successful session
   if (event.type === "checkout.session.completed") {
     const tenantId = session.client_reference_id;
-    const sessionType = session.metadata?.type;
 
-    if (tenantId && sessionType === "SMS_PURCHASE") {
-      // HANDLE ONE-TIME SMS PURCHASE
-      const creditsToAdd = parseInt(session.metadata?.credits || "0");
-      await prisma.tenant.update({
-        where: { id: tenantId },
-        data: {
-          smsCredits: {
-            increment: creditsToAdd,
-          },
-        },
-      });
-    } else if (tenantId) {
-      // HANDLE SUBSCRIPTION (Existing Logic)
+    if (tenantId) {
+      // HANDLE SUBSCRIPTION
       const subscription = await stripe.subscriptions.retrieve(
         session.subscription as string
       );

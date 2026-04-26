@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CreditCard, Sparkles, Zap, MessageSquare, ShoppingCart } from "lucide-react";
-import { PLANS, SMS_PACKS } from "@/config/plans";
+import { Check, CreditCard } from "lucide-react";
+import { PLANS } from "@/config/plans";
 import { createLemonSqueezyCheckout } from "@/app/actions/lemonsqueezy";
 
 export function BillingSettings({ 
   currentPlan, 
-  planInterval,
-  smsCredits
+  planInterval
 }: { 
   currentPlan: string, 
-  planInterval: string,
-  smsCredits: number
+  planInterval: string
 }) {
   const [interval, setInterval] = useState<"MONTH" | "YEAR">(planInterval as any || "MONTH");
   const [loading, setLoading] = useState<string | null>(null);
@@ -44,24 +42,6 @@ export function BillingSettings({
     }
   };
 
-  const handleBuySMS = async (packId: string) => {
-    setLoading(packId);
-    const pack = SMS_PACKS.find(p => p.id === packId);
-    if (!pack || !pack.variantId) {
-      alert("Pack configuration error");
-      setLoading(null);
-      return;
-    }
-
-    const result = await createLemonSqueezyCheckout(pack.variantId, "SMS");
-
-    if (result.url) {
-      window.location.href = result.url;
-    } else if (result.error) {
-      alert(result.error);
-      setLoading(null);
-    }
-  };
   return (
     <div className="space-y-6">
       {/* Subscription Plans */}
@@ -145,50 +125,6 @@ export function BillingSettings({
                 </div>
               );
             })}
-          </div>
-        </div>
-      </div>
-
-      {/* SMS Credits Section */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-amber-500" />
-            <h3 className="font-bold text-slate-900 dark:text-white">Messaging Credits</h3>
-          </div>
-          <div className="bg-amber-50 dark:bg-amber-900/20 px-4 py-1.5 rounded-full border border-amber-100 dark:border-amber-900/50">
-            <span className="text-xs font-black text-amber-600 dark:text-amber-400">{smsCredits} Credits Remaining</span>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
-            Buy prepaid credits to send SMS reminders to your customers. Credits never expire and work globally.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {SMS_PACKS.map((pack) => (
-              <div key={pack.id} className="p-6 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col items-center text-center">
-                <Zap className="h-6 w-6 text-amber-500 mb-2" />
-                <h4 className="font-bold text-slate-900 dark:text-white">{pack.credits} SMS</h4>
-                <div className="mt-2 mb-6">
-                  <span className="text-2xl font-black text-slate-900 dark:text-white">${pack.price}</span>
-                  <span className="text-slate-400 text-[10px] block mt-1">one-time payment</span>
-                </div>
-                <button 
-                  onClick={() => handleBuySMS(pack.id)}
-                  disabled={!!loading}
-                  className="w-full py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
-                >
-                  {loading === pack.id ? "Processing..." : (
-                    <>
-                      <ShoppingCart className="h-3.5 w-3.5" />
-                      Buy Now
-                    </>
-                  )}
-                </button>
-              </div>
-            ))}
           </div>
         </div>
       </div>

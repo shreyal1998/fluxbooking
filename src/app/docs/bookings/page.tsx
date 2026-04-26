@@ -53,14 +53,14 @@ export default function BookingsDocs() {
              <h3 className="text-xl font-black text-slate-900">Notifications</h3>
           </div>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            Once a booking is confirmed, both the staff member and the customer receive immediate confirmation via email (and SMS if enabled).
+            Once a booking is confirmed, both the staff member and the customer receive immediate confirmation via email.
           </p>
         </div>
       </div>
 
       <div className="pt-12 border-t border-slate-100 flex justify-between">
         <Link href="/docs/services" className="text-sm font-black text-slate-400 hover:text-slate-600">← Services & Pricing</Link>
-        <Link href="/docs/multi-tenancy" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Multi-Tenancy →</Link>
+        <Link href="/docs/multi-tenancy" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Data Isolation →</Link>
       </div>
     </div>
   );

@@ -49,7 +49,8 @@ export async function getAvailableSlots(
   ]);
 
   // ENFORCE PLAN LIMITS
-  const limits = { FREE: 1, TEAM: 5, PRO: 1000 };
+  const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
+
   let currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
   if (tenant?.planStatus === "TRIALING" && currentLimit < 5) currentLimit = 5;
 

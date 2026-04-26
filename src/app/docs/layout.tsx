@@ -73,21 +73,21 @@ export default function DocsLayout({
         <div className="p-8">
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 mb-10 px-5 py-2.5 rounded-full border border-indigo-100 bg-indigo-50/50 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-950 hover:text-white hover:bg-indigo-600 hover:border-indigo-600 hover:shadow-xl hover:shadow-indigo-500/20 transition-all group"
+            className="inline-flex items-center gap-2 mb-10 text-xs font-black uppercase tracking-[0.2em] text-slate-600 hover:text-indigo-600 transition-all group"
           >
             <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" />
-            FLUXBOOKING.COM
+            Back to Home
           </Link>
 
-          <button 
-            onClick={scrollToTop}
+          <Link 
+            href="/"
             className="flex items-center gap-2 mb-10 group outline-none cursor-pointer"
           >
             <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
               <Calendar className="h-5 w-5 text-white" />
             </div>
-            <span className="font-black text-xl tracking-tight text-slate-900">FluxDocs</span>
-          </button>
+            <span className="font-bold text-xl tracking-tight text-slate-900">FluxBooking</span>
+          </Link>
 
           <nav className="space-y-10">
             {sidebarLinks.map((section) => (

@@ -57,35 +57,8 @@ export const PLANS = [
       "Unlimited Staff Members",
       "Unlimited Bookings",
       "Email Notifications",
-      "Multiple Locations",
-      "Priority Support",
+      "Multiple Location Support",
+      "Priority 24/7 Support",
     ],
-  },
-];
-
-export const SMS_PACKS = [
-  {
-    id: "SMS_STARTER",
-    name: "Starter Pack",
-    credits: 200,
-    price: 12,
-    variantId: process.env.NEXT_PUBLIC_LS_VARIANT_SMS_200 || "price_placeholder_sms_200",
-    priceId: process.env.NEXT_PUBLIC_LS_VARIANT_SMS_200 || "price_placeholder_sms_200",
-  },
-  {
-    id: "SMS_STANDARD",
-    name: "Standard Pack",
-    credits: 1000,
-    price: 45,
-    variantId: process.env.NEXT_PUBLIC_LS_VARIANT_SMS_1000 || "price_placeholder_sms_1000",
-    priceId: process.env.NEXT_PUBLIC_LS_VARIANT_SMS_1000 || "price_placeholder_sms_1000",
-  },
-  {
-    id: "SMS_BUSINESS",
-    name: "Business Pack",
-    credits: 2500,
-    price: 99,
-    variantId: process.env.NEXT_PUBLIC_LS_VARIANT_SMS_2500 || "price_placeholder_sms_2500",
-    priceId: process.env.NEXT_PUBLIC_LS_VARIANT_SMS_2500 || "price_placeholder_sms_2500",
   },
 ];

@@ -2,11 +2,11 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PLANS, SMS_PACKS } from "@/config/plans";
+import { PLANS } from "@/config/plans";
 
 const LEMON_SQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1";
 
-export async function createLemonSqueezyCheckout(variantId: string, type: "SUBSCRIPTION" | "SMS" = "SUBSCRIPTION") {
+export async function createLemonSqueezyCheckout(variantId: string) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
@@ -40,10 +40,10 @@ export async function createLemonSqueezyCheckout(variantId: string, type: "SUBSC
               email: userEmail,
               custom: {
                 tenantId: tenantId,
-                type: type
+                type: "SUBSCRIPTION"
               }
             },
-            // Redirect back to settings after payment
+...
             product_options: {
               redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?success=true`,
             }

@@ -79,29 +79,6 @@ export async function POST(req: Request) {
           planInterval: "MONTH",
         },
       });
-    } else if (eventName === "order_created" && type === "SMS") {
-      const variantId = payload.data.attributes.variant_id.toString();
-      
-      // Mapping based on environment variables
-      let creditsToAdd = 0;
-      if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_SMS_200) creditsToAdd = 200;
-      else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_SMS_1000) creditsToAdd = 1000;
-      else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_SMS_2500) creditsToAdd = 2500;
-      else {
-          console.warn(`⚠️ Unknown SMS Variant ID: ${variantId}. Adding default 200 credits.`);
-          creditsToAdd = 200;
-      }
-
-      console.log(`✅ Adding SMS Credits: Tenant ${tenantId} -> +${creditsToAdd} credits`);
-
-      await prisma.tenant.update({
-        where: { id: tenantId },
-        data: {
-          smsCredits: {
-            increment: creditsToAdd,
-          },
-        },
-      });
     }
 
     return new NextResponse("Webhook processed successfully", { status: 200 });

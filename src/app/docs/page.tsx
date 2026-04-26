@@ -65,7 +65,7 @@ export default function DocsPage() {
           {[
             "Blazing fast booking flow for your customers",
             "Individual calendars for every staff member",
-            "Automatic email and SMS notifications",
+            "Automatic email notifications",
             "Secure payments via Lemon Squeezy",
             "Full control over branding and colors"
           ].map((item) => (
@@ -92,7 +92,7 @@ export default function DocsPage() {
       </div>
 
       <div className="pt-12 border-t border-slate-100 flex justify-end">
-        <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start Guide →</Link>
+        <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start →</Link>
       </div>
     </div>
   );
