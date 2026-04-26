@@ -277,7 +277,7 @@ export function AddStaffForm({
             Assigned Services
           </label>
           <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-hide">
-            {services.map((service: any) => (
+            {services?.map((service: any) => (
               <button
                 key={service.id}
                 type="button"

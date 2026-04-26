@@ -344,6 +344,7 @@ export async function submitLeaveRequest(formData: FormData) {
   const startTime = new Date(formData.get("startTime") as string);
   const endTime = new Date(formData.get("endTime") as string);
   const reason = formData.get("reason") as string;
+  const type = formData.get("type") as string || "PERSONAL";
 
   try {
     const staff = await prisma.staff.findUnique({
@@ -356,6 +357,7 @@ export async function submitLeaveRequest(formData: FormData) {
       data: {
         tenantId,
         staffId: staff.id,
+        type,
         startTime,
         endTime,
         reason,

@@ -81,7 +81,7 @@ export function AppointmentsClient({
     }
 
     return [
-      ...filteredBookings.map((b: any) => ({
+      ...(filteredBookings?.map((b: any) => ({
         id: b.id,
         title: `${b.customerName} - ${b.service.name}`,
         start: new Date(b.startTime),
@@ -90,8 +90,8 @@ export function AppointmentsClient({
         resourceName: b.staff.name,
         status: b.status,
         color: b.service.color
-      })),
-      ...filteredBlocked.map((s: any) => ({
+      })) || []),
+      ...(filteredBlocked?.map((s: any) => ({
         id: s.id,
         title: s.reason || "Blocked",
         start: new Date(s.startTime),
@@ -99,7 +99,7 @@ export function AppointmentsClient({
         type: "blocked" as const,
         resourceName: s.staff.name,
         leaveType: s.type
-      }))
+      })) || [])
     ];
   }, [bookings, blockedSlots, staffFilter, userRole]);
 

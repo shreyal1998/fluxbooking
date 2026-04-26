@@ -227,7 +227,7 @@ export function ManualBooking({
                     <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Which service is the customer booking?</p>
                   </div>
                   <div className="grid grid-cols-1 gap-3">
-                    {services.map((service: any) => (
+                    {services?.map((service: any) => (
                       <button
                         key={service.id}
                         onClick={() => {
@@ -289,9 +289,9 @@ export function ManualBooking({
                       <div className="flex justify-center py-8">
                         <div className="h-8 w-8 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
                       </div>
-                    ) : availableSlots.length > 0 ? (
+                    ) : availableSlots?.length > 0 ? (
                       <div className="grid grid-cols-3 gap-3">
-                        {availableSlots.map((slot, idx) => {
+                        {availableSlots?.map((slot, idx) => {
                           const isSelected = selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId;
                           return (
                             <button
@@ -345,9 +345,9 @@ export function ManualBooking({
                           />
                         </div>
                         
-                        {searchResults.length > 0 && (
+                        {searchResults?.length > 0 && (
                           <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-                            {searchResults.map((customer) => (
+                            {searchResults?.map((customer) => (
                               <button
                                 key={customer.id}
                                 onClick={() => handleSelectCustomer(customer)}

@@ -211,13 +211,13 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
               Assigned Services
             </label>
             <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-hide">
-              {services.map((service) => (
+              {services?.map((service) => (
                 <button
                   key={service.id}
                   type="button"
                   onClick={() => toggleService(service.id)}
                   className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
-                    selectedServices.includes(service.id)
+                    selectedServices?.includes(service.id)
                       ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20"
                       : "border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
                   }`}
@@ -226,7 +226,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
                     <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: service.color }}></div>
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{service.name}</span>
                   </div>
-                  {selectedServices.includes(service.id) && <Check className="h-4 w-4 text-indigo-600" />}
+                  {selectedServices?.includes(service.id) && <Check className="h-4 w-4 text-indigo-600" />}
                 </button>
               ))}
             </div>
