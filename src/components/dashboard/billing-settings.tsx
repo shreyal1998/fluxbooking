@@ -32,7 +32,7 @@ export function BillingSettings({
       return;
     }
 
-    const result = await createLemonSqueezyCheckout(variantId, "SUBSCRIPTION");
+    const result = await createLemonSqueezyCheckout(variantId);
 
     if (result.url) {
       window.location.href = result.url;
