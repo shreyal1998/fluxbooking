@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
@@ -24,8 +25,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sonner": "^2.0.7",
-    "stripe": "^22.0.2",
-    "twilio": "^6.0.0"
+    "stripe": "^22.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

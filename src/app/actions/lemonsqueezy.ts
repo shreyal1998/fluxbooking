@@ -43,7 +43,6 @@ export async function createLemonSqueezyCheckout(variantId: string) {
                 type: "SUBSCRIPTION"
               }
             },
-...
             product_options: {
               redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?success=true`,
             }
