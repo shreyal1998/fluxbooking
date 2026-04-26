@@ -5,15 +5,16 @@ import { BookingForm } from "./booking-form";
 import { Calendar, ShieldCheck, Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
 export default async function PublicBookingPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  
   const tenant = await prisma.tenant.findUnique({
     where: { slug },
-...
     include: {
       services: {
         orderBy: { name: "asc" }
@@ -94,8 +95,9 @@ export default async function PublicBookingPage({
         <div className="mt-12 text-center space-y-4 animate-fade-in">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Powered by FluxBooking SaaS</p>
           <div className="flex items-center justify-center gap-6">
-             <Link href="/privacy" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Privacy</Link>             <Link href="#" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Terms</Link>
-             <Link href="#" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Support</Link>
+             <Link href="/privacy" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Privacy</Link>
+             <Link href="/terms" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Terms</Link>
+             <Link href="/help" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Support</Link>
           </div>
         </div>
       </div>
