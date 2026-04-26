@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { ArrowRight, XCircle, CheckCircle2, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { ArrowRight, XCircle, CheckCircle2, Loader2, Sparkles, AlertCircle, Calendar } from "lucide-react";
 import { rescheduleBookingByCustomer, cancelBookingByCustomer } from "@/app/actions/booking";
 import { toast } from "sonner";
 import Link from "next/link";
