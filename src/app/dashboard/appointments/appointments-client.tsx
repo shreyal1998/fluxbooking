@@ -116,7 +116,7 @@ export function AppointmentsClient({
 
   return (
     <div className="space-y-8 animate-fade-in transition-colors">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Appointments</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">

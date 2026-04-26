@@ -20,6 +20,8 @@ import {
 import { updateCustomer, toggleCustomerStatus } from "@/app/actions/customer";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
+import { Portal } from "@/components/ui/portal";
 
 const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -42,6 +44,8 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
   const [archiveReason, setArchiveReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  useLockBodyScroll(!!editingCustomer || !!archivingCustomer);
 
   const filteredCustomers = customers.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -131,7 +135,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
 
   return (
     <div className="space-y-6 transition-colors">
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="relative max-w-md w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input 
@@ -262,134 +266,138 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
       </div>
 
       {editingCustomer && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
-              <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
-                 <h3 className="text-xl font-black text-slate-900 dark:text-white">Customer Profile</h3>
-                 <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                   <X className="h-5 w-5 text-slate-400" />
-                 </button>
-              </div>
-              <form onSubmit={handleUpdate} className="p-8 space-y-6" noValidate>
-                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
-                            <select 
-                                name="status" 
-                                defaultValue={editingCustomer.status} 
-                                disabled={userRole !== "ADMIN" && editingCustomer.status === "INACTIVE"}
-                                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50"
-                            >
-                                <option value="ACTIVE">ACTIVE</option>
-                                <option value="INACTIVE">INACTIVE</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
-                            <input 
-                              name="name" 
-                              defaultValue={editingCustomer.name} 
-                              required 
-                              onChange={() => clearFieldError("name")}
-                              className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
-                                fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
-                              }`}
-                            />
-                            <InputError message={fieldErrors.name} />
-                        </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
-                      <input 
-                        name="email" 
-                        type="email" 
-                        defaultValue={editingCustomer.email} 
-                        required 
-                        onChange={() => clearFieldError("email")}
-                        className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
-                          fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
-                        }`}
-                      />
-                      <InputError message={fieldErrors.email} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number</label>
-                      <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Internal Notes</label>
-                      <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
-                    </div>
-                 </div>
-                 <button 
-                   type="submit" 
-                   disabled={loading}
-                   className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50"
-                 >
-                   {loading ? "Saving..." : "Save Changes"}
-                 </button>
-              </form>
-           </div>
-        </div>
+        <Portal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                   <h3 className="text-xl font-black text-slate-900 dark:text-white">Customer Profile</h3>
+                   <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                     <X className="h-5 w-5 text-slate-400" />
+                   </button>
+                </div>
+                <form onSubmit={handleUpdate} className="p-8 space-y-6" noValidate>
+                   <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                              <select 
+                                  name="status" 
+                                  defaultValue={editingCustomer.status} 
+                                  disabled={userRole !== "ADMIN" && editingCustomer.status === "INACTIVE"}
+                                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50"
+                              >
+                                  <option value="ACTIVE">ACTIVE</option>
+                                  <option value="INACTIVE">INACTIVE</option>
+                              </select>
+                          </div>
+                          <div>
+                              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
+                              <input 
+                                name="name" 
+                                defaultValue={editingCustomer.name} 
+                                required 
+                                onChange={() => clearFieldError("name")}
+                                className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
+                                  fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
+                                }`}
+                              />
+                              <InputError message={fieldErrors.name} />
+                          </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                        <input 
+                          name="email" 
+                          type="email" 
+                          defaultValue={editingCustomer.email} 
+                          required 
+                          onChange={() => clearFieldError("email")}
+                          className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
+                            fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
+                          }`}
+                        />
+                        <InputError message={fieldErrors.email} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number</label>
+                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Internal Notes</label>
+                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
+                      </div>
+                   </div>
+                   <button 
+                     type="submit" 
+                     disabled={loading}
+                     className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50"
+                   >
+                     {loading ? "Saving..." : "Save Changes"}
+                   </button>
+                </form>
+             </div>
+          </div>
+        </Portal>
       )}
 
       {archivingCustomer && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-            <div className="p-8 text-center">
-              <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
-                <AlertTriangle className="h-8 w-8 text-amber-600" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Archive Customer?</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
-                Warning: You are moving <span className="font-bold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive. 
-                They will be hidden from your list. Only an Administrator can restore them.
-              </p>
+        <Portal>
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+              <div className="p-8 text-center">
+                <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
+                  <AlertTriangle className="h-8 w-8 text-amber-600" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Archive Customer?</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
+                  Warning: You are moving <span className="font-bold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive. 
+                  They will be hidden from your list. Only an Administrator can restore them.
+                </p>
 
-              <div className="space-y-4 text-left">
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Archiving</label>
-                <select 
-                  value={archiveReason}
-                  onChange={(e) => setArchiveReason(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20"
-                >
-                  <option value="">Select a reason...</option>
-                  <option value="Moved away">Moved away</option>
-                  <option value="Duplicate entry">Duplicate entry</option>
-                  <option value="Requested no contact">Requested no contact</option>
-                  <option value="Business decision">Business decision</option>
-                  <option value="Other">Other (Type below)</option>
-                </select>
-
-                {archiveReason === "Other" && (
-                   <input 
-                    type="text"
-                    placeholder="Please specify..."
+                <div className="space-y-4 text-left">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Archiving</label>
+                  <select 
+                    value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20"
-                   />
-                )}
-              </div>
+                  >
+                    <option value="">Select a reason...</option>
+                    <option value="Moved away">Moved away</option>
+                    <option value="Duplicate entry">Duplicate entry</option>
+                    <option value="Requested no contact">Requested no contact</option>
+                    <option value="Business decision">Business decision</option>
+                    <option value="Other">Other (Type below)</option>
+                  </select>
 
-              <div className="grid grid-cols-2 gap-4 mt-8">
-                <button 
-                  onClick={() => setArchivingCustomer(null)}
-                  className="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => handleToggleStatus(archivingCustomer.id, 'ACTIVE', archiveReason)}
-                  disabled={!archiveReason || processingId === archivingCustomer.id}
-                  className="bg-amber-600 text-white py-4 rounded-2xl font-black hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50"
-                >
-                  {processingId === archivingCustomer.id ? "Archiving..." : "Confirm Archive"}
-                </button>
+                  {archiveReason === "Other" && (
+                     <input 
+                      type="text"
+                      placeholder="Please specify..."
+                      onChange={(e) => setArchiveReason(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20"
+                     />
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <button 
+                    onClick={() => setArchivingCustomer(null)}
+                    className="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => handleToggleStatus(archivingCustomer.id, 'ACTIVE', archiveReason)}
+                    disabled={!archiveReason || processingId === archivingCustomer.id}
+                    className="bg-amber-600 text-white py-4 rounded-2xl font-black hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50"
+                  >
+                    {processingId === archivingCustomer.id ? "Archiving..." : "Confirm Archive"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

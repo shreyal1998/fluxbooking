@@ -5,6 +5,8 @@ import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCir
 import { AddServiceForm } from "@/components/dashboard/add-service-form";
 import { updateService, deleteService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
+import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
+import { Portal } from "@/components/ui/portal";
 
 export function ServicesClient({ 
   initialServices, 
@@ -21,16 +23,7 @@ export function ServicesClient({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Lock scroll when any modal is open
-  useEffect(() => {
-    if (isAddModalOpen || editingService) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isAddModalOpen, editingService]);
+  useLockBodyScroll(isAddModalOpen || !!editingService);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,7 +61,7 @@ export function ServicesClient({
 
   return (
     <div className="space-y-8 animate-fade-in transition-colors">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Services</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Manage the services your business offers to clients.</p>
@@ -135,130 +128,134 @@ export function ServicesClient({
 
       {/* Add Service Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
-          <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-sm animate-in fade-in duration-500" />
-          <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="p-5 px-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
-              <h3 className="text-base font-black text-slate-900 dark:text-white">Add New Service</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                <X className="h-4 w-4 text-slate-400" />
-              </button>
-            </div>
-            <div className="max-h-[80vh] overflow-y-auto">
-              <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} />
+        <Portal>
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
+            <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-sm animate-in fade-in duration-500" />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-5 px-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Add New Service</h3>
+                <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                  <X className="h-4 w-4 text-slate-400" />
+                </button>
+              </div>
+              <div className="max-h-[80vh] overflow-y-auto">
+                <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} />
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* Edit Service Modal */}
       {editingService && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
-              <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
-                 <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit Service</h3>
-                 <button onClick={() => { setEditingService(null); setConfirmDelete(false); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                   <X className="h-5 w-5 text-slate-400" />
-                 </button>
-              </div>
-              
-              <div className="p-8 overflow-y-auto max-h-[70vh]">
-                <form onSubmit={handleUpdate} className="space-y-6">
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Service Name</label>
-                    <input
-                      name="name"
-                      type="text"
-                      required
-                      defaultValue={editingService.name}
-                      className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
+        <Portal>
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
+                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                   <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit Service</h3>
+                   <button onClick={() => { setEditingService(null); setConfirmDelete(false); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                     <X className="h-5 w-5 text-slate-400" />
+                   </button>
+                </div>
+                
+                <div className="p-8 overflow-y-auto max-h-[70vh]">
+                  <form onSubmit={handleUpdate} className="space-y-6">
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Duration (min)</label>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Service Name</label>
                       <input
-                        name="duration"
-                        type="number"
+                        name="name"
+                        type="text"
                         required
-                        defaultValue={editingService.durationMinutes}
+                        defaultValue={editingService.name}
                         className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer (min)</label>
-                      <input
-                        name="bufferTime"
-                        type="number"
-                        defaultValue={editingService.bufferTime}
-                        className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Price ($)</label>
-                    <input
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      required
-                      defaultValue={editingService.price.toString()}
-                      className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3">Brand Color</label>
-                    <div className="flex flex-wrap gap-3">
-                      {[
-                        { name: 'Indigo', value: '#6366f1' },
-                        { name: 'Emerald', value: '#10b981' },
-                        { name: 'Sky', value: '#0ea5e9' },
-                        { name: 'Amber', value: '#f59e0b' },
-                        { name: 'Rose', value: '#f43f5e' },
-                        { name: 'Violet', value: '#8b5cf6' },
-                      ].map((color) => (
-                        <label key={color.value} className="relative cursor-pointer group">
-                          <input type="radio" name="color" value={color.value} className="peer sr-only" defaultChecked={editingService.color === color.value} />
-                          <div className="w-8 h-8 rounded-xl border-2 border-transparent peer-checked:border-indigo-600 peer-checked:scale-110 transition-all shadow-sm group-hover:scale-110" style={{ backgroundColor: color.value }}></div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 space-y-4">
-                    <button
-                      type="submit"
-                      disabled={loading || deleteLoading}
-                      className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                    >
-                      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Save Changes</>}
-                    </button>
                     
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(editingService.id)}
-                      disabled={loading || deleteLoading}
-                      className={`w-full py-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                        confirmDelete 
-                        ? "bg-rose-600 text-white hover:bg-rose-700" 
-                        : "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/10"
-                      }`}
-                    >
-                      {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                        <>
-                          <Trash2 className="h-4 w-4" />
-                          {confirmDelete ? "Click again to confirm delete" : "Delete Service"}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-           </div>
-        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Duration (min)</label>
+                        <input
+                          name="duration"
+                          type="number"
+                          required
+                          defaultValue={editingService.durationMinutes}
+                          className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer (min)</label>
+                        <input
+                          name="bufferTime"
+                          type="number"
+                          defaultValue={editingService.bufferTime}
+                          className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Price ($)</label>
+                      <input
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        required
+                        defaultValue={editingService.price.toString()}
+                        className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3">Brand Color</label>
+                      <div className="flex flex-wrap gap-3">
+                        {[
+                          { name: 'Indigo', value: '#6366f1' },
+                          { name: 'Emerald', value: '#10b981' },
+                          { name: 'Sky', value: '#0ea5e9' },
+                          { name: 'Amber', value: '#f59e0b' },
+                          { name: 'Rose', value: '#f43f5e' },
+                          { name: 'Violet', value: '#8b5cf6' },
+                        ].map((color) => (
+                          <label key={color.value} className="relative cursor-pointer group">
+                            <input type="radio" name="color" value={color.value} className="peer sr-only" defaultChecked={editingService.color === color.value} />
+                            <div className="w-8 h-8 rounded-xl border-2 border-transparent peer-checked:border-indigo-600 peer-checked:scale-110 transition-all shadow-sm group-hover:scale-110" style={{ backgroundColor: color.value }}></div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 space-y-4">
+                      <button
+                        type="submit"
+                        disabled={loading || deleteLoading}
+                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                      >
+                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Save Changes</>}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(editingService.id)}
+                        disabled={loading || deleteLoading}
+                        className={`w-full py-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                          confirmDelete 
+                          ? "bg-rose-600 text-white hover:bg-rose-700" 
+                          : "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/10"
+                        }`}
+                      >
+                        {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            {confirmDelete ? "Click again to confirm delete" : "Delete Service"}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+             </div>
+          </div>
+        </Portal>
       )}
     </div>
   );

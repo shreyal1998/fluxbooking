@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Users, X, Lock, Settings2, Clock, Scissors, Check } from "lucide-react";
 import { AvailabilityEditor } from "./availability-editor";
 import { EditStaffForm } from "./edit-staff-form";
+import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 
 interface StaffMember {
   id: string;
@@ -27,6 +28,8 @@ interface StaffListProps {
 export function StaffList({ staffMembers, currentLimit, services }: StaffListProps) {
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [activeTab, setActiveTab] = useState<"profile" | "availability">("profile");
+
+  useLockBodyScroll(!!editingStaff);
 
   return (
     <>

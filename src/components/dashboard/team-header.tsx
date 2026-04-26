@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Plus, X } from "lucide-react";
 import { AddStaffForm } from "./add-staff-form";
+import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
+import { Portal } from "@/components/ui/portal";
 
 interface TeamHeaderProps {
   users: any[];
@@ -13,20 +15,11 @@ export function TeamHeader({ users, services }: TeamHeaderProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Lock scroll when modal is open
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isModalOpen]);
+  useLockBodyScroll(isModalOpen);
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Team</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Manage your professional team members and their schedules.</p>
@@ -42,7 +35,8 @@ export function TeamHeader({ users, services }: TeamHeaderProps) {
 
       {/* Modal Overlay */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
+        <Portal>
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
           {/* Backdrop (Soft Blur) */}
           <div 
             className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm animate-in fade-in duration-500"
@@ -69,6 +63,7 @@ export function TeamHeader({ users, services }: TeamHeaderProps) {
              </div>
           </div>
         </div>
+        </Portal>
       )}
     </>
   );

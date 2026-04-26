@@ -12,12 +12,14 @@ import {
   X,
   Pencil,
   Search,
-  UserPlus
+  UserPlus,
+  AlertCircle
 } from "lucide-react";
 import { getAvailableSlots, createBooking, updateBooking } from "@/app/actions/booking";
 import { searchCustomers, addCustomer } from "@/app/actions/customer";
-import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
+import { Portal } from "@/components/ui/portal";
 
 function InputError({ message }: { message?: string }) {
   if (!message) return null;
@@ -47,6 +49,8 @@ export function ManualBooking({
   const [customerSearch, setCustomerSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isAddingNewCustomer, setIsAddingNewCustomer] = useState(false);
+
+  useLockBodyScroll(isOpen);
 
   const fetchSlots = async (date: Date, serviceId: string, staffId?: string) => {
     setLoading(true);
@@ -194,7 +198,8 @@ export function ManualBooking({
       )}
 
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+        <Portal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-900/60 backdrop-blur-md animate-fade-in">
           <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh] transition-colors">
             
             <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 z-10">
@@ -447,6 +452,7 @@ export function ManualBooking({
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </>
   );
