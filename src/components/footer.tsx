@@ -21,50 +21,50 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-slate-950 text-white py-16">
-      <div className="container px-4 mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+    <footer className="bg-slate-950 text-white py-20">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-2 space-y-6">
             <button 
               onClick={scrollToTop} 
               className="flex items-center gap-2 outline-none cursor-pointer group"
             >
-              <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
                 <Calendar className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold text-xl tracking-tight text-white">FluxBooking</span>
+              <span className="font-bold text-2xl tracking-tight text-white">FluxBooking</span>
             </button>
-            <p className="text-slate-400 text-sm max-w-sm font-medium">
-              The world's most versatile booking platform for growing businesses. Built for performance and privacy.
+            <p className="text-slate-400 text-sm max-w-sm font-medium leading-relaxed">
+              The world's most versatile booking platform for growing businesses. Built for performance, designed for conversion, and engineered for privacy.
             </p>
-            <div className="flex gap-4">
-               <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Twitter className="h-4 w-4" /></Link>
-               <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Linkedin className="h-4 w-4" /></Link>
-               <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Github className="h-4 w-4" /></Link>
+            <div className="flex gap-5">
+               <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Twitter className="h-5 w-5" /></Link>
+               <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Linkedin className="h-5 w-5" /></Link>
+               <Link href="#" className="text-slate-600 hover:text-white transition-colors"><Github className="h-5 w-5" /></Link>
             </div>
           </div>
           <div>
-            <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest">Platform</h5>
-            <ul className="space-y-4 text-xs font-bold text-slate-400">
-              <li><Link href="/#features" className="hover:text-white hover:underline transition-all">Features</Link></li>
-              <li><Link href="/#pricing" className="hover:text-white hover:underline transition-all">Pricing</Link></li>
-              <li><Link href="/register" className="hover:text-white hover:underline transition-all">Register</Link></li>
-              <li><Link href="/login" className="hover:text-white hover:underline transition-all">Login</Link></li>
+            <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest text-slate-500">Platform</h5>
+            <ul className="space-y-4 text-sm font-semibold text-slate-400">
+              <li><Link href="/#features" className="hover:text-white transition-colors">Features</Link></li>
+              <li><Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link href="/register" className="hover:text-white transition-colors">Register</Link></li>
+              <li><Link href="/login" className="hover:text-white transition-colors">Login</Link></li>
             </ul>
           </div>
           <div>
-            <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest">Support</h5>
-            <ul className="space-y-4 text-xs font-bold text-slate-400">
-              <li><Link href="/docs" className="hover:text-white hover:underline transition-all">Documentation</Link></li>
-              <li><Link href="/help" className="hover:text-white hover:underline transition-all">Help Center</Link></li>
-              <li><Link href="/privacy" className="hover:text-white hover:underline transition-all">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-white hover:underline transition-all">Terms of Service</Link></li>
+            <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest text-slate-500">Support</h5>
+            <ul className="space-y-4 text-sm font-semibold text-slate-400">
+              <li><Link href="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
+              <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
-        <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase" suppressHydrationWarning>
-            © 2026 FluxBooking SaaS. All rights reserved.
+            © {new Date().getFullYear()} FluxBooking SaaS. All rights reserved.
           </p>
           <p className="text-[9px] text-slate-700 font-black tracking-widest uppercase">
             Built for constant motion.
