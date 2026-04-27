@@ -190,7 +190,7 @@ export function ManualBooking({
       {mode === "create" && (
         <button 
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none border border-transparent dark:border-white/10"
         >
           <Sparkles className="h-4 w-4" />
           Manual Booking
@@ -199,12 +199,12 @@ export function ManualBooking({
 
       {isOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-900/60 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh] transition-colors">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh] transition-colors">
             
-            <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 z-10">
+            <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
                   {mode === 'edit' ? <Pencil className="h-5 w-5" /> : <CalendarIcon className="h-5 w-5" />}
                 </div>
                 <div>
@@ -216,9 +216,9 @@ export function ManualBooking({
               </div>
               <button 
                 onClick={handleClose}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
               >
-                <X className="h-5 w-5 text-slate-400" />
+                <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
               </button>
             </div>
 
@@ -276,7 +276,7 @@ export function ManualBooking({
                               onClick={() => handleDateChange(date)}
                               className={`flex flex-col items-center min-w-[70px] p-4 rounded-2xl border-2 transition-all ${
                                 isSelected 
-                                  ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100" 
+                                  ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none" 
                                   : "bg-white dark:bg-slate-800 border-slate-50 dark:border-slate-800 text-slate-400 hover:border-indigo-100"
                               }`}
                             >
@@ -437,7 +437,7 @@ export function ManualBooking({
                        <button 
                          type="submit" 
                          disabled={loading || !customerInfo.name}
-                         className="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                         className="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                        >
                          {loading ? "Saving..." : (
                            <>

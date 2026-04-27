@@ -64,12 +64,12 @@ export function ServicesClient({
       <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Services</h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Manage the services your business offers to clients.</p>
+          <p className="text-slate-500 dark:text-slate-200 font-medium mt-1">Manage the services your business offers to clients.</p>
         </div>
         {userRole === "ADMIN" && (
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 hover:scale-105 transition-all active:scale-95"
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-200 dark:shadow-none border border-transparent dark:border-white/10"
           >
             <Plus className="h-4 w-4" />
             Add Service
@@ -80,12 +80,12 @@ export function ServicesClient({
       <div className="w-full">
         {services.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 p-24 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
-            <Scissors className="h-16 w-16 text-slate-200 dark:text-slate-800 mb-6" />
-            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-sm">No services added yet. Create your first service to start taking bookings.</p>
+            <Scissors className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
+            <p className="text-slate-500 dark:text-slate-200 font-medium max-w-sm">No services added yet. Create your first service to start taking bookings.</p>
             {userRole === "ADMIN" && (
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="mt-8 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100"
+                className="mt-8 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10"
               >
                 Add Your First Service
               </button>
@@ -99,7 +99,7 @@ export function ServicesClient({
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h4 className="text-lg font-black text-slate-900 dark:text-white">{service.name}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-300 font-medium flex items-center gap-1 mt-1">
                       <Clock className="h-3 w-3" /> {service.durationMinutes} min
                       {service.bufferTime > 0 && <span className="text-[10px] text-indigo-400 font-bold ml-1">+{service.bufferTime}m buffer</span>}
                     </p>
@@ -116,7 +116,7 @@ export function ServicesClient({
                 <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-800">
                   <div className="flex items-center gap-2">
                      <div className="w-3 h-3 rounded-lg shadow-sm" style={{ backgroundColor: service.color }}></div>
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Theme</span>
+                     <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Theme</span>
                   </div>
                   <span className="font-black text-indigo-600 dark:text-indigo-400">${service.price.toString()}</span>
                 </div>

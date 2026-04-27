@@ -59,7 +59,7 @@ export default async function MySchedulePage() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">My Schedule</h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium">Manage your availability and time off.</p>
+          <p className="text-slate-500 dark:text-slate-200 font-medium">Manage your availability and time off.</p>
         </div>
       </div>
 
@@ -76,7 +76,7 @@ export default async function MySchedulePage() {
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 dark:text-white">Public Profile</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">How you appear to customers.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-200 font-medium">How you appear to customers.</p>
               </div>
             </div>
             <div className="p-8">
@@ -92,7 +92,7 @@ export default async function MySchedulePage() {
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 dark:text-white">Weekly Working Hours</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Standard weekly availability.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-200 font-medium">Standard weekly availability.</p>
               </div>
             </div>
             <div className="p-8">
@@ -111,7 +111,7 @@ export default async function MySchedulePage() {
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 dark:text-white">Quick Block</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Temporarily block specific hours from your calendar.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-200 font-medium">Temporarily block specific hours from your calendar.</p>
               </div>
             </div>
             <div className="p-8">
@@ -122,21 +122,21 @@ export default async function MySchedulePage() {
           {/* Leave History */}
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
             <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-              <div className="h-10 w-10 rounded-2xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+              <div className="h-10 w-10 rounded-2xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-200">
                 <History className="h-5 w-5" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white">Recent Leave Requests</h3>
             </div>
             <div className="p-8">
               {staffProfile.leaveRequests.length === 0 ? (
-                <p className="text-center text-slate-400 dark:text-slate-600 text-sm py-4 italic">No recent requests.</p>
+                <p className="text-center text-slate-400 dark:text-slate-500 text-sm py-4 italic">No recent requests.</p>
               ) : (
                 <div className="space-y-4">
                   {staffProfile.leaveRequests.map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/30">
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-white">{request.type}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-500 font-medium mt-0.5">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-200 font-medium mt-0.5">
                           {format(new Date(request.startTime), "MMM d, h:mm a")} - {format(new Date(request.endTime), "h:mm a")}
                         </p>
                       </div>
@@ -164,7 +164,7 @@ export default async function MySchedulePage() {
               </div>
               <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Request Time Off</h3>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">Submit your request for sick leave or vacation. Admin approval is required to block these hours.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-200 mb-6 leading-relaxed">Submit your request for sick leave or vacation. Admin approval is required to block these hours.</p>
             <LeaveRequestForm />
           </div>
         </div>

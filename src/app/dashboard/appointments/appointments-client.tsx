@@ -145,21 +145,21 @@ export function AppointmentsClient({
           <div className="bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center">
             <button 
               onClick={() => setViewMode("calendar")}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
               title="Calendar View"
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
             <button 
               onClick={() => setViewMode("team")}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'team' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'team' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
               title="Team View"
             >
               <Users className="h-4 w-4" />
             </button>
             <button 
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
               title="List View"
             >
               <List className="h-4 w-4" />
@@ -186,19 +186,19 @@ export function AppointmentsClient({
           {bookings.length === 0 ? (
             <div className="p-12 text-center">
               <CalendarIcon className="h-12 w-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
-              <p className="text-slate-500 dark:text-slate-400 font-medium">No bookings found yet.</p>
+              <p className="text-slate-500 dark:text-slate-200 font-medium">No bookings found yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date & Time</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Customer</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Service</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Staff</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date & Time</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Customer</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Service</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Staff</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
@@ -209,26 +209,26 @@ export function AppointmentsClient({
                       <tr key={booking.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                          <div className="text-xs text-slate-500 dark:text-slate-300 flex items-center gap-1 mt-1">
                             <Clock className="h-3 w-3" /> {format(new Date(booking.startTime), "hh:mm a")}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-slate-900 dark:text-white">{booking.customerName}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                          <div className="text-xs text-slate-500 dark:text-slate-300 flex items-center gap-1 mt-1">
                             <Mail className="h-3 w-3" /> {booking.customerEmail}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
+                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-900/50">
                              <div className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: booking.service.color }}></div>
                             {booking.service.name}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                          <div className="text-sm text-slate-700 dark:text-slate-200 flex items-center gap-2">
                             <div className="h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                              <User className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+                              <User className="h-3 w-3 text-slate-500 dark:text-slate-300" />
                             </div>
                             {booking.staff.name}
                           </div>

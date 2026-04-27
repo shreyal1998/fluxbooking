@@ -1,13 +1,26 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
-  --foreground: #0f172a; /* Slate 900 */
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: #0f172a; /* Softer Slate 900 */
+  --foreground: #ffffff; /* Pure White for primary text */
+  --card: #1e293b; /* Elevated Slate 800 */
+  --card-foreground: #f8fafc; /* High-contrast light gray */
+  --border: #334155; /* Slate 700 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card-elevated: var(--card);
+  --color-border-subtle: var(--border);
+  --shadow-glow-indigo: var(--shadow-glow-indigo);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   
@@ -17,6 +30,7 @@
   
   --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.04);
   --shadow-soft-indigo: 0 20px 50px -12px rgba(79, 70, 229, 0.1);
+  --shadow-glow-indigo: 0 0 20px rgba(99, 102, 241, 0.15);
 }
 
 body {

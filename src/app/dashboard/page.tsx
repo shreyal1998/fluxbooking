@@ -86,7 +86,7 @@ export default async function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <div key={stat.name} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft group hover:shadow-xl hover:shadow-indigo-500/5 transition-all">
+          <div key={stat.name} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft group hover:shadow-xl hover:shadow-indigo-500/5 dark:shadow-none transition-all">
             <div className="flex items-center justify-between mb-6">
               <div className={`p-4 rounded-2xl ${stat.bg} dark:bg-slate-800`}>
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
@@ -112,17 +112,17 @@ export default async function DashboardPage() {
             </div>
             <div className="space-y-6">
               {recentBookings.length === 0 ? (
-                <p className="text-center text-slate-400 py-8 italic text-sm">No recent activity.</p>
+                <p className="text-center text-slate-400 dark:text-slate-500 py-8 italic text-sm">No recent activity.</p>
               ) : (
                 recentBookings.map((booking) => (
                   <div key={booking.id} className="flex items-center justify-between group transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-indigo-600 font-black text-xs group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-indigo-600 dark:text-white font-black text-xs group-hover:bg-indigo-600 group-hover:text-white transition-all">
                         {booking.customerName.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-white">{booking.customerName}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{booking.service.name} • with {booking.staff.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-200 font-medium">{booking.service.name} • with {booking.staff.name}</p>
                       </div>
                     </div>
                     <div className="text-right flex items-center gap-4">
@@ -148,30 +148,30 @@ export default async function DashboardPage() {
                 <>
                   <a href="/dashboard/services" className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 transition-all group">
                     <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                      <Scissors className="h-5 w-5 text-slate-400 group-hover:text-indigo-600" />
+                      <Scissors className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600" />
                     </div>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-indigo-900 dark:group-hover:text-indigo-300 uppercase tracking-tighter">Services</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-200 group-hover:text-indigo-900 dark:group-hover:text-white uppercase tracking-tighter">Services</span>
                   </a>
                   <a href="/dashboard/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 transition-all group">
                     <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                      <Clock className="h-5 w-5 text-slate-400 group-hover:text-indigo-600" />
+                      <Clock className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600" />
                     </div>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-indigo-900 dark:group-hover:text-indigo-300 uppercase tracking-tighter">My Schedule</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-200 group-hover:text-indigo-900 dark:group-hover:text-white uppercase tracking-tighter">My Schedule</span>
                   </a>
                 </>
               ) : (
                 <>
                   <a href="/dashboard/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 transition-all group">
                     <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                      <CalendarIcon className="h-5 w-5 text-slate-400 group-hover:text-indigo-600" />
+                      <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600" />
                     </div>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-indigo-900 dark:group-hover:text-indigo-300 uppercase tracking-tighter">My Schedule</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-200 group-hover:text-indigo-900 dark:group-hover:text-white uppercase tracking-tighter">My Schedule</span>
                   </a>
                   <a href="/dashboard/appointments" className="flex flex-col items-center justify-center p-6 rounded-3xl border border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-100 transition-all group">
                     <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                      <CalendarIcon className="h-5 w-5 text-slate-400 group-hover:text-indigo-600" />
+                      <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600" />
                     </div>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400 group-hover:text-indigo-900 dark:group-hover:text-indigo-300 uppercase tracking-tighter">Bookings</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-200 group-hover:text-indigo-900 dark:group-hover:text-white uppercase tracking-tighter">Bookings</span>
                   </a>
                 </>
               )}

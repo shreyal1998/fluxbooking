@@ -71,7 +71,7 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Preview</p>
            <div className="flex flex-col sm:flex-row items-center gap-6">
               <button 
-                className="px-8 py-3 rounded-2xl text-white font-black text-sm shadow-xl transition-all cursor-default"
+                className="px-8 py-3 rounded-2xl text-white font-black text-sm shadow-xl dark:shadow-none border border-transparent dark:border-white/10"
                 style={{ backgroundColor: selectedColor }}
               >
                 Confirm Booking
@@ -96,7 +96,7 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
           <button
             onClick={handleSave}
             disabled={loading || selectedColor === initialColor}
-            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Branding Changes"}
           </button>

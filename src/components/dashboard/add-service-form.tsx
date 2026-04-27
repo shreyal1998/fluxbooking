@@ -167,7 +167,7 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all active:scale-[0.98]"
+          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:opacity-50 transition-all active:scale-[0.98]"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>

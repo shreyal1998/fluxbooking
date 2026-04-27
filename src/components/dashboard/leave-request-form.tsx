@@ -134,7 +134,7 @@ export function LeaveRequestForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-glow-indigo border border-transparent dark:border-indigo-400/20 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]"
       >
         {loading ? "Submitting..." : (
           <>

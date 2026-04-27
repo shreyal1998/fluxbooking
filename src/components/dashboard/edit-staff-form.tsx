@@ -118,7 +118,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
   return (
     <div className="space-y-6">
       {generalError && (
-        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 text-rose-600">
+        <div className="p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 rounded-2xl flex items-start gap-3 text-rose-600 dark:text-rose-400">
           <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
           <p className="text-xs font-bold leading-relaxed">{generalError}</p>
         </div>
@@ -236,7 +236,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
         <button
           type="submit"
           disabled={loading || deleteLoading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Profile Changes"}
         </button>
@@ -258,7 +258,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
               className={`w-full py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                 confirmDelete 
                   ? "bg-rose-600 text-white hover:bg-rose-700" 
-                  : "bg-white dark:bg-slate-900 text-rose-600 border border-rose-200 dark:border-rose-900/30 hover:bg-rose-50"
+                  : "bg-white dark:bg-slate-950 text-rose-600 border border-rose-200 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-900/20"
               }`}
             >
               {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (

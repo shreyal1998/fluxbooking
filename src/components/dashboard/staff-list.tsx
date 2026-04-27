@@ -108,9 +108,9 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
 
       {/* Management Modal */}
       {editingStaff && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-height-[90vh] flex flex-col border border-slate-200 dark:border-slate-800">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-height-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-4">
                 <div 
                   className="h-10 w-10 rounded-full flex items-center justify-center border-2"
@@ -125,14 +125,14 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
               </div>
               <button 
                 onClick={() => setEditingStaff(null)}
-                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
               >
                 <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-100 dark:border-slate-800 px-6">
+            <div className="flex border-b border-slate-100 dark:border-slate-700 px-6">
               <button
                 onClick={() => setActiveTab("profile")}
                 className={`px-4 py-4 text-xs font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-2 ${
@@ -157,7 +157,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
               </button>
             </div>
 
-            <div className="p-8 overflow-y-auto bg-slate-50/30 dark:bg-transparent">
+            <div className="p-8 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/20">
               {activeTab === "profile" ? (
                 <EditStaffForm 
                   staff={editingStaff} 

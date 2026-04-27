@@ -201,8 +201,8 @@ export function AddStaffForm({
                           <input type="hidden" name="staffCountryCode" value={selectedCountry.code} />
 
                           {openDropdown && (
-                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col">
-                              <div className="px-3 pb-2 border-b border-slate-50 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-800">
+                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 py-2 max-h-60 flex flex-col">
+                              <div className="px-3 pb-2 border-b border-slate-50 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900">
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                                   <input 
@@ -211,7 +211,7 @@ export function AddStaffForm({
                                     placeholder="Search..."
                                     value={countrySearch}
                                     onChange={(e) => setCountrySearch(e.target.value)}
-                                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border-none rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20 dark:text-white"
+                                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20 dark:text-white"
                                   />
                                 </div>
                               </div>
@@ -221,7 +221,7 @@ export function AddStaffForm({
                                     key={c.code}
                                     type="button"
                                     onClick={() => { setSelectedCountry(c); setOpenDropdown(false); setCountrySearch(""); }}
-                                    className={`flex items-center justify-between w-full px-4 py-2 text-[10px] font-bold ${selectedCountry.code === c.code ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                                    className={`flex items-center justify-between w-full px-4 py-2 text-[10px] font-bold ${selectedCountry.code === c.code ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                                   >
                                     <span className="truncate mr-2">{c.name}</span>
                                     <span className="text-slate-400">+{c.phoneCode}</span>
@@ -316,7 +316,7 @@ export function AddStaffForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all active:scale-[0.98]"
+          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:opacity-50 transition-all active:scale-[0.98]"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>

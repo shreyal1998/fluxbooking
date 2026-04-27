@@ -75,7 +75,7 @@ export function DashboardShell({
       <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="h-20 flex items-center px-8">
           <Link href="/dashboard" className="flex items-center gap-2 group">
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
+            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20 dark:shadow-none">
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">FluxBooking</span>
@@ -94,11 +94,11 @@ export function DashboardShell({
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                   isActive 
-                    ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400 shadow-sm shadow-indigo-100/50 dark:shadow-none" 
-                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
+                    ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-white shadow-sm shadow-indigo-100/50 dark:shadow-none" 
+                    : "text-slate-500 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <item.icon className={`h-5 w-5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                <item.icon className={`h-5 w-5 ${isActive ? 'text-indigo-600 dark:text-white' : 'text-slate-400 dark:text-slate-300'}`} />
                 {item.name}
               </Link>
             );
@@ -108,16 +108,16 @@ export function DashboardShell({
         <div className="p-4 mt-auto">
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-4 mb-4 border border-slate-100 dark:border-slate-800">
              <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">Need help?</p>
-             <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Check our documentation for quick start guides.</p>
-             <button className="w-full py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+             <p className="text-[11px] text-slate-500 dark:text-slate-300 mb-3">Check our documentation for quick start guides.</p>
+             <button className="w-full py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                View Docs
              </button>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex w-full items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all group"
+            className="flex w-full items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-500 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-white transition-all group"
           >
-            <LogOut className="h-5 w-5 text-slate-400 dark:text-slate-500 group-hover:text-red-500 dark:group-hover:text-red-400" />
+            <LogOut className="h-5 w-5 text-slate-400 dark:text-slate-300 group-hover:text-red-500 dark:group-hover:text-white" />
             Logout
           </button>
         </div>

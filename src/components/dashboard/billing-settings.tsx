@@ -120,7 +120,7 @@ export function BillingSettings({
                     className={`w-full py-3 rounded-xl text-xs font-black transition-all ${
                       isCurrent 
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default" 
-                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10"
                     }`}
                   >
                     {isCurrent ? "Active" : loading === plan.id ? "Redirecting..." : "Upgrade"}

@@ -7,7 +7,15 @@ import { PLANS } from "@/config/plans";
 const LEMON_SQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1";
 
 export async function createLemonSqueezyCheckout(variantId: string) {
+  console.log("--- AUTH DEBUG ---");
   const session = await getServerSession(authOptions);
+  console.log("Session exists:", !!session);
+  if (session) {
+    console.log("User Role:", (session.user as any).role);
+    console.log("Tenant ID:", (session.user as any).tenantId);
+  }
+  console.log("------------------");
+
   if (!session) return { error: "Not authenticated" };
 
   if ((session.user as any).role !== "ADMIN") {
