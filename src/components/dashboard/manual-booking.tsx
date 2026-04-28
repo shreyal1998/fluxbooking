@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, addDays, isSameDay } from "date-fns";
+import { format, addDays, isSameDay, parse } from "date-fns";
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -309,7 +309,9 @@ export function ManualBooking({
                                   : "border-slate-50 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-100 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800"
                               }`}
                             >
-                              <span className="block text-xs font-black">{slot.time}</span>
+                              <span className="block text-xs font-black">
+                                {format(parse(slot.time, "HH:mm", new Date()), "h:mm a")}
+                              </span>
                               <span className={`block text-[8px] uppercase tracking-tighter mt-0.5 ${isSelected ? 'text-indigo-100' : 'opacity-60'}`}>{slot.staffName.split(' ')[0]}</span>
                             </button>
                           );

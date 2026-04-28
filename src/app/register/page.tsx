@@ -177,6 +177,7 @@ function RegisterContent() {
           )}
           
           <input type="hidden" name="plan" value={initialPlan} />
+          <input type="hidden" name="timezone" value={Intl.DateTimeFormat().resolvedOptions().timeZone} />
 
           <div className="space-y-5">
             <div>

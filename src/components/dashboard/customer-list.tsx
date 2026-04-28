@@ -135,7 +135,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
 
   return (
     <div className="space-y-6 transition-colors">
-      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-2">
         <div className="relative max-w-md w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input 
@@ -143,19 +143,19 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
             placeholder="Search customers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none dark:text-white"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none dark:text-white"
             />
         </div>
 
         {userRole === "ADMIN" && (
-          <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
                     <button
                         key={s}
                         onClick={() => setStatusFilter(s)}
-                        className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${
+                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                             statusFilter === s 
-                            ? "bg-indigo-600 text-white shadow-md" 
+                            ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm" 
                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                         }`}
                     >
@@ -166,7 +166,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900/50">

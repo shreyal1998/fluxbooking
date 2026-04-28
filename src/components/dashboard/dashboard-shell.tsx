@@ -124,7 +124,7 @@ export function DashboardShell({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <header className="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 md:px-12 sticky top-0 z-[50]">
           <div className="flex items-center gap-4 flex-1">
 
@@ -152,7 +152,7 @@ export function DashboardShell({
           </div>
         </header>
         
-        <div className="p-8 md:p-12 overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {children}
         </div>
       </main>

@@ -19,16 +19,16 @@ export function TeamHeader({ users, services }: TeamHeaderProps) {
 
   return (
     <>
-      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Team</h2>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Team</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Manage your professional team members and their schedules.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 hover:scale-105 transition-all active:scale-95 border border-transparent dark:border-white/10"
+          className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-indigo-100 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
           Add Member
         </button>
       </div>

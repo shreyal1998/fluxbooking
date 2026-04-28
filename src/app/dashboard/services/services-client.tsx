@@ -60,24 +60,24 @@ export function ServicesClient({
   };
 
   return (
-    <div className="space-y-8 animate-fade-in transition-colors">
-      <div className="sticky top-0 z-40 bg-[#F8FAFC]/80 dark:bg-slate-950/80 backdrop-blur-md py-4 -mt-4 mb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Services</h2>
-          <p className="text-slate-500 dark:text-slate-200 font-medium mt-1">Manage the services your business offers to clients.</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Services</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Manage the services your business offers to clients.</p>
         </div>
         {userRole === "ADMIN" && (
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-200 dark:shadow-none border border-transparent dark:border-white/10"
+            className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-indigo-100 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Add Service
           </button>
         )}
       </div>
 
-      <div className="w-full">
+      <div className="flex-1 overflow-y-auto pr-2 -mr-2">
         {services.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 p-24 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
             <Scissors className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />

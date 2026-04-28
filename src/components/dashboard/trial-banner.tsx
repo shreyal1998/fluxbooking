@@ -3,6 +3,7 @@
 import { AlertCircle, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { differenceInCalendarDays } from "date-fns";
 
 interface TrialBannerProps {
   planStatus: string | null;
@@ -16,8 +17,10 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
     if (trialEndsAt) {
       const now = new Date();
       const end = new Date(trialEndsAt);
-      const diffTime = end.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // differenceInCalendarDays handles the logic of "midnight-to-midnight" 
+      // which is more intuitive for users than millisecond-based Math.ceil
+      const diffDays = differenceInCalendarDays(end, now);
       setDaysRemaining(diffDays > 0 ? diffDays : 0);
     }
   }, [trialEndsAt]);

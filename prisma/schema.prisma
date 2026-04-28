@@ -72,6 +72,7 @@ model Tenant {
   lemonSqueezySubscriptionId String?       @unique
   trialEndsAt         DateTime?
   subscriptionEndsAt  DateTime?
+  timezone            String               @default("UTC")
 
   // Notifications & Credits
   emailNotificationsEnabled Boolean @default(true)

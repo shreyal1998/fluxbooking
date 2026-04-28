@@ -15,6 +15,7 @@ export async function registerBusiness(formData: FormData) {
   const slug = formData.get("slug") as string;
   const country = (formData.get("country") as string) || "US";
   const currency = (formData.get("currency") as string) || "USD";
+  const timezone = (formData.get("timezone") as string) || "UTC";
   
   // New Plan Selection Fields
   const selectedPlan = (formData.get("plan") as SubscriptionPlan) || "FREE";
@@ -52,8 +53,10 @@ export async function registerBusiness(formData: FormData) {
 
     // Create Tenant and User in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Set trial for 14 days, ending at 23:59:59 in user's timezone
       const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14); // Set trial for 14 days
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+      trialEndsAt.setHours(23, 59, 59, 999);
 
       const tenant = await tx.tenant.create({
         data: {
@@ -62,6 +65,7 @@ export async function registerBusiness(formData: FormData) {
           businessType,
           country,
           currency,
+          timezone,
           plan: selectedPlan,
           planInterval: selectedInterval,
           planStatus: "TRIALING",
