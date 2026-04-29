@@ -148,7 +148,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
         </div>
 
         {userRole === "ADMIN" && (
-          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
                     <button
                         key={s}
@@ -166,7 +166,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
@@ -268,8 +268,8 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
       {editingCustomer && (
         <Portal>
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
-                <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors">
+                <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Customer Profile</h3>
                    <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
@@ -343,7 +343,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
       {archivingCustomer && (
         <Portal>
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />

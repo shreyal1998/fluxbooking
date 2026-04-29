@@ -20,8 +20,8 @@ export function LocationList({ locations: initialLocations, isPro }: LocationLis
   const [locations, setLocations] = useState(initialLocations);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           <h3 className="font-bold text-slate-900 dark:text-white">Business Locations</h3>
@@ -34,7 +34,7 @@ export function LocationList({ locations: initialLocations, isPro }: LocationLis
         )}
       </div>
 
-      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="divide-y divide-slate-200 dark:divide-slate-800">
         {locations.length > 0 ? (
           locations.map((loc) => (
             <div key={loc.id} className="p-6 flex items-start justify-between group">

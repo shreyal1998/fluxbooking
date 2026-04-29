@@ -82,14 +82,14 @@ export function AvailabilityEditor({
 
   return (
     <div className="space-y-6 transition-colors">
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div className="divide-y divide-slate-200 dark:divide-slate-800">
           {DAYS.map((day) => {
             const schedule = availability[day];
             const isActive = !!schedule;
 
             return (
-              <div key={day} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <div key={day} className="p-4 px-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => handleToggleDay(day)}

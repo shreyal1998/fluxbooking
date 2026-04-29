@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar } from "lucide-react";
 import { Footer } from "@/components/footer";
+import { Logo } from "@/components/logo";
 
 export default function PublicLayout({
   children,
@@ -16,12 +16,9 @@ export default function PublicLayout({
         <div className="max-w-7xl mx-auto px-6 md:px-12 h-20 flex items-center justify-between">
           <Link 
             href="/"
-            className="flex items-center gap-2 group outline-none cursor-pointer"
+            className="cursor-pointer relative -top-0.5 left-2"
           >
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
-              <Calendar className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-2xl tracking-tight text-slate-900">FluxBooking</span>
+            <Logo />
           </Link>
           <nav className="hidden md:flex items-center gap-10">
             <Link className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors" href="/#features">Features</Link>

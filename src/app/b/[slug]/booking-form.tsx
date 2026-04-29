@@ -223,7 +223,7 @@ export function BookingForm({
       )}
 
       {/* Step Indicator */}
-      <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-slate-50">
+      <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-slate-100">
         <div className="flex items-center gap-4">
            {[1, 2, 3].map(i => (
              <div key={i} className="flex items-center gap-2">
@@ -266,7 +266,7 @@ export function BookingForm({
                   className={`group flex items-center justify-between p-6 rounded-3xl border-2 text-left transition-all ${
                     selectedService?.id === service.id
                       ? "bg-opacity-10"
-                      : "border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50"
+                      : "border-slate-100 bg-slate-50/50 hover:border-slate-100 hover:bg-slate-50"
                   }`}
                   style={{ 
                     borderColor: selectedService?.id === service.id ? primaryColor : undefined,
@@ -345,7 +345,7 @@ export function BookingForm({
                     className={`flex-shrink-0 flex flex-col items-center justify-center w-20 h-24 rounded-2xl border-2 transition-all ${
                       isSelected
                         ? "shadow-lg shadow-indigo-100/50"
-                        : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
+                        : "border-slate-100 bg-slate-50/50 hover:border-slate-100"
                     }`}
                     style={{ 
                       borderColor: isSelected ? primaryColor : undefined,
@@ -380,7 +380,7 @@ export function BookingForm({
                     className={`p-4 rounded-2xl border-2 font-black text-sm transition-all ${
                       selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId
                         ? "text-white shadow-lg"
-                        : "border-slate-50 bg-slate-50 hover:border-slate-200 text-slate-700"
+                        : "border-slate-100 bg-slate-50 hover:border-slate-100 text-slate-700"
                     }`}
                     style={{ 
                       backgroundColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined,
@@ -393,7 +393,7 @@ export function BookingForm({
                 ))}
               </div>
             ) : (
-              <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+              <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-100">
                 <p className="text-slate-500 font-medium">No slots available for this day. Try another date or staff member!</p>
               </div>
             )}
@@ -446,7 +446,7 @@ export function BookingForm({
                       required
                       onChange={() => clearFieldError("customerName")}
                       className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                        fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                        fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                       }`}
                       placeholder="Enter your full name"
                     />
@@ -460,7 +460,7 @@ export function BookingForm({
                       required
                       onChange={() => clearFieldError("customerEmail")}
                       className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                        fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                        fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                       }`}
                       placeholder="name@example.com"
                     />

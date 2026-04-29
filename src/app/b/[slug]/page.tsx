@@ -51,7 +51,7 @@ export default async function PublicBookingPage({
           <p className="text-slate-500 font-medium leading-relaxed">
             {tenant.name} is currently updating their booking system. Please check back later or contact them directly.
           </p>
-          <div className="mt-8 pt-8 border-t border-slate-50">
+          <div className="mt-8 pt-8 border-t border-slate-100">
              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Service by FluxBooking</p>
           </div>
         </div>

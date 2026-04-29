@@ -135,7 +135,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
               defaultValue={staff.name}
               onChange={() => clearFieldError("name")}
               className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-800 focus:border-indigo-600"
+                fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
               }`}
             />
             <InputError message={fieldErrors.name} />
@@ -151,7 +151,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
             onChange={() => clearFieldError("bio")}
             placeholder="e.g., Senior Stylist with 10 years experience..."
             className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.bio ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-800 focus:border-indigo-600"
+              fieldErrors.bio ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
             }`}
           />
           <InputError message={fieldErrors.bio} />
@@ -166,7 +166,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
             onChange={() => clearFieldError("phone")}
             placeholder="+1 234 567 8900"
             className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.phone ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-800 focus:border-indigo-600"
+              fieldErrors.phone ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
             }`}
           />
           <InputError message={fieldErrors.phone} />
@@ -219,7 +219,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
                   className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
                     selectedServices?.includes(service.id)
                       ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20"
-                      : "border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
+                      : "border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
       </form>
 
       {isAdmin && (
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+        <div className="pt-6 border-t border-slate-100 dark:border-slate-700">
           <div className="bg-rose-50 dark:bg-rose-900/10 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/20">
             <div className="flex items-center gap-2 text-rose-800 dark:text-rose-400 font-bold mb-1">
               <ShieldAlert className="h-4 w-4" />

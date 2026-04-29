@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Calendar, Loader2, Eye, EyeOff, ArrowRight, Globe, ChevronDown, Check, Search, AlertCircle } from "lucide-react";
 import { registerBusiness } from "@/app/actions/register";
 import { COUNTRIES } from "@/config/countries";
+import { Logo } from "@/components/logo";
 
 function RegisterContent() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -152,11 +153,8 @@ function RegisterContent() {
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
       <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100">
         <div className="flex flex-col items-center">
-          <Link href="/" className="flex items-center gap-2 mb-6 group outline-none">
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
-              <Calendar className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">FluxBooking</span>
+          <Link href="/" className="mb-6 outline-none">
+            <Logo size="xl" />
           </Link>
           <h2 className="text-center text-3xl font-black text-slate-900 tracking-tight">
             Join FluxBooking
@@ -190,7 +188,7 @@ function RegisterContent() {
                 type="text"
                 onChange={() => clearFieldError("name")}
                 className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
-                  fieldErrors.name ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                  fieldErrors.name ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                 }`}
                 placeholder="John Doe"
               />
@@ -207,7 +205,7 @@ function RegisterContent() {
                 type="email"
                 onChange={() => clearFieldError("email")}
                 className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
-                  fieldErrors.email ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                  fieldErrors.email ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                 }`}
                 placeholder="john@example.com"
               />
@@ -226,9 +224,9 @@ function RegisterContent() {
                     type={showPassword ? "text" : "password"}
                     onChange={() => clearFieldError("password")}
                     className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
-                      fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                      fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                     }`}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   />
                   <button
                     type="button"
@@ -251,9 +249,9 @@ function RegisterContent() {
                     type={showConfirmPassword ? "text" : "password"}
                     onChange={() => clearFieldError("confirmPassword")}
                     className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
-                      fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                      fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                     }`}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   />
                   <button
                     type="button"
@@ -277,7 +275,7 @@ function RegisterContent() {
                 type="text"
                 onChange={() => clearFieldError("businessName")}
                 className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
-                  fieldErrors.businessName ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                  fieldErrors.businessName ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                 }`}
                 placeholder="My Awesome Salon"
               />
@@ -294,7 +292,7 @@ function RegisterContent() {
                   type="button"
                   onClick={(e) => toggleDropdown(e, "country")}
                   className={`flex items-center justify-between w-full rounded-2xl border-2 px-4 py-3 text-slate-900 focus:bg-white transition-all sm:text-sm font-bold ${
-                    openDropdown === "country" ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-slate-50 bg-slate-50"
+                    openDropdown === "country" ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-slate-100 bg-slate-50"
                   } ${fieldErrors.country ? "border-rose-100 bg-rose-50" : ""}`}
                 >
                   <span className={!selectedCountry ? "text-slate-400" : ""}>
@@ -308,7 +306,7 @@ function RegisterContent() {
                   <div className={`absolute z-50 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200 ${
                     dropdownDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
                   }`}>
-                    <div className="px-3 pb-2 pt-1 border-b border-slate-50 mb-1 sticky top-0 bg-white z-10">
+                    <div className="px-3 pb-2 pt-1 border-b border-slate-100 mb-1 sticky top-0 bg-white z-10">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                         <input 
@@ -317,23 +315,30 @@ function RegisterContent() {
                           placeholder="Search country..."
                           value={countrySearch}
                           onChange={(e) => setCountrySearch(e.target.value)}
-                          className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                          autoComplete="off"
+                          className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500/20 outline-none"
                         />
                       </div>
                     </div>
-                    <div className="overflow-y-auto flex-1">
-                      {filteredCountries.map((c) => (
-                        <button
-                          key={c.code}
-                          type="button"
-                          onClick={() => handleCountrySelect(c as any)}
-                          className={`flex items-center w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                            selectedCountry?.code === c.code ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          {c.name}
-                        </button>
-                      ))}
+                    <div className="overflow-y-auto flex-1 custom-scrollbar">
+                      {filteredCountries.length === 0 ? (
+                        <div className="px-5 py-8 text-center">
+                          <p className="text-xs font-bold text-slate-400 italic">No countries found matching "{countrySearch}"</p>
+                        </div>
+                      ) : (
+                        filteredCountries.map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => handleCountrySelect(c as any)}
+                            className={`flex items-center w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                              selectedCountry?.code === c.code ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
+                            }`}
+                          >
+                            {c.name}
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
@@ -354,7 +359,7 @@ function RegisterContent() {
                   type="tel"
                   onChange={() => clearFieldError("phone")}
                   className={`flex-1 rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
-                    fieldErrors.phone ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-50 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                    fieldErrors.phone ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                   }`}
                   placeholder="234 567 890"
                 />
@@ -373,7 +378,7 @@ function RegisterContent() {
                     type="button"
                     onClick={(e) => toggleDropdown(e, "type")}
                     className={`flex items-center justify-between w-full rounded-2xl border-2 px-4 py-3 text-slate-900 focus:bg-white focus:border-indigo-600 transition-all sm:text-sm font-bold ${
-                      fieldErrors.businessType ? "border-rose-100 bg-rose-50" : "border-slate-50 bg-slate-50"
+                      fieldErrors.businessType ? "border-rose-100 bg-rose-50" : "border-slate-100 bg-slate-50"
                     }`}
                   >
                     <span className={!selectedBusinessType ? "text-slate-400" : ""}>
@@ -416,9 +421,9 @@ function RegisterContent() {
                   Custom URL
                 </label>
                 <div className={`flex rounded-2xl shadow-sm overflow-hidden border-2 transition-all ${
-                  fieldErrors.slug ? "border-rose-100 bg-rose-50" : "border-slate-50 bg-slate-50"
+                  fieldErrors.slug ? "border-rose-100 bg-rose-50" : "border-slate-100 bg-slate-50"
                 }`}>
-                  <span className="inline-flex items-center bg-slate-100 px-3 text-slate-500 text-xs font-bold border-r border-slate-200">
+                  <span className="inline-flex items-center bg-slate-100 px-3 text-slate-500 text-xs font-bold border-r border-slate-100">
                     /b/
                   </span>
                   <input

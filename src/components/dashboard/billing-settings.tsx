@@ -45,8 +45,8 @@ export function BillingSettings({
   return (
     <div className="space-y-6">
       {/* Subscription Plans */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             <h3 className="font-bold text-slate-900 dark:text-white">Subscription Plans</h3>
@@ -83,7 +83,7 @@ export function BillingSettings({
                   className={`relative p-6 rounded-2xl border transition-all ${
                     isCurrent 
                     ? "border-indigo-600 dark:border-indigo-500 ring-1 ring-indigo-600 dark:ring-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10" 
-                    : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700"
+                    : "border-slate-100 dark:border-slate-700 hover:border-slate-100 dark:hover:border-slate-700"
                   }`}
                 >
                   {isCurrent && (

@@ -10,7 +10,6 @@ import {
   CreditCard,
   Lock
 } from "lucide-react";
-import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
@@ -41,7 +40,7 @@ export function SettingsClient({
     { 
       id: "business", 
       label: "Business", 
-      description: "Profile, hours and locations",
+      description: "Profile and locations",
       icon: Building 
     },
     { 
@@ -70,8 +69,8 @@ export function SettingsClient({
       case "business":
         return (
           <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
                 <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white">Business Profile</h3>
@@ -102,7 +101,7 @@ export function SettingsClient({
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Public URL Slug</label>
                   <div className="flex rounded-2xl shadow-sm overflow-hidden">
-                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950 px-5 text-slate-500 dark:text-slate-400 text-xs font-bold border-r border-slate-200 dark:border-slate-800">
+                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950 px-5 text-slate-500 dark:text-slate-400 text-xs font-bold border-r border-slate-100 dark:border-slate-700">
                       {process.env.NEXT_PUBLIC_APP_URL || 'fluxbooking.com'}/b/
                     </span>
                     <input
@@ -116,29 +115,6 @@ export function SettingsClient({
                     <Globe className="h-3 w-3" /> Your unique identifier used for your public booking page.
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-                <Clock className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white">Business Hours</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Master availability for your venue.</p>
-                </div>
-              </div>
-              <div className="p-8">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">Define the general opening and closing hours for your venue. These act as the master constraints for all bookings.</p>
-                <AvailabilityEditor 
-                  initialAvailability={tenant?.businessHoursJson || {
-                    monday: { start: "09:00", end: "17:00" },
-                    tuesday: { start: "09:00", end: "17:00" },
-                    wednesday: { start: "09:00", end: "17:00" },
-                    thursday: { start: "09:00", end: "17:00" },
-                    friday: { start: "09:00", end: "17:00" },
-                  }} 
-                  isBusiness={true} 
-                />
               </div>
             </div>
 
@@ -171,8 +147,8 @@ export function SettingsClient({
               />
             )}
 
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
                 <Palette className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white">Appearance</h3>
@@ -189,8 +165,8 @@ export function SettingsClient({
       case "security":
         return (
           <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
                 <Shield className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white">Account Security</h3>
@@ -215,7 +191,7 @@ export function SettingsClient({
             </div>
 
             {userRole === "ADMIN" && (
-              <div className="bg-rose-50 dark:bg-rose-900/10 p-8 rounded-[2rem] border border-rose-100 dark:border-rose-900/30">
+              <div className="bg-rose-50 dark:bg-rose-900/10 p-8 rounded-[2.5rem] border border-rose-200 dark:border-rose-900/30">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-8 w-8 rounded-xl bg-rose-600 text-white flex items-center justify-center">
                     <Lock className="h-4 w-4" />

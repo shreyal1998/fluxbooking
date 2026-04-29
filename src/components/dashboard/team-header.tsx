@@ -43,7 +43,7 @@ export function TeamHeader({ users, services }: TeamHeaderProps) {
           />
 
           {/* Modal Content - Fixed Center */}
-          <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+          <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
              <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">Add Team Member</h3>
                 <button 

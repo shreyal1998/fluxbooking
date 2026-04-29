@@ -12,150 +12,180 @@ import {
   Bell,
   Search,
   Clock,
-  UserCircle
+  UserCircle,
+  Menu,
+  X,
+  ChevronRight
 } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import { useState } from "react";
 import { getLabels } from "@/lib/labels";
-import { BusinessType } from "@prisma/client";
+import { Logo } from "../logo";
+import { TrialBanner } from "./trial-banner";
 
 export function DashboardShell({ 
   children,
-  businessType 
+  session,
+  tenant
 }: { 
   children: React.ReactNode,
-  businessType?: BusinessType
+  session: any,
+  tenant: any
 }) {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const userRole = (session?.user as any)?.role;
-  const labels = getLabels(businessType);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const labels = getLabels(tenant?.businessType);
+  const user = session?.user;
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { 
-      name: labels.service + "s", 
-      href: "/dashboard/services", 
-      icon: Scissors,
-      adminOnly: true 
-    },
-    { 
-      name: "Team", 
-      href: "/dashboard/staff", 
-      icon: Users,
-      adminOnly: true 
-    },
-    { 
-      name: labels.customer + "s", 
-      href: "/dashboard/customers", 
-      icon: UserCircle
-    },
-    { 
-      name: "My Schedule", 
-      href: "/dashboard/my-schedule", 
-      icon: Clock
-    },
-    { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
-    { 
-      name: "Settings", 
-      href: "/dashboard/settings", 
-      icon: Settings,
-      adminOnly: true 
-    },
+    { name: "Booking Calendar", href: "/dashboard/appointments", icon: Calendar },
+    { name: labels.service + "s", href: "/dashboard/services", icon: Scissors, adminOnly: true },
+    { name: labels.staff, href: "/dashboard/staff", icon: Users, adminOnly: true },
+    { name: "Customers", href: "/dashboard/customers", icon: UserCircle },
+    { name: "My Schedule", href: "/dashboard/my-schedule", icon: Clock },
+    { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
-  const filteredNavItems = navItems.filter(item => {
-    if ((item as any).adminOnly && userRole !== "ADMIN") return false;
-    if ((item as any).staffOnly && userRole !== "STAFF") return false;
-    return true;
-  });
+  const filteredNavItems = navItems.filter(item => 
+    !item.adminOnly || user?.role === "ADMIN"
+  );
+
+  const getPageBackground = (path: string) => {
+    return "bg-indigo-50/50 dark:bg-indigo-950/20";
+  };
+
+  const bgClass = getPageBackground(pathname);
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-300">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="h-20 flex items-center px-8">
-          <Link href="/dashboard" className="flex items-center gap-2 group">
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20 dark:shadow-none">
-              <Calendar className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">FluxBooking</span>
+    <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 overflow-hidden">
+      {/* Sidebar - Desktop */}
+      <aside className="hidden lg:flex flex-col w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 z-30 transition-all duration-500 relative">
+        <div className="h-20 lg:h-24 px-6 lg:px-10 flex items-center">
+          <Link href="/dashboard" className="px-2 relative -top-0.5 left-2">
+            <Logo size="xl" textClassName="dark:text-white" />
           </Link>
         </div>
-        
-        <nav className="flex-1 px-4 py-4 space-y-1">
-          <div className="px-4 mb-4">
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Menu</p>
-          </div>
+
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                className={`flex items-center justify-between px-4 py-3 rounded-[1.25rem] transition-all group relative overflow-hidden ${
                   isActive 
-                    ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-white shadow-sm shadow-indigo-100/50 dark:shadow-none" 
-                    : "text-slate-500 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 dark:shadow-none" 
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <item.icon className={`h-5 w-5 ${isActive ? 'text-indigo-600 dark:text-white' : 'text-slate-400 dark:text-slate-300'}`} />
-                {item.name}
+                <div className="flex items-center gap-4 relative z-10">
+                  <item.icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"}`} />
+                  <span className={`text-sm font-bold tracking-tight ${isActive ? "font-black" : ""}`}>{item.name}</span>
+                </div>
+                {isActive && <ChevronRight className="h-4 w-4 text-white/50 relative z-10" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 mt-auto">
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-4 mb-4 border border-slate-100 dark:border-slate-800">
-             <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">Need help?</p>
-             <p className="text-[11px] text-slate-500 dark:text-slate-300 mb-3">Check our documentation for quick start guides.</p>
-             <button className="w-full py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-               View Docs
-             </button>
+        <div className="mt-auto">
+          <TrialBanner 
+            planStatus={tenant?.planStatus} 
+            trialEndsAt={tenant?.trialEndsAt} 
+          />
+          <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="flex items-center gap-4 w-full px-5 py-4 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
+            >
+              <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+              <span className="text-sm font-bold">Logout</span>
+            </button>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex w-full items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-slate-500 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-white transition-all group"
-          >
-            <LogOut className="h-5 w-5 text-slate-400 dark:text-slate-300 group-hover:text-red-500 dark:group-hover:text-white" />
-            Logout
-          </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <header className="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 md:px-12 sticky top-0 z-[50]">
-          <div className="flex items-center gap-4 flex-1">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col relative overflow-hidden">
+        {/* Top Header */}
+        <header className="h-20 lg:h-24 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-6 lg:px-10 z-20 sticky top-0 transition-all duration-500">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="lg:hidden p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
 
-             <h1 className="text-xl font-bold text-slate-900 dark:text-white hidden lg:block">
-               {filteredNavItems.find(item => item.href === pathname)?.name || "Dashboard"}
-             </h1>
-             <div className="relative max-w-md w-full ml-4 z-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
-                <input 
-                  type="text" 
-                  placeholder="Quick search..." 
-                  className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl py-2.5 pl-10 pr-4 text-sm dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
-                />
-             </div>
+          <div className="flex-1 max-w-xl mx-8 hidden sm:block relative group">
+             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
+             <input 
+              placeholder="Search appointments, customers..."
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600/20 dark:focus:border-indigo-500/20 rounded-2xl text-sm font-medium focus:outline-none transition-all dark:text-white"
+             />
           </div>
-          
-          <div className="flex items-center gap-3">
-            <button className="h-10 w-10 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
-               <Bell className="h-5 w-5" />
-               <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+
+          <div className="flex items-center gap-4 lg:gap-6">
+            <button className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-all relative">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-rose-500 border-2 border-white dark:border-slate-700 rounded-full"></span>
             </button>
-            <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-indigo-200 dark:shadow-none cursor-pointer hover:scale-105 transition-transform">
-              {session?.user?.name?.substring(0, 2).toUpperCase() || "US"}
+            <div className="h-10 lg:h-12 w-10 lg:w-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-black text-sm border-2 border-white dark:border-slate-700 select-none hover:scale-105 transition-transform cursor-pointer">
+              {user?.name?.substring(0, 2).toUpperCase() || "US"}
             </div>
           </div>
         </header>
         
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex-1 flex flex-col overflow-hidden transition-colors duration-700 ${bgClass}`}>
           {children}
         </div>
       </main>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-slate-900 shadow-2xl animate-in slide-in-from-left duration-300 flex flex-col">
+            <div className="h-20 px-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+              <div className="relative -top-0.5 left-2">
+                <Logo size="xl" textClassName="dark:text-white" />
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                <X className="h-6 w-6 text-slate-500" />
+              </button>
+            </div>
+            <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
+              {filteredNavItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-4 px-6 py-5 rounded-3xl transition-all ${
+                    pathname === item.href 
+                      ? "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20" 
+                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <item.icon className="h-6 w-6" />
+                  <span className="text-base font-bold">{item.name}</span>
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-auto">
+               <TrialBanner 
+                planStatus={tenant?.planStatus} 
+                trialEndsAt={tenant?.trialEndsAt} 
+               />
+               <div className="p-8 border-t border-slate-100 dark:border-slate-700">
+                  <button onClick={() => signOut()} className="flex items-center gap-4 text-rose-600 font-bold">
+                    <LogOut className="h-6 w-6" /> Logout
+                  </button>
+               </div>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

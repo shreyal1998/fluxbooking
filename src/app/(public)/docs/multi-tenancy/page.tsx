@@ -50,7 +50,7 @@ export default function MultiTenancyDocs() {
             "Automatic tenant validation on every server action",
             "Secure database connections with strict SSL/TLS requirements"
           ].map((t) => (
-            <div key={t} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-50 bg-slate-50/50">
+            <div key={t} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               <span className="text-sm font-bold text-slate-700">{t}</span>
             </div>
@@ -71,8 +71,8 @@ export default function MultiTenancyDocs() {
       </div>
 
       <div className="pt-12 border-t border-slate-100 flex justify-between">
-        <Link href="/docs/bookings" className="text-sm font-black text-slate-400 hover:text-slate-600">← Calendar & Bookings</Link>
-        <Link href="/docs" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Back to Intro →</Link>
+        <Link href="/docs/bookings" className="text-sm font-black text-slate-400 hover:text-slate-600">â† Calendar & Bookings</Link>
+        <Link href="/docs" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Back to Intro â†’</Link>
       </div>
     </div>
   );

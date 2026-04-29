@@ -145,7 +145,7 @@ export function AddStaffForm({
             onChange={() => clearFieldError("name")}
             placeholder="e.g., Sarah Smith"
             className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
+              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
             }`}
           />
           <InputError message={fieldErrors.name} />
@@ -193,7 +193,7 @@ export function AddStaffForm({
                           <button
                             type="button"
                             onClick={() => setOpenDropdown(!openDropdown)}
-                            className="h-10 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center gap-2 text-xs font-black text-slate-500 hover:border-indigo-500 transition-all cursor-pointer"
+                            className="h-10 px-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center gap-2 text-xs font-black text-slate-500 hover:border-indigo-500 transition-all cursor-pointer"
                           >
                             <span>+{selectedCountry.phoneCode}</span>
                             <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${openDropdown ? 'rotate-180' : ''}`} />
@@ -201,8 +201,8 @@ export function AddStaffForm({
                           <input type="hidden" name="staffCountryCode" value={selectedCountry.code} />
 
                           {openDropdown && (
-                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 py-2 max-h-60 flex flex-col">
-                              <div className="px-3 pb-2 border-b border-slate-50 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900">
+                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col">
+                              <div className="px-3 pb-2 border-b border-slate-100 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-900">
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                                   <input 
@@ -235,7 +235,7 @@ export function AddStaffForm({
                         name="phone"
                         type="tel"
                         placeholder="Phone (Optional)"
-                        className="flex-1 h-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:border-indigo-500"
+                        className="flex-1 h-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:border-indigo-500"
                        />
                     </div>
                   </div>
@@ -285,7 +285,7 @@ export function AddStaffForm({
                 className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
                   selectedServices.includes(service.id)
                     ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20"
-                    : "border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
+                    : "border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -297,7 +297,7 @@ export function AddStaffForm({
             ))}
           </div>
           {services.length === 0 && (
-            <p className="text-[10px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+            <p className="text-[10px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-100 dark:border-slate-700">
               No services created yet.
             </p>
           )}

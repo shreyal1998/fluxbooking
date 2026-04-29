@@ -36,8 +36,8 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-      <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
         <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
           <Palette className="h-5 w-5" />
         </div>
@@ -67,7 +67,7 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-800">
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Preview</p>
            <div className="flex flex-col sm:flex-row items-center gap-6">
               <button 

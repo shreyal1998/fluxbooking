@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { 
   Calendar as CalendarIcon, 
@@ -8,7 +8,7 @@ import {
   Clock, 
   User, 
   Mail, 
-  LayoutGrid,
+  LayoutGrid, 
   Filter,
   CheckCircle2,
   AlertCircle,
@@ -17,7 +17,11 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Plus
+  Plus,
+  X,
+  Ban,
+  Scissors,
+  Check
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
@@ -33,6 +37,10 @@ import {
   endOfWeek, 
   isSameMonth
 } from "date-fns";
+import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
+import { Portal } from "@/components/ui/portal";
+import { ManualBooking } from "@/components/dashboard/manual-booking";
+import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
 
 export function AppointmentsClient({ 
   bookings, 
@@ -48,14 +56,46 @@ export function AppointmentsClient({
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
   const [staffFilter, setStaffFilter] = useState<string>("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [showHoursModal, setShowHoursModal] = useState(false);
+  
+  // Custom Staff Dropdown State
+  const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
+  const staffDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Click outside to close staff dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (staffDropdownRef.current && !staffDropdownRef.current.contains(event.target as Node)) {
+        setIsStaffFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Helper to get current date at venue
+  const getVenueDate = () => {
+    try {
+      const tz = tenant?.timezone || "UTC";
+      const str = new Date().toLocaleString("en-US", { timeZone: tz });
+      return new Date(str);
+    } catch (e) {
+      return new Date();
+    }
+  };
+
+  // Slot Action State
+  const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ date: Date, staffId?: string } | null>(null);
+  const [actionType, setActionType] = useState<"book" | "block" | null>(null);
 
   // Initialize date on client only to avoid hydration mismatch
   useEffect(() => {
-    setCurrentDate(new Date());
+    setCurrentDate(getVenueDate());
   }, []);
 
   const handleSlotClick = (date: Date, staffId?: string) => {
-    toast.info("Slot clicked: " + format(date, "PPP p"));
+    setSelectedSlotInfo({ date, staffId });
+    setActionType(null); // Show selection first
   };
 
   const nextDate = () => {
@@ -152,45 +192,217 @@ export function AppointmentsClient({
       case "CONFIRMED": return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900/50";
       case "COMPLETED": return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-900/50";
       case "CANCELLED": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900/50";
-      default: return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+      default: return "bg-slate-100 text-slate-700 border-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
     }
   };
 
+  const selectedStaffName = staffFilter === "all" ? "All Staff Members" : staff.find((s: any) => s.id === staffFilter)?.name;
+
   return (
-    <div className="h-full flex flex-col transition-colors p-4 md:p-6 lg:p-8 overflow-y-auto">
+    <div className="h-full flex flex-col transition-colors p-4 md:p-6 lg:p-8 overflow-hidden">
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Appointments</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mt-1">Manage your schedule and bookings</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Booking Calendar</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mt-1">Manage your team, venue and appointments</p>
         </div>
         
         <div className="flex items-center gap-3">
+          <ManualBooking 
+            tenantId={tenantId} 
+            services={services} 
+            staff={staff} 
+          />
+          
           {userRole === "ADMIN" && (
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <Filter className="h-4 w-4 text-slate-400" />
-              <select 
-                value={staffFilter}
-                onChange={(e) => setStaffFilter(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-700 dark:text-slate-200 focus:outline-none min-w-[140px] appearance-none cursor-pointer"
+            <button 
+              onClick={() => setShowHoursModal(true)}
+              className="flex items-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-4 py-2.5 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+            >
+              <Clock className="h-4 w-4" />
+              Manage Hours
+            </button>
+          )}
+
+          {userRole === "ADMIN" && (
+            <div className="relative" ref={staffDropdownRef}>
+              <button 
+                onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
+                className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border-2 border-transparent focus:border-indigo-600 hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all group shadow-sm min-w-[180px]"
               >
-                <option value="all">All Staff Members</option>
-                {staff.map((s: any) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+                <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
+                <span className="text-xs font-black text-slate-900 dark:text-slate-100 flex-1 text-left">
+                  {selectedStaffName}
+                </span>
+                <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
+              </button>
+
+              {isStaffFilterOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Team Member</p>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto scrollbar-hide">
+                    <button
+                      onClick={() => { setStaffFilter("all"); setIsStaffFilterOpen(false); }}
+                      className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                          <Users className="h-4 w-4" />
+                        </div>
+                        <span className={`text-xs font-bold ${staffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>All Staff Members</span>
+                      </div>
+                      {staffFilter === "all" && <Check className="h-4 w-4 text-indigo-600" />}
+                    </button>
+
+                    {staff.map((s: any) => (
+                      <button
+                        key={s.id}
+                        onClick={() => { setStaffFilter(s.id); setIsStaffFilterOpen(false); }}
+                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-black" style={{ backgroundColor: s.color }}>
+                            {s.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <span className={`text-xs font-bold ${staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{s.name}</span>
+                        </div>
+                        {staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/* Business Hours Modal */}
+      {showHoursModal && (
+        <Portal>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowHoursModal(false)} />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Business Hours</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Master availability for your venue.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowHoursModal(false)}
+                  className="h-10 w-10 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-8 max-h-[70vh] overflow-y-auto">
+                <AvailabilityEditor 
+                  initialAvailability={tenant?.businessHoursJson} 
+                  isBusiness={true} 
+                />
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Slot Action Modal */}
+      {selectedSlotInfo && (
+        <Portal>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedSlotInfo(null)} />
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+               {actionType === null ? (
+                 <div className="p-10 space-y-8 text-center">
+                    <div className="space-y-2">
+                       <h3 className="text-2xl font-black text-slate-900 dark:text-white">Schedule Action</h3>
+                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                          {format(selectedSlotInfo.date, "EEEE, MMMM do")} at {format(selectedSlotInfo.date, "h:mm a")}
+                       </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                       <button 
+                        onClick={() => setActionType("book")}
+                        className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group"
+                       >
+                          <div className="h-16 w-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                             <Scissors className="h-8 w-8" />
+                          </div>
+                          <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Book Appointment</span>
+                       </button>
+
+                       <button 
+                        onClick={() => setActionType("block")}
+                        className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group"
+                       >
+                          <div className="h-16 w-16 rounded-3xl bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                             <Ban className="h-8 w-8" />
+                          </div>
+                          <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Block Time</span>
+                       </button>
+                    </div>
+
+                    <button 
+                      onClick={() => setSelectedSlotInfo(null)}
+                      className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600"
+                    >
+                      Cancel
+                    </button>
+                 </div>
+               ) : actionType === "book" ? (
+                 <div className="flex flex-col">
+                    <ManualBooking 
+                      tenantId={tenantId}
+                      services={services}
+                      staff={staff}
+                      mode="create"
+                      initialData={{
+                        startTime: selectedSlotInfo.date,
+                        staffId: selectedSlotInfo.staffId,
+                        staff: staff.find((s: any) => s.id === selectedSlotInfo.staffId)
+                      }}
+                      onClose={() => setSelectedSlotInfo(null)}
+                      inline={true}
+                    />
+                 </div>
+               ) : (
+                 <div className="p-10 space-y-6">
+                    <div className="flex items-center justify-between mb-2">
+                       <h3 className="text-xl font-black text-slate-900 dark:text-white">Quick Block</h3>
+                       <button onClick={() => setActionType(null)} className="text-xs font-bold text-indigo-600">Back</button>
+                    </div>
+                    <QuickBlockForm 
+                      staffId={selectedSlotInfo.staffId || staff[0]?.id} 
+                      existingBlocks={[]} 
+                      initialData={{
+                        startTime: selectedSlotInfo.date,
+                        endTime: addDays(selectedSlotInfo.date, 0) // Just a placeholder, format handled in QuickBlockForm component update needed
+                      }}
+                      onSuccess={() => setSelectedSlotInfo(null)}
+                      inline={true}
+                    />
+                 </div>
+               )}
+            </div>
+           </div>
+        </Portal>
+      )}
+
       {/* Toolbar & Content Card */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Navigation & View Control Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-white dark:bg-slate-900/80 backdrop-blur-sm p-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
-              <button onClick={prevDate} className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group">
+            <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1">
+              <button onClick={prevDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                 <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
               </button>
               <button 
@@ -199,13 +411,13 @@ export function AppointmentsClient({
               >
                 Today
               </button>
-              <button onClick={nextDate} className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group">
+              <button onClick={nextDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                 <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
               </button>
             </div>
             
             {viewMode !== "list" && (
-              <h3 className="text-sm font-black text-slate-900 dark:text-slate-50 whitespace-nowrap bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/30">
+              <h3 className="text-base font-black text-slate-900 dark:text-white whitespace-nowrap px-2 tracking-tight">
                 {getHeaderText()}
               </h3>
             )}
@@ -214,12 +426,12 @@ export function AppointmentsClient({
           <div className="flex flex-wrap items-center gap-3">
             {/* Granularity Selector */}
             {viewMode !== "month" && viewMode !== "list" && (
-              <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 {([15, 30, 60] as const).map((mins) => (
                   <button
                     key={mins}
                     onClick={() => setSlotDuration(mins)}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                       slotDuration === mins
                         ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none"
                         : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
@@ -232,15 +444,15 @@ export function AppointmentsClient({
             )}
 
             {/* View Switcher */}
-            <div className="bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
+            <div className="bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
               {(["month", "week", "day", "team", "list"] as const).map((mode) => (
                 <button 
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                  className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                     viewMode === mode 
                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
-                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   }`}
                 >
                   {mode}
@@ -251,7 +463,7 @@ export function AppointmentsClient({
         </div>
 
         {/* Main Content Card */}
-        <div className="flex-1 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-soft overflow-hidden flex flex-col min-h-[600px]">
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-0">
           {viewMode === "list" ? (
             <div className="flex-1 overflow-auto">
               {bookings.length === 0 ? (
@@ -345,6 +557,7 @@ export function AppointmentsClient({
               userRole={userRole} 
               staffList={staff} 
               businessHours={tenant?.businessHoursJson}
+              timezone={tenant?.timezone || "UTC"}
               onSlotClick={handleSlotClick}
               currentDate={currentDate}
               view={viewMode as any}

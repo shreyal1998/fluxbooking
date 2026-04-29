@@ -6,6 +6,7 @@ import { Calendar, Clock, User, Scissors, ShieldCheck } from "lucide-react";
 import { Footer } from "@/components/footer";
 import { getSuggestedSlots } from "@/app/actions/booking";
 import { ManageActions } from "./manage-actions";
+import { Logo } from "@/components/logo";
 
 interface ManageBookingPageProps {
   params: Promise<{
@@ -46,14 +47,12 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
       {/* Header */}
       <header className="sticky top-0 w-full z-50 glass">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group outline-none">
-            <div className="bg-indigo-600 p-1.5 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
-              <Calendar className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">FluxBooking</span>
+          <Link href="/" className="outline-none relative -top-0.5 left-2">
+            <Logo size="xl" />
           </Link>
         </div>
       </header>
+
 
       <main className="flex-1 container mx-auto px-4 py-16 lg:py-24 max-w-2xl">
         <div className="space-y-10">
@@ -70,7 +69,7 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
           </div>
 
           {/* Current Appointment Card */}
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-indigo-500/5 overflow-hidden">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-indigo-500/5 overflow-hidden">
             <div className="p-8 lg:p-12 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-1">

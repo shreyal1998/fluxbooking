@@ -69,7 +69,7 @@ export default function DocsPage() {
             "Secure payments via Lemon Squeezy",
             "Full control over branding and colors"
           ].map((item) => (
-            <div key={item} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-50 bg-slate-50/50">
+            <div key={item} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
               <CheckCircle2 className="h-5 w-5 text-indigo-500" />
               <span className="text-sm font-bold text-slate-700">{item}</span>
             </div>
@@ -92,7 +92,7 @@ export default function DocsPage() {
       </div>
 
       <div className="pt-12 border-t border-slate-100 flex justify-end">
-        <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start →</Link>
+        <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start â†’</Link>
       </div>
     </div>
   );

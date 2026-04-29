@@ -40,8 +40,8 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
           return (
             <div key={member.id} className={`p-6 rounded-xl border transition-all ${
               isLocked 
-              ? "bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 opacity-60 grayscale" 
-              : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm"
+              ? "bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-700 opacity-60 grayscale" 
+              : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-700 shadow-sm"
             }`}>
               <div className="flex items-center gap-4 mb-4">
                 <div 
@@ -71,7 +71,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                   {member.services?.map((service: any) => (
                     <span 
                       key={service.id} 
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
                     >
                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: service.color }}></div>
                       {service.name}
@@ -85,7 +85,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                   {member.bio}
                 </p>
               )}
-              <div className="pt-4 border-t border-slate-50 dark:border-slate-800">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                 {!isLocked ? (
                   <button 
                     onClick={() => {
@@ -109,7 +109,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
       {/* Management Modal */}
       {editingStaff && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-height-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-height-[90vh] flex flex-col border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
             <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-4">
                 <div 

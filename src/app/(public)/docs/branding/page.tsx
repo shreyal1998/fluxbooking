@@ -26,7 +26,7 @@ export default function BrandingDocs() {
           {["#6366f1", "#0ea5e9", "#10b981", "#f43f5e"].map((color) => (
             <div key={color} className="h-12 w-12 rounded-2xl shadow-lg border-4 border-white" style={{ backgroundColor: color }}></div>
           ))}
-          <div className="h-12 w-12 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-300">
+          <div className="h-12 w-12 rounded-2xl border-2 border-dashed border-slate-100 flex items-center justify-center text-slate-300">
             <Paintbrush className="h-5 w-5" />
           </div>
         </div>
@@ -63,8 +63,8 @@ export default function BrandingDocs() {
       </section>
 
       <div className="pt-12 border-t border-slate-100 flex justify-between">
-        <Link href="/docs/business-profile" className="text-sm font-black text-slate-400 hover:text-slate-600">← Business Profile</Link>
-        <Link href="/docs/staff" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Staff Management →</Link>
+        <Link href="/docs/business-profile" className="text-sm font-black text-slate-400 hover:text-slate-600">â† Business Profile</Link>
+        <Link href="/docs/staff" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Staff Management â†’</Link>
       </div>
     </div>
   );

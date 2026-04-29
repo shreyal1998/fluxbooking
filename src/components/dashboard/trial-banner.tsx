@@ -17,9 +17,6 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
     if (trialEndsAt) {
       const now = new Date();
       const end = new Date(trialEndsAt);
-      
-      // differenceInCalendarDays handles the logic of "midnight-to-midnight" 
-      // which is more intuitive for users than millisecond-based Math.ceil
       const diffDays = differenceInCalendarDays(end, now);
       setDaysRemaining(diffDays > 0 ? diffDays : 0);
     }
@@ -27,38 +24,50 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
 
   if (planStatus !== "TRIALING" || daysRemaining === null) return null;
 
+  const isCritical = daysRemaining <= 3;
+
   return (
-    <div className={`w-full px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-500 ${
-      daysRemaining <= 3 
-      ? "bg-rose-500 text-white shadow-lg shadow-rose-200" 
-      : "bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none border border-transparent dark:border-white/10"
+    <div className={`mx-4 mb-4 p-5 rounded-[2rem] border transition-all duration-500 group ${
+      isCritical 
+      ? "bg-rose-50 border-rose-100 dark:bg-rose-900/20 dark:border-rose-900/50 shadow-lg shadow-rose-500/5" 
+      : "bg-indigo-50 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30 shadow-lg shadow-indigo-500/5"
     }`}>
-      <div className="flex items-center gap-4">
-        <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner">
-          {daysRemaining <= 3 ? (
+      <div className="flex items-start gap-3 mb-4">
+        <div className={`h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg ${
+          isCritical 
+          ? "bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-rose-500/20" 
+          : "bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-indigo-500/20"
+        }`}>
+          {isCritical ? (
             <AlertCircle className="h-5 w-5 animate-pulse" />
           ) : (
             <Clock className="h-5 w-5" />
           )}
         </div>
         <div>
-           <p className="text-sm font-black tracking-tight leading-tight">
+           <p className={`text-xs font-black tracking-tight leading-tight ${
+             isCritical ? "text-rose-900 dark:text-rose-100" : "text-slate-900 dark:text-indigo-100"
+           }`}>
              {daysRemaining === 0 
-               ? "Your Starter features trial ends today!" 
-               : `Free Trial Active: You're using Starter features for ${daysRemaining} more day${daysRemaining === 1 ? "" : "s"}.`}
+               ? "Trial ends today!" 
+               : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left on trial.`}
            </p>
-           <p className="text-[10px] font-bold opacity-80 mt-0.5 uppercase tracking-widest">
-             After the trial, you will revert to the 1-staff Free plan.
+           <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest leading-relaxed">
+             Starter Features
            </p>
         </div>
       </div>
       
       <Link 
         href="/dashboard/settings" 
-        className="flex items-center gap-2 bg-white text-indigo-600 hover:bg-slate-50 px-6 py-2 rounded-xl text-xs font-black transition-all shadow-xl dark:shadow-none border border-transparent dark:border-indigo-400/20 active:scale-95"
+        className={`flex items-center justify-center gap-2 w-full py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg ${
+          isCritical 
+          ? "bg-gradient-to-r from-rose-500 to-red-600 text-white hover:from-rose-600 hover:to-red-700 shadow-rose-500/30" 
+          : "bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-700 hover:to-violet-700 shadow-indigo-500/30"
+        }`}
       >
-        Upgrade Now
-        <ArrowRight className="h-3.5 w-3.5" />
+        <span>Upgrade Plan</span>
+        <ArrowRight className="h-3 w-3" />
       </Link>
     </div>
   );

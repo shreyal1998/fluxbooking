@@ -45,7 +45,7 @@ export default function Home() {
             </Link>
             <Link
               href="/#pricing"
-              className="w-full sm:w-auto inline-flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-10 text-base font-bold text-slate-900 transition-all hover:bg-slate-50 hover:border-slate-300"
+              className="w-full sm:w-auto inline-flex h-14 items-center justify-center rounded-2xl border border-slate-100 bg-white px-10 text-base font-bold text-slate-900 transition-all hover:bg-slate-50 hover:border-slate-100"
             >
               View Plans
             </Link>
@@ -53,9 +53,9 @@ export default function Home() {
 
           {/* Mock UI Showcase */}
           <div className="relative max-w-5xl mx-auto px-4">
-            <div className="rounded-[2.5rem] border border-slate-200 bg-white p-3 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
+            <div className="rounded-[2.5rem] border border-slate-100 bg-white p-3 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
               <div className="rounded-[2rem] border border-slate-100 bg-[#F8FAFC] flex flex-col overflow-hidden">
-                <div className="h-12 bg-white border-b border-slate-200 flex items-center px-8 justify-between text-left">
+                <div className="h-12 bg-white border-b border-slate-100 flex items-center px-8 justify-between text-left">
                   <div className="flex gap-2">
                     <div className="h-3 w-3 rounded-full bg-[#FF5F57] border border-[#E0443E] shadow-sm"></div>
                     <div className="h-3 w-3 rounded-full bg-[#FEBC2E] border border-[#D8A020] shadow-sm"></div>
@@ -69,7 +69,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex-1 flex overflow-hidden min-h-[450px] text-left">
-                  <div className="w-56 bg-white border-r border-slate-200 p-6 space-y-6 hidden md:block">
+                  <div className="w-56 bg-white border-r border-slate-100 p-6 space-y-6 hidden md:block">
                      <div className="space-y-4">
                        <div className="h-10 w-full bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 flex items-center px-4 gap-3">
                           <Calendar className="h-4.5 w-4.5" />
@@ -179,7 +179,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
             {/* Free Plan */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col hover:scale-[1.02] transition-transform">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col hover:scale-[1.02] transition-transform">
               <h4 className="font-black text-slate-400 uppercase tracking-widest text-xs mb-4">Start-up</h4>
               <div className="mb-6 flex items-baseline gap-1">
                 <span className="text-4xl font-black text-slate-900">$0</span>
@@ -213,7 +213,7 @@ export default function Home() {
             </div>
 
             {/* Pro Plan */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col hover:scale-[1.02] transition-transform">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col hover:scale-[1.02] transition-transform">
               <h4 className="text-3xl font-black text-slate-900 mb-2">Pro Plan</h4>
               <div className="mb-10 flex items-baseline gap-1">
                 <span className="text-5xl font-black text-slate-900">${isYearly ? '149.90' : '14.99'}</span>
