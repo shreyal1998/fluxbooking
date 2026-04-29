@@ -122,7 +122,7 @@ export function ManualBooking({
   useEffect(() => {
     const search = async () => {
       if (customerSearch.length > 2) {
-        const results = await searchCustomers(tenantId, customerSearch);
+        const results = await searchCustomers(customerSearch);
         setSearchResults(results);
       } else {
         setSearchResults([]);
