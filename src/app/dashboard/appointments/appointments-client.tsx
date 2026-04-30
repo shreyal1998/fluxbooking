@@ -203,8 +203,8 @@ export function AppointmentsClient({
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Booking Calendar</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mt-1">Manage your team, venue and appointments</p>
+          <h1 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Booking Calendar</h1>
+          <p className="text-sm text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your team, venue and appointments</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -217,7 +217,7 @@ export function AppointmentsClient({
           {userRole === "ADMIN" && (
             <button 
               onClick={() => setShowHoursModal(true)}
-              className="flex items-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-4 py-2.5 rounded-2xl border border-slate-100 dark:border-slate-700 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
+              className="flex items-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
             >
               <Clock className="h-4 w-4" />
               Manage Hours
@@ -231,7 +231,7 @@ export function AppointmentsClient({
                 className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border-2 border-transparent focus:border-indigo-600 hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all group shadow-sm min-w-[180px]"
               >
                 <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
-                <span className="text-xs font-black text-slate-900 dark:text-slate-100 flex-1 text-left">
+                <span className="text-xs font-medium text-slate-900 dark:text-slate-100 flex-1 text-left">
                   {selectedStaffName}
                 </span>
                 <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
@@ -240,7 +240,7 @@ export function AppointmentsClient({
               {isStaffFilterOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Team Member</p>
+                    <p className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
                     <button
@@ -251,7 +251,7 @@ export function AppointmentsClient({
                         <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
                           <Users className="h-4 w-4" />
                         </div>
-                        <span className={`text-xs font-bold ${staffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>All Staff Members</span>
+                        <span className={`text-xs font-medium ${staffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>All Staff Members</span>
                       </div>
                       {staffFilter === "all" && <Check className="h-4 w-4 text-indigo-600" />}
                     </button>
@@ -263,10 +263,10 @@ export function AppointmentsClient({
                         className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-black" style={{ backgroundColor: s.color }}>
+                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: s.color }}>
                             {s.name.substring(0, 2).toUpperCase()}
                           </div>
-                          <span className={`text-xs font-bold ${staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{s.name}</span>
+                          <span className={`text-xs font-medium ${staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>{s.name}</span>
                         </div>
                         {staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />}
                       </button>
@@ -292,7 +292,7 @@ export function AppointmentsClient({
                   </div>
                   <div>
                     <h3 className="text-xl font-black text-slate-900 dark:text-white">Business Hours</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Master availability for your venue.</p>
+                    <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Master availability for your venue.</p>
                   </div>
                 </div>
                 <button 
@@ -399,9 +399,9 @@ export function AppointmentsClient({
       {/* Toolbar & Content Card */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Navigation & View Control Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-white dark:bg-slate-900/80 backdrop-blur-sm p-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex items-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-1">
+            <div className="flex items-center bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-1">
               <button onClick={prevDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                 <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
               </button>
@@ -426,7 +426,7 @@ export function AppointmentsClient({
           <div className="flex flex-wrap items-center gap-3">
             {/* Granularity Selector */}
             {viewMode !== "month" && viewMode !== "list" && (
-              <div className="flex items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex items-center bg-white dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 {([15, 30, 60] as const).map((mins) => (
                   <button
                     key={mins}
@@ -444,7 +444,7 @@ export function AppointmentsClient({
             )}
 
             {/* View Switcher */}
-            <div className="bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
+            <div className="bg-white dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
               {(["month", "week", "day", "team", "list"] as const).map((mode) => (
                 <button 
                   key={mode}
@@ -463,7 +463,7 @@ export function AppointmentsClient({
         </div>
 
         {/* Main Content Card */}
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-0">
           {viewMode === "list" ? (
             <div className="flex-1 overflow-auto">
               {bookings.length === 0 ? (
@@ -476,12 +476,12 @@ export function AppointmentsClient({
                   <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                     <thead className="bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 z-10">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Date & Time</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Customer</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Service</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Staff</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Date & Time</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Customer</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Service</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Staff</th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-right text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -492,13 +492,13 @@ export function AppointmentsClient({
                           <tr key={booking.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-bold text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
-                              <div className="text-xs text-slate-500 dark:text-slate-300 flex items-center gap-1 mt-1">
+                              <div className="text-xs text-slate-900 dark:text-white opacity-60 flex items-center gap-1 mt-1">
                                 <Clock className="h-3 w-3" /> {format(new Date(booking.startTime), "hh:mm a")}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-semibold text-slate-900 dark:text-white">{booking.customerName}</div>
-                              <div className="text-xs text-slate-500 dark:text-slate-300 flex items-center gap-1 mt-1">
+                              <div className="text-xs text-slate-900 dark:text-white opacity-60 flex items-center gap-1 mt-1">
                                 <Mail className="h-3 w-3" /> {booking.customerEmail}
                               </div>
                             </td>

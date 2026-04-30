@@ -171,12 +171,12 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
               <tr>
-                <th className="px-8 py-5 text-left text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Customer</th>
-                <th className="px-8 py-5 text-left text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Contact Details</th>
+                <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Customer</th>
+                <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Contact Details</th>
                 {userRole === "ADMIN" && (
-                  <th className="px-8 py-5 text-left text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th>
+                  <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Status</th>
                 )}
-                <th className="px-8 py-5 text-right text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Quick Actions</th>
+                <th className="px-8 py-5 text-right text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Quick Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -203,11 +203,11 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center gap-2 text-xs font-medium text-slate-900 dark:text-white opacity-60">
                         <Mail className="h-3.5 w-3.5 text-slate-400" /> {customer.email}
                       </div>
                       {customer.phone && (
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-900 dark:text-white opacity-60">
                           <Phone className="h-3.5 w-3.5 text-slate-400" /> {customer.phone}
                         </div>
                       )}
@@ -270,7 +270,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
              <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                   <h3 className="text-xl font-black text-slate-900 dark:text-white">Customer Profile</h3>
+                   <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Customer Profile</h3>
                    <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
                    </button>
@@ -279,7 +279,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                    <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Status</label>
+                              <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Status</label>
                               <select 
                                   name="status" 
                                   defaultValue={editingCustomer.status} 
@@ -291,7 +291,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                               </select>
                           </div>
                           <div>
-                              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
+                              <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Full Name</label>
                               <input 
                                 name="name" 
                                 defaultValue={editingCustomer.name} 
@@ -305,7 +305,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                           </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+                        <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Email Address</label>
                         <input 
                           name="email" 
                           type="email" 
@@ -319,11 +319,11 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                         <InputError message={fieldErrors.email} />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Phone Number</label>
+                        <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Phone Number</label>
                         <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Internal Notes</label>
+                        <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Internal Notes</label>
                         <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
                       </div>
                    </div>
@@ -348,14 +348,14 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Archive Customer?</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
-                  Warning: You are moving <span className="font-bold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive. 
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Archive Customer?</h3>
+                <p className="text-sm text-slate-900 dark:text-white font-normal opacity-60 mb-8">
+                  Warning: You are moving <span className="font-semibold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive. 
                   They will be hidden from your list. Only an Administrator can restore them.
                 </p>
 
                 <div className="space-y-4 text-left">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Archiving</label>
+                  <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 opacity-40">Reason for Archiving</label>
                   <select 
                     value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}
@@ -382,7 +382,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                 <div className="grid grid-cols-2 gap-4 mt-8">
                   <button 
                     onClick={() => setArchivingCustomer(null)}
-                    className="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                    className="py-4 rounded-2xl font-medium text-slate-900 dark:text-white opacity-40 hover:opacity-100 transition-all"
                   >
                     Cancel
                   </button>

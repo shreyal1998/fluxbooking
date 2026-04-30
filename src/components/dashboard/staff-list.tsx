@@ -61,7 +61,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                     {member.name}
                     {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded">Locked</span>}
                   </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{isLocked ? "Limit Reached" : member.user?.email || "Staff Member"}</p>
+                  <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">{isLocked ? "Limit Reached" : member.user?.email || "Staff Member"}</p>
                 </div>
               </div>
 
@@ -71,7 +71,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                   {member.services?.map((service: any) => (
                     <span 
                       key={service.id} 
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-900 dark:text-white border border-slate-100 dark:border-slate-700"
                     >
                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: service.color }}></div>
                       {service.name}
@@ -81,7 +81,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
               )}
 
               {member.bio && (
-                <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
+                <p className="text-sm text-slate-900 dark:text-white font-normal opacity-60 line-clamp-2 mb-4">
                   {member.bio}
                 </p>
               )}
@@ -119,8 +119,8 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                   <Users className="h-5 w-5" style={{ color: editingStaff.color }} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white">Manage Staff</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Configuring {editingStaff.name}</p>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Manage Staff</h3>
+                  <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Configuring {editingStaff.name}</p>
                 </div>
               </div>
               <button 

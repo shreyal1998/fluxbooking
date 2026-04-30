@@ -52,18 +52,26 @@ export function BillingSettings({
             <h3 className="font-bold text-slate-900 dark:text-white">Subscription Plans</h3>
           </div>
           
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
             <button 
               onClick={() => setInterval("MONTH")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${interval === "MONTH" ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-slate-500"}`}
+              className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
+                interval === "MONTH" 
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
+                  : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+              }`}
             >
               Monthly
             </button>
             <button 
               onClick={() => setInterval("YEAR")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${interval === "YEAR" ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-slate-500"}`}
+              className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
+                interval === "YEAR" 
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
+                  : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+              }`}
             >
-              Yearly <span className="ml-1 text-[10px] text-emerald-500">-20%</span>
+              Yearly <span className="ml-1 text-[8px] text-indigo-100">(-20%)</span>
             </button>
           </div>
         </div>

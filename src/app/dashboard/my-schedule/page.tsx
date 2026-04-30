@@ -79,26 +79,22 @@ export default async function MySchedulePage() {
   const totalHours = Math.floor(totalMinutes / 60);
 
   return (
-    <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto">
-      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">My Schedule</h2>
-          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Manage your personal availability and time off.</p>
+          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">My Schedule</h2>
+          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your personal availability and time off.</p>
         </div>
         
-        <div className="flex items-center gap-6">
-            <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Weekly Commitment</p>
-                <p className="text-2xl font-black text-indigo-600">{totalHours} Hours</p>
-            </div>
-            <div className="h-10 w-px bg-slate-200 dark:bg-slate-800 hidden md:block" />
-            <div className="text-right hidden md:block">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black border border-emerald-100 uppercase tracking-tight">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Active
-                </span>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 px-6 py-3 bg-white/70 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-md">
+            <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest">{totalHours} Weekly Hours</span>
+          </div>
+          <div className="hidden md:flex items-center gap-3 px-6 py-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Active Status</span>
+          </div>
         </div>
       </div>
 
@@ -122,8 +118,8 @@ export default async function MySchedulePage() {
                                 <User className="h-7 w-7" />
                             </div>
                             <div>
-                                <h4 className="text-xl font-black text-slate-900 dark:text-white">{nextAppointment.customerName}</h4>
-                                <p className="text-sm font-bold text-slate-500">{nextAppointment.service.name} â€¢ {format(new Date(nextAppointment.startTime), "h:mm a")}</p>
+                                <h4 className="text-xl font-semibold text-slate-900 dark:text-white">{nextAppointment.customerName}</h4>
+                                <p className="text-sm font-medium text-slate-900 dark:text-white opacity-60">{nextAppointment.service.name} • {format(new Date(nextAppointment.startTime), "h:mm a")}</p>
                             </div>
                         </div>
                         <a href="/dashboard/appointments" className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-all">
@@ -142,8 +138,8 @@ export default async function MySchedulePage() {
                 <Clock className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 dark:text-white">Weekly Working Hours</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Standard weekly availability.</p>
+                <h3 className="font-semibold text-slate-900 dark:text-white">Weekly Working Hours</h3>
+                <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Standard weekly availability.</p>
               </div>
             </div>
             <div className="p-8">
@@ -161,8 +157,8 @@ export default async function MySchedulePage() {
                 <Ban className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 dark:text-white">Quick Block</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Temporarily block specific hours from your calendar.</p>
+                <h3 className="font-semibold text-slate-900 dark:text-white">Quick Block</h3>
+                <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Temporarily block specific hours from your calendar.</p>
               </div>
             </div>
             <div className="p-8">
@@ -178,16 +174,16 @@ export default async function MySchedulePage() {
               <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
                 <Calendar className="h-5 w-5" />
               </div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Request Time Off</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">Request Time Off</h3>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">Submit your request for sick leave or vacation. Admin approval is required.</p>
+            <p className="text-sm text-slate-900 dark:text-white font-normal opacity-60 mb-6 leading-relaxed">Submit your request for sick leave or vacation. Admin approval is required.</p>
             <LeaveRequestForm />
           </div>
 
           {/* Leave History */}
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-soft overflow-hidden">
             <div className="p-8 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                 <History className="h-4 w-4 text-slate-400" />
                 Recent History
               </h3>
@@ -200,7 +196,7 @@ export default async function MySchedulePage() {
                   {staffProfile.leaveRequests.map((request) => (
                     <div key={request.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-950/30">
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-bold text-slate-900 dark:text-white">{request.type}</p>
+                            <p className="text-xs font-medium text-slate-900 dark:text-white">{request.type}</p>
                             <span className={`px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider border ${
                                 request.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                 request.status === 'REJECTED' ? 'bg-rose-50 text-rose-600 border-rose-100' :
@@ -209,7 +205,7 @@ export default async function MySchedulePage() {
                                 {request.status}
                             </span>
                         </div>
-                        <p className="text-[10px] text-slate-500 font-medium">
+                        <p className="text-[10px] text-slate-900 dark:text-white font-medium opacity-60">
                             {format(new Date(request.startTime), "MMM d")} - {format(new Date(request.endTime), "MMM d")}
                         </p>
                     </div>
