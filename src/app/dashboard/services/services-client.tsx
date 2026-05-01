@@ -7,34 +7,65 @@ import { updateService, deleteService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
+import { getLabels } from "@/lib/labels";
+import { useRouter } from "next/navigation";
 
 export function ServicesClient({ 
   initialServices, 
-  userRole 
+  userRole,
+  businessType
 }: { 
   initialServices: any[], 
-  userRole: string 
+  userRole: string,
+  businessType?: any
 }) {
+  const router = useRouter();
   const [services, setServices] = useState(initialServices);
+  const labels = getLabels(businessType);
   const [editingService, setEditingService] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Lock scroll when any modal is open
   useLockBodyScroll(isAddModalOpen || !!editingService);
 
+  const clearFieldError = (field: string) => {
+    if (fieldErrors[field]) {
+      const newErrors = { ...fieldErrors };
+      delete newErrors[field];
+      setFieldErrors(newErrors);
+    }
+  };
+
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setFieldErrors({});
+
     const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const duration = formData.get("duration") as string;
+    const price = formData.get("price") as string;
+
+    const errors: Record<string, string> = {};
+    if (!name) errors.name = "Service name is required";
+    if (!duration) errors.duration = "Duration is required";
+    if (!price) errors.price = "Price is required";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
     
     const result = await updateService(editingService.id, formData);
     if (result.success) {
       toast.success("Service updated successfully!");
       setEditingService(null);
-      window.location.reload();
+      router.refresh();
     } else {
       toast.error(result.error);
     }
@@ -51,7 +82,7 @@ export function ServicesClient({
     if (result.success) {
       toast.success("Service deleted");
       setEditingService(null);
-      window.location.reload();
+      router.refresh();
     } else {
       toast.error(result.error);
     }
@@ -59,16 +90,35 @@ export function ServicesClient({
     setConfirmDelete(false);
   };
 
+  const InputError = ({ message }: { message?: string }) => {
+    if (!message) return null;
+    return (
+      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+        <AlertCircle className="h-3 w-3" />
+        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      </div>
+    );
+  };
+
+  const closeEditModal = () => {
+    setEditingService(null);
+    setConfirmDelete(false);
+    setFieldErrors({});
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Services</h2>
-          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage the services your business offers to clients.</p>
+          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">{labels.service}s</h2>
+          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">Manage the services your business offers to clients.</p>
         </div>
         {userRole === "ADMIN" && (
           <button 
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              setFieldErrors({});
+              setIsAddModalOpen(true);
+            }}
             className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-medium text-sm shadow-xl shadow-indigo-100 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10"
           >
             <Plus className="h-5 w-5" />
@@ -85,7 +135,10 @@ export function ServicesClient({
               <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No services added yet. Create your first service to start taking bookings.</p>
               {userRole === "ADMIN" && (
                 <button 
-                  onClick={() => setIsAddModalOpen(true)}
+                  onClick={() => {
+                    setFieldErrors({});
+                    setIsAddModalOpen(true);
+                  }}
                   className="mt-8 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-medium text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10"
                 >
                   Add Your First Service
@@ -101,7 +154,7 @@ export function ServicesClient({
                     <div>
                       <h4 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">{service.name}</h4>
                       <div className="flex items-center gap-3 mt-2">
-                        <p className="text-xs text-slate-900 dark:text-white font-medium opacity-60 flex items-center gap-1.5">
+                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5" /> {service.durationMinutes} min
                         </p>
                         {service.bufferTime > 0 && (
@@ -113,7 +166,10 @@ export function ServicesClient({
                     </div>
                     {userRole === "ADMIN" && (
                       <button 
-                        onClick={() => setEditingService(service)}
+                        onClick={() => {
+                          setFieldErrors({});
+                          setEditingService(service);
+                        }}
                         className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm"
                       >
                         <Pencil className="h-4 w-4" />
@@ -140,8 +196,11 @@ export function ServicesClient({
       {/* Add Service Modal */}
       {isAddModalOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
-            <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-sm animate-in fade-in duration-500" />
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              onClick={() => setIsAddModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+            />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">Add New Service</h3>
@@ -160,38 +219,54 @@ export function ServicesClient({
       {/* Edit Service Modal */}
       {editingService && (
         <Portal>
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+             <div 
+               onClick={closeEditModal}
+               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+             />
+             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit Service</h3>
-                   <button onClick={() => { setEditingService(null); setConfirmDelete(false); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                   <button onClick={closeEditModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
                    </button>
                 </div>
                 
                 <div className="p-8 overflow-y-auto max-h-[70vh]">
-                  <form onSubmit={handleUpdate} className="space-y-6">
+                  <form onSubmit={handleUpdate} className="space-y-6" noValidate>
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Service Name</label>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                        Service Name <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         name="name"
                         type="text"
                         required
                         defaultValue={editingService.name}
-                        className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-700 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                        onChange={() => clearFieldError("name")}
+                        className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
+                          fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+                        }`}
                       />
+                      <InputError message={fieldErrors.name} />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Duration (min)</label>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                          Duration (min) <span className="text-rose-500">*</span>
+                        </label>
                         <input
                           name="duration"
                           type="number"
                           required
                           defaultValue={editingService.durationMinutes}
-                          className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-700 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                          onChange={() => clearFieldError("duration")}
+                          className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
+                            fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+                          }`}
                         />
+                        <InputError message={fieldErrors.duration} />
                       </div>
                       <div>
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer (min)</label>
@@ -205,15 +280,21 @@ export function ServicesClient({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Price ($)</label>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                        Price ($) <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         name="price"
                         type="number"
                         step="0.01"
                         required
                         defaultValue={editingService.price.toString()}
-                        className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-700 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                        onChange={() => clearFieldError("price")}
+                        className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
+                          fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+                        }`}
                       />
+                      <InputError message={fieldErrors.price} />
                     </div>
 
                     <div>

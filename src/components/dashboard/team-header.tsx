@@ -24,7 +24,7 @@ export function TeamHeader({ users, services, staffMembersCount, currentLimit }:
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
           <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Team Members</h2>
-          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your team members and their access.</p>
+          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">Manage your team members and their access.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -44,33 +44,34 @@ export function TeamHeader({ users, services, staffMembersCount, currentLimit }:
       {/* Modal Overlay */}
       {isModalOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
-          {/* Backdrop (Soft Blur) */}
-          <div 
-            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-500"
-          />
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 sm:p-6">
+            {/* Full-Screen Backdrop (Blurs entire page including Sidebar/Header) */}
+            <div 
+              onClick={() => setIsModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+            />
 
-          {/* Modal Content - Fixed Center */}
-          <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
-             <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">Add Team Member</h3>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
-                >
-                  <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                </button>
-             </div>
+            {/* Modal Content - Fixed Center */}
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+               <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Add Team Member</h3>
+                  <button 
+                    onClick={() => setIsModalOpen(false)}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                  >
+                    <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  </button>
+               </div>
 
-             <div className="max-h-[80vh] overflow-y-auto">
-                <AddStaffForm 
-                  users={users} 
-                  services={services} 
-                  onSuccess={() => setIsModalOpen(false)} 
-                />
-             </div>
+               <div className="max-h-[80vh] overflow-y-auto">
+                  <AddStaffForm 
+                    users={users} 
+                    services={services} 
+                    onSuccess={() => setIsModalOpen(false)} 
+                  />
+               </div>
+            </div>
           </div>
-        </div>
         </Portal>
       )}
     </>

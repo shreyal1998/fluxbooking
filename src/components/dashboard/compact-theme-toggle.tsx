@@ -49,7 +49,7 @@ export function CompactThemeToggle() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
-            <p className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest opacity-40">Select Theme</p>
+            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Select Theme</p>
           </div>
           <div className="px-1">
             {options.map((option) => {
@@ -66,7 +66,7 @@ export function CompactThemeToggle() {
                   className={`w-full px-3 py-2.5 rounded-xl text-left flex items-center justify-between group transition-colors ${
                     isActive 
                       ? 'bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' 
-                      : 'text-slate-900 dark:text-white opacity-40 hover:opacity-100'
+                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export function CompactThemeToggle() {
                     }`}>
                       <Icon className="h-3.5 w-3.5" />
                     </div>
-                    <span className="text-xs font-medium">{option.label}</span>
+                    <span className="text-xs font-semibold">{option.label}</span>
                   </div>
                   {isActive && <Check className="h-3.5 w-3.5" />}
                 </button>

@@ -87,7 +87,13 @@ export default async function PublicBookingPage({
           <BookingForm 
             tenantId={tenant.id} 
             services={tenant.services.map(s => ({ ...s, price: s.price.toString() }))} 
-            staff={tenant.staff as any} 
+            staff={tenant.staff.map(s => ({
+              ...s,
+              services: s.services?.map(srv => ({
+                ...srv,
+                price: srv.price.toString()
+              }))
+            })) as any} 
             primaryColor={tenant.primaryColor}
           />
         </div>

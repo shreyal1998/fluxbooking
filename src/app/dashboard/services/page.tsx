@@ -11,16 +11,28 @@ export default async function ServicesPage() {
   const tenantId = (session.user as any).tenantId;
   const userRole = (session.user as any).role;
 
-  const services = await prisma.service.findMany({
-    where: { tenantId },
-    orderBy: { createdAt: "desc" },
-  });
+  const [services, tenant] = await Promise.all([
+    prisma.service.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { businessType: true }
+    })
+  ]);
+
+  const serializedServices = services.map(s => ({ 
+    ...s, 
+    price: s.price.toString() 
+  }));
 
   return (
     <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
       <ServicesClient 
-        initialServices={services.map(s => ({ ...s, price: s.price.toString() }))} 
+        initialServices={serializedServices} 
         userRole={userRole} 
+        businessType={tenant?.businessType}
       />
     </div>
   );

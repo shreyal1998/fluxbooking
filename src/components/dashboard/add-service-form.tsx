@@ -50,6 +50,8 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
     } else {
       toast.success("Service created successfully!");
       (e.target as HTMLFormElement).reset();
+      setFieldErrors({});
+      setGeneralError(null);
       setLoading(false);
       if (onSuccess) onSuccess();
     }
@@ -75,7 +77,9 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Service Name</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            Service Name <span className="text-rose-500">*</span>
+          </label>
           <input
             name="name"
             type="text"
@@ -91,7 +95,9 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Duration (min)</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              Duration (min) <span className="text-rose-500">*</span>
+            </label>
             <div className="relative">
               <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -124,7 +130,9 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Price ($)</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            Price ($) <span className="text-rose-500">*</span>
+          </label>
           <div className="relative">
             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input

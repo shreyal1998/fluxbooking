@@ -90,16 +90,53 @@ export default async function DashboardPage() {
     <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Welcome back, {session.user?.name}</h2>
-          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Here's what's happening at <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{tenant?.name}</span> today.</p>
+          {userRole === "STAFF" && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 mb-3">
+              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Users className="h-3 w-3" /> Staff Portal
+              </span>
+            </div>
+          )}
+          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">
+            {userRole === "STAFF" ? `Hello, ${session.user?.name.split(' ')[0]}` : `Welcome back, ${session.user?.name}`}
+          </h2>
+          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">
+            Here's what's happening at <span className="text-indigo-600 dark:text-indigo-400 font-bold decoration-indigo-500/30 underline-offset-4 decoration-2">{tenant?.name}</span> today.
+          </p>
         </div>
-        <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm self-start md:self-auto">
+        <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm self-start md:self-auto transition-all hover:border-indigo-100 dark:hover:border-indigo-900">
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
           <span className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest">Live Insights</span>
         </div>
       </div>
 
       <div className="flex-1 space-y-10 pb-8">
+        {userRole === "STAFF" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-500">
+             <a href="/dashboard/appointments" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
+                <div className="h-12 w-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
+                   <CalendarIcon className="h-6 w-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 dark:text-white">Today's Schedule</h4>
+                <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">View and manage your upcoming bookings.</p>
+             </a>
+             <a href="/dashboard/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-900 transition-all">
+                <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+                   <Clock className="h-6 w-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 dark:text-white">My Availability</h4>
+                <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">Update your working hours and blocks.</p>
+             </a>
+             <a href="/dashboard/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-rose-200 dark:hover:border-rose-900 transition-all">
+                <div className="h-12 w-12 rounded-2xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 group-hover:scale-110 transition-transform">
+                   <ArrowUpRight className="h-6 w-6" />
+                </div>
+                <h4 className="font-bold text-slate-900 dark:text-white">Request Leave</h4>
+                <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">Submit sick leave or vacation requests.</p>
+             </a>
+          </div>
+        )}
+
         {userRole === "STAFF" && !hasUpdatedAvailability && (
           <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
@@ -132,7 +169,7 @@ export default async function DashboardPage() {
                     <span className="text-[10px] font-medium uppercase tracking-tighter">{stat.trend}</span>
                 </div>
               </div>
-              <p className="text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-1 opacity-60">{stat.name}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{stat.name}</p>
               <h3 className="text-3xl font-medium text-slate-900 dark:text-white">{stat.value}</h3>
             </div>
           ))}
@@ -155,7 +192,7 @@ export default async function DashboardPage() {
                 {recentBookings.length === 0 ? (
                   <div className="text-center py-12">
                     <Clock className="h-10 w-10 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
-                    <p className="text-slate-900 dark:text-white font-medium italic text-sm opacity-40">No recent activity.</p>
+                    <p className="font-medium italic text-sm text-slate-400 dark:text-slate-500">No recent activity.</p>
                   </div>
                 ) : (
                   recentBookings.map((booking) => (
@@ -166,13 +203,13 @@ export default async function DashboardPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-slate-900 dark:text-white">{booking.customerName}</p>
-                          <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">{booking.service.name} • with {booking.staff.name}</p>
+                          <p className="text-xs font-normal text-slate-500 dark:text-slate-400">{booking.service.name} • with {booking.staff.name}</p>
                         </div>
                       </div>
                       <div className="text-right flex items-center gap-6">
                         <div>
                           <p className="text-sm font-medium text-slate-900 dark:text-white">{format(new Date(booking.startTime), "h:mm a")}</p>
-                          <p className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest opacity-60">{format(new Date(booking.startTime), "MMM d")}</p>
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{format(new Date(booking.startTime), "MMM d")}</p>
                         </div>
                         {booking.status === 'COMPLETED' ? (
                           <CheckCircle2 className="h-5 w-5 text-emerald-500" />

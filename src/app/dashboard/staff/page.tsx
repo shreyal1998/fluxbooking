@@ -71,9 +71,22 @@ export default async function StaffPage() {
     return { ...req, hasConflicts };
   });
 
+  const serializedServices = services.map(s => ({
+    ...s,
+    price: s.price.toString()
+  }));
+
+  const serializedStaff = staffMembers.map(s => ({
+    ...s,
+    services: s.services.map(srv => ({
+      ...srv,
+      price: srv.price.toString()
+    }))
+  }));
+
   return (
     <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
-      <TeamHeader users={users} services={services} staffMembersCount={staffMembers.length} currentLimit={currentLimit} />
+      <TeamHeader users={users} services={serializedServices} staffMembersCount={staffMembers.length} currentLimit={currentLimit} />
 
       <div className="flex-1 space-y-12 pb-8">
         {/* Plan Limit Warning */}
@@ -117,7 +130,7 @@ export default async function StaffPage() {
             </div>
           ) : (
             <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-8">
-              <StaffList staffMembers={staffMembers} currentLimit={currentLimit} services={services} />
+              <StaffList staffMembers={serializedStaff} currentLimit={currentLimit} services={serializedServices} />
             </div>
           )}
         </div>

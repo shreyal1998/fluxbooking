@@ -74,41 +74,41 @@ export function SettingsClient({
                 <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-medium text-slate-900 dark:text-white">Business Profile</h3>
-                  <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Core information about your venue.</p>
+                  <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Core information about your venue.</p>
                 </div>
               </div>
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 mb-2 opacity-40">Business Name</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Name</label>
                     <input
                       type="text"
                       disabled
                       value={tenant?.name}
-                      className="block w-full rounded-2xl border-none bg-white dark:bg-slate-800 px-5 py-4 text-sm text-slate-900 dark:text-white font-medium opacity-60"
+                      className="block w-full rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 px-5 py-4 text-sm text-slate-900 dark:text-white font-medium"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 mb-2 opacity-40">Business Type</label>
+                    <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Type</label>
                     <input
                       type="text"
                       disabled
                       value={tenant?.businessType}
-                      className="block w-full rounded-2xl border-none bg-white dark:bg-slate-800 px-5 py-4 text-sm text-slate-900 dark:text-white font-medium opacity-60"
+                      className="block w-full rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 px-5 py-4 text-sm text-slate-900 dark:text-white font-medium"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 mb-2 opacity-40">Public URL Slug</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Public URL Slug</label>
                   <div className="flex rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-slate-800">
-                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950 px-5 text-slate-900 dark:text-white text-xs font-bold border-r border-slate-100 dark:border-slate-700 opacity-60">
+                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950 px-5 text-slate-600 dark:text-slate-400 text-xs font-bold border-r border-slate-100 dark:border-slate-700">
                       {process.env.NEXT_PUBLIC_APP_URL || 'fluxbooking.com'}/b/
                     </span>
                     <input
                       type="text"
                       disabled
                       value={tenant?.slug}
-                      className="block w-full min-w-0 flex-1 border-none bg-white dark:bg-slate-800 px-5 py-4 text-sm text-slate-900 dark:text-white font-bold opacity-60"
+                      className="block w-full min-w-0 flex-1 border-none bg-slate-50/50 dark:bg-slate-800/50 px-5 py-4 text-sm text-slate-900 dark:text-white font-bold"
                     />
                   </div>
                   <p className="mt-3 text-[10px] text-slate-400 font-medium ml-1 flex items-center gap-1.5">
@@ -156,17 +156,17 @@ export function SettingsClient({
                 <Shield className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-medium text-slate-900 dark:text-white">Account Security</h3>
-                  <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Protect your administrator access.</p>
+                  <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Protect your administrator access.</p>
                 </div>
               </div>
               <div className="p-8 space-y-8">
                 <div>
-                  <label className="block text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 mb-2 opacity-40">Admin Email</label>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Admin Email</label>
                   <input
                     type="text"
                     disabled
                     value={sessionUser?.email || ""}
-                    className="block w-full rounded-2xl border-none bg-white dark:bg-slate-800 px-5 py-4 text-sm text-slate-900 dark:text-white font-bold opacity-60"
+                    className="block w-full rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 px-5 py-4 text-sm text-slate-900 dark:text-white font-bold"
                   />
                 </div>
                 <button className="text-sm font-black text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2 group transition-all">

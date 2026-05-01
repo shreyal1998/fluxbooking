@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "sonner";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { ReadingProgress } from "@/components/reading-progress";
+import NextTopLoader from "nextjs-toploader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,10 +42,27 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <NextTopLoader
+              color="#4f46e5"
+              height={3}
+              showSpinner={false}
+              zIndex={1000000}
+            />
             {children}
-            <Toaster position="top-center" richColors />
             <ScrollToTop />
             <ReadingProgress />
+            <Toaster 
+              position="top-right" 
+              richColors 
+              closeButton 
+              expand={true} 
+              toastOptions={{
+                style: {
+                  zIndex: 2147483647,
+                },
+                className: "sonner-toast-high-z",
+              }}
+            />
           </AuthProvider>
         </ThemeProvider>
       </body>

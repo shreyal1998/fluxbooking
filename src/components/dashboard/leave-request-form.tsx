@@ -70,7 +70,9 @@ export function LeaveRequestForm() {
     <form onSubmit={handleSubmit} className="space-y-4 transition-colors" noValidate>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Leave Type</label>
+          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+            Leave Type <span className="text-rose-500">*</span>
+          </label>
           <select 
             name="type" 
             required
@@ -95,7 +97,9 @@ export function LeaveRequestForm() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Start Time</label>
+          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+            Start Time <span className="text-rose-500">*</span>
+          </label>
           <input 
             name="startTime" 
             type="datetime-local" 
@@ -108,7 +112,9 @@ export function LeaveRequestForm() {
           <InputError message={fieldErrors.startTime} />
         </div>
         <div>
-          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">End Time</label>
+          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+            End Time <span className="text-rose-500">*</span>
+          </label>
           <input 
             name="endTime" 
             type="datetime-local" 

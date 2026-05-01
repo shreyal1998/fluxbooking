@@ -41,6 +41,7 @@ import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { Portal } from "@/components/ui/portal";
 import { ManualBooking } from "@/components/dashboard/manual-booking";
 import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
+import { useRouter } from "next/navigation";
 
 export function AppointmentsClient({ 
   bookings, 
@@ -51,6 +52,7 @@ export function AppointmentsClient({
   userRole,
   tenant
 }: any) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">("week");
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
@@ -204,7 +206,7 @@ export function AppointmentsClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Booking Calendar</h1>
-          <p className="text-sm text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your team, venue and appointments</p>
+          <p className="text-sm font-normal mt-1 text-slate-500 dark:text-slate-400">Manage your team, venue and appointments</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -282,9 +284,12 @@ export function AppointmentsClient({
       {/* Business Hours Modal */}
       {showHoursModal && (
         <Portal>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowHoursModal(false)} />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              onClick={() => setShowHoursModal(false)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
@@ -316,9 +321,12 @@ export function AppointmentsClient({
       {/* Slot Action Modal */}
       {selectedSlotInfo && (
         <Portal>
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedSlotInfo(null)} />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              onClick={() => setSelectedSlotInfo(null)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                {actionType === null ? (
                  <div className="p-10 space-y-8 text-center">
                     <div className="space-y-2">
@@ -492,13 +500,13 @@ export function AppointmentsClient({
                           <tr key={booking.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-bold text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
-                              <div className="text-xs text-slate-900 dark:text-white opacity-60 flex items-center gap-1 mt-1">
+                              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                                 <Clock className="h-3 w-3" /> {format(new Date(booking.startTime), "hh:mm a")}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-semibold text-slate-900 dark:text-white">{booking.customerName}</div>
-                              <div className="text-xs text-slate-900 dark:text-white opacity-60 flex items-center gap-1 mt-1">
+                              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                                 <Mail className="h-3 w-3" /> {booking.customerEmail}
                               </div>
                             </td>

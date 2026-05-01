@@ -28,10 +28,25 @@ export function AddStaffForm({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // User Account State
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [userSearch, setUserSearch] = useState("");
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+  const userSearchInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
+    u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenDropdown(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -43,6 +58,12 @@ export function AddStaffForm({
       searchInputRef.current.focus();
     }
   }, [openDropdown]);
+
+  useEffect(() => {
+    if (userDropdownOpen && userSearchInputRef.current) {
+      userSearchInputRef.current.focus();
+    }
+  }, [userDropdownOpen]);
 
   const filteredCountries = COUNTRIES.filter(c => 
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
@@ -87,7 +108,9 @@ export function AddStaffForm({
       if (!password) errors.password = "Password is required";
       else if (password.length < 6) errors.password = "Password must be at least 6 characters";
       
-      if (password && password !== confirmPassword) {
+      if (!confirmPassword) {
+        errors.confirmPassword = "Please confirm your password";
+      } else if (password && password !== confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
     }
@@ -110,6 +133,8 @@ export function AddStaffForm({
     } else {
       toast.success("Team member added successfully!");
       (e.target as HTMLFormElement).reset();
+      setFieldErrors({});
+      setGeneralError(null);
       setShowPasswordField(true);
       setSelectedServices([]);
       setLoading(false);
@@ -137,7 +162,9 @@ export function AddStaffForm({
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Full Name</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            Full Name <span className="text-rose-500">*</span>
+          </label>
           <input
             name="name"
             type="text"
@@ -152,22 +179,86 @@ export function AddStaffForm({
         </div>
         
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">User Account</label>
-          <select
-            name="userId"
-            onChange={(e) => {
-              setShowPasswordField(e.target.value === "");
-              clearFieldError("userId");
-            }}
-            className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all appearance-none cursor-pointer"
-          >
-            <option value="">Create new login account</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                Use existing: {user.name} ({user.email})
-              </option>
-            ))}
-          </select>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            User Account <span className="text-rose-500">*</span>
+          </label>
+          <div className="relative" ref={userDropdownRef}>
+            <input type="hidden" name="userId" value={selectedUserId} />
+            <button
+              type="button"
+              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+              className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-slate-50 dark:bg-slate-800 ${
+                userDropdownOpen ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-indigo-600"
+              }`}
+            >
+              <span className={!selectedUserId ? "text-slate-900 dark:text-white" : "font-medium"}>
+                {selectedUserId 
+                  ? `Use existing: ${users.find(u => u.id === selectedUserId)?.name || ""}` 
+                  : "Create new login account"}
+              </span>
+              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {userDropdownOpen && (
+              <div className="absolute z-[120] left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col animate-in fade-in zoom-in duration-200">
+                <div className="px-3 pb-2 border-b border-slate-100 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-900">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input 
+                      ref={userSearchInputRef}
+                      type="text"
+                      placeholder="Search users..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="overflow-y-auto flex-1 text-left custom-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedUserId("");
+                      setShowPasswordField(true);
+                      setUserDropdownOpen(false);
+                      setUserSearch("");
+                      clearFieldError("userId");
+                    }}
+                    className={`flex items-center justify-between w-full px-5 py-3 text-xs font-bold transition-colors ${
+                      selectedUserId === "" ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    Create new login account
+                  </button>
+                  {filteredUsers.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedUserId(user.id);
+                        setShowPasswordField(false);
+                        setUserDropdownOpen(false);
+                        setUserSearch("");
+                        setFieldErrors({}); // Clear errors when selecting existing user
+                        setGeneralError(null);
+                      }}
+                      className={`flex flex-col items-start w-full px-5 py-3 transition-colors ${
+                        selectedUserId === user.id ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="truncate text-xs font-bold">{user.name}</span>
+                      <span className={`text-xs font-medium mt-0.5 ${selectedUserId === user.id ? 'text-indigo-400 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{user.email}</span>
+                    </button>
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <div className="px-5 py-4 text-xs font-bold text-slate-400 italic text-center">
+                      No users found.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {showPasswordField && (
@@ -180,7 +271,7 @@ export function AddStaffForm({
                       name="email"
                       type="email"
                       onChange={() => clearFieldError("email")}
-                      placeholder="Email"
+                      placeholder="Email *"
                       className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
                         fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                       }`}
@@ -239,13 +330,13 @@ export function AddStaffForm({
                        />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div>
                       <input
                         name="password"
                         type="password"
                         onChange={() => clearFieldError("password")}
-                        placeholder="Password"
+                        placeholder="Password *"
                         className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
                           fieldErrors.password ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                         }`}
@@ -257,7 +348,7 @@ export function AddStaffForm({
                         name="confirmPassword"
                         type="password"
                         onChange={() => clearFieldError("confirmPassword")}
-                        placeholder="Confirm"
+                        placeholder="Confirm Password *"
                         className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
                           fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                         }`}

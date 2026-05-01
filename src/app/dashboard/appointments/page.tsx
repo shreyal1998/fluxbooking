@@ -52,9 +52,17 @@ export default async function AppointmentsPage() {
     staff = staffProfile ? [staffProfile] : [];
   }
 
+  const serializedBookings = bookings.map(b => ({
+    ...b,
+    service: b.service ? {
+      ...b.service,
+      price: b.service.price.toString()
+    } : null
+  }));
+
   return (
     <AppointmentsClient 
-      bookings={bookings}
+      bookings={serializedBookings as any}
       blockedSlots={blockedSlots}
       services={services.map(s => ({ ...s, price: s.price.toString() }))}
       staff={staff}

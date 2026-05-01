@@ -4,6 +4,8 @@ import { useState } from "react";
 import { AlertCircle, Loader2, Palette, Trash2, ShieldAlert, Scissors, Check } from "lucide-react";
 import { updateStaffProfile, deleteStaff } from "@/app/actions/dashboard";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface EditStaffFormProps {
   staff: {
@@ -41,6 +43,14 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
   const [selectedServices, setSelectedServices] = useState<string[]>(
     staff.services?.map(s => s.id) || []
   );
+
+  // Clear errors when the staff member changes
+  useEffect(() => {
+    setFieldErrors({});
+    setGeneralError(null);
+    setConfirmDelete(false);
+    setSelectedServices(staff.services?.map(s => s.id) || []);
+  }, [staff.id, staff.services]);
 
   const toggleService = (serviceId: string) => {
     setSelectedServices(prev => 
@@ -89,6 +99,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
     } else {
       toast.success("Profile updated successfully!");
       setLoading(false);
+      setFieldErrors({});
+      setGeneralError(null);
       if (onSuccess) onSuccess();
     }
   };
@@ -111,6 +123,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
     } else {
       toast.success("Staff member removed successfully!");
       setDeleteLoading(false);
+      setFieldErrors({});
+      setGeneralError(null);
       if (onSuccess) onSuccess();
     }
   };
@@ -127,7 +141,9 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {isAdmin && (
           <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Full Name <span className="text-rose-500">*</span>
+            </label>
             <input
               name="name"
               type="text"

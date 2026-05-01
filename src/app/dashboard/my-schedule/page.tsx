@@ -83,7 +83,7 @@ export default async function MySchedulePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
           <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">My Schedule</h2>
-          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your personal availability and time off.</p>
+          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">Manage your personal availability and time off.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default async function MySchedulePage() {
                                 {request.status}
                             </span>
                         </div>
-                        <p className="text-[10px] text-slate-900 dark:text-white font-medium opacity-60">
+                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                             {format(new Date(request.startTime), "MMM d")} - {format(new Date(request.endTime), "MMM d")}
                         </p>
                     </div>

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { createBooking, rescheduleBookingByCustomer } from "@/app/actions/booking";
 import { toast } from "sonner";
+import { LiquidLoader } from "@/components/ui/liquid-loader";
 
 interface Service {
   id: string;
@@ -117,7 +118,7 @@ export function BookingForm({
   if (!hasMounted) {
     return (
       <div className="flex justify-center items-center p-24">
-        <Loader2 className="h-10 w-10 animate-spin" style={{ color: primaryColor }} />
+        <LiquidLoader />
       </div>
     );
   }
@@ -365,7 +366,7 @@ export function BookingForm({
 
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="h-10 w-10 animate-spin" style={{ color: primaryColor }} />
+                <LiquidLoader />
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Searching available slots...</p>
               </div>
             ) : slots.length > 0 ? (
@@ -420,7 +421,7 @@ export function BookingForm({
                      <Users className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>{isRescheduling ? "Updated Service" : "Appointment"}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500" style={{ color: `${primaryColor}cc` }}>{isRescheduling ? "Updated Service" : "Appointment"}</p>
                     <p className="font-bold text-slate-900">{selectedService?.name} with {selectedSlot?.staffName}</p>
                   </div>
                </div>
@@ -429,7 +430,7 @@ export function BookingForm({
                      <Calendar className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider opacity-60" style={{ color: primaryColor }}>New Date & Time</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500" style={{ color: `${primaryColor}cc` }}>New Date & Time</p>
                     <p className="font-bold text-slate-900">{format(selectedDate, "EEEE, MMMM d")} at {selectedSlot?.time}</p>
                   </div>
                </div>
@@ -439,7 +440,9 @@ export function BookingForm({
               {!isRescheduling && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">Your Name</label>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                      Your Name <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       name="customerName"
                       type="text"
@@ -453,7 +456,9 @@ export function BookingForm({
                     <InputError message={fieldErrors.customerName} />
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">Email Address</label>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                      Email Address <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       name="customerEmail"
                       type="email"

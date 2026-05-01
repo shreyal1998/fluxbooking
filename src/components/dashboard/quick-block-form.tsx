@@ -33,6 +33,11 @@ export function QuickBlockForm({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Reset errors when data changes
+  useEffect(() => {
+    setFieldErrors({});
+  }, [staffId, initialData]);
+
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
       const newErrors = { ...fieldErrors };
@@ -75,6 +80,7 @@ export function QuickBlockForm({
     if (result.success) {
       toast.success("Time blocked successfully!");
       if (!inline) (e.target as HTMLFormElement).reset();
+      setFieldErrors({});
       if (onSuccess) onSuccess();
     } else {
       toast.error(result.error || "Failed to block time");
@@ -87,6 +93,7 @@ export function QuickBlockForm({
     const result = await deleteBlockedSlot(id);
     if (result.success) {
       toast.success("Block removed");
+      setFieldErrors({});
     } else {
       toast.error(result.error);
     }
@@ -115,7 +122,9 @@ export function QuickBlockForm({
           </div>
           <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1">Start Time</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1">
+                  Start Time <span className="text-rose-500">*</span>
+                </label>
                 <input
                   name="startTime"
                   type="datetime-local"
@@ -129,7 +138,9 @@ export function QuickBlockForm({
                 <InputError message={fieldErrors.startTime} />
               </div>
               <div className="space-y-1">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1">End Time</label>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1">
+                  End Time <span className="text-rose-500">*</span>
+                </label>
                 <input
                   name="endTime"
                   type="datetime-local"

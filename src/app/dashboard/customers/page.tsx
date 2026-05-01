@@ -27,7 +27,7 @@ export default async function CustomersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
           <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Customers</h2>
-          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your client relationships and notes.</p>
+          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">Manage your client relationships and notes.</p>
         </div>
         <div className="flex items-center gap-3 px-6 py-3 bg-white/70 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm self-start md:self-auto backdrop-blur-md">
           <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />

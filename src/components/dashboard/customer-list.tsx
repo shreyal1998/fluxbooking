@@ -203,11 +203,11 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs font-medium text-slate-900 dark:text-white opacity-60">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                         <Mail className="h-3.5 w-3.5 text-slate-400" /> {customer.email}
                       </div>
                       {customer.phone && (
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-900 dark:text-white opacity-60">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                           <Phone className="h-3.5 w-3.5 text-slate-400" /> {customer.phone}
                         </div>
                       )}
@@ -267,8 +267,12 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
 
       {editingCustomer && (
         <Portal>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+             <div 
+               onClick={() => setEditingCustomer(null)}
+               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+             />
+             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Customer Profile</h3>
                    <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
@@ -342,8 +346,12 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
 
       {archivingCustomer && (
         <Portal>
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              onClick={() => setArchivingCustomer(null)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />

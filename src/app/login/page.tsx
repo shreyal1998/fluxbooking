@@ -102,7 +102,7 @@ function LoginForm() {
           <div className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                Email address
+                Email address <span className="text-rose-500">*</span>
               </label>
               <input
                 id="email"
@@ -119,7 +119,7 @@ function LoginForm() {
             </div>
             <div>
               <label htmlFor="password" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                Password
+                Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -170,8 +170,14 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <div className="premium-pulsar-container">
+          <div className="liquid-loader">
+            <div className="liquid-blob"></div>
+            <div className="liquid-blob"></div>
+            <div className="liquid-blob"></div>
+          </div>
+        </div>
       </div>
     }>
       <LoginForm />

@@ -93,6 +93,11 @@ export function ManualBooking({
     phone: ""
   });
 
+  // Clear errors when context changes
+  useEffect(() => {
+    setFieldErrors({});
+  }, [initialData]);
+
   useEffect(() => {
     if ((mode === "edit" || (inline && initialData?.startTime)) && selectedService) {
       fetchSlots(selectedDate, selectedService.id, selectedSlot?.staffId);
@@ -411,7 +416,7 @@ export function ManualBooking({
                     <div>
                         <input 
                         name="name" 
-                        placeholder="Full Name" 
+                        placeholder="Full Name *" 
                         required 
                         className={`w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none border-2 transition-all ${
                             fieldErrors.customerName ? "border-rose-100 bg-rose-50" : "border-transparent focus:border-indigo-600"
@@ -423,7 +428,7 @@ export function ManualBooking({
                         <input 
                         name="email" 
                         type="email" 
-                        placeholder="Email Address" 
+                        placeholder="Email Address *" 
                         required 
                         className={`w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none border-2 transition-all ${
                             fieldErrors.customerEmail ? "border-rose-100 bg-rose-50" : "border-transparent focus:border-indigo-600"
@@ -493,8 +498,14 @@ export function ManualBooking({
 
       {isOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-             {content}
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
+            <div 
+              onClick={handleClose}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+            />
+            <div className="relative w-full max-w-2xl">
+              {content}
+            </div>
           </div>
         </Portal>
       )}

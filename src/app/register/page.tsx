@@ -180,7 +180,7 @@ function RegisterContent() {
           <div className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                Full Name
+                Full Name <span className="text-rose-500">*</span>
               </label>
               <input
                 id="name"
@@ -197,7 +197,7 @@ function RegisterContent() {
 
             <div>
               <label htmlFor="email" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                Email address
+                Email address <span className="text-rose-500">*</span>
               </label>
               <input
                 id="email"
@@ -215,7 +215,7 @@ function RegisterContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="password" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                  Password
+                  Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -240,7 +240,7 @@ function RegisterContent() {
               </div>
               <div>
                 <label htmlFor="confirmPassword" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                  Confirm Password
+                  Confirm Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -267,7 +267,7 @@ function RegisterContent() {
 
             <div>
               <label htmlFor="businessName" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                Business Name
+                Business Name <span className="text-rose-500">*</span>
               </label>
               <input
                 id="businessName"
@@ -284,7 +284,7 @@ function RegisterContent() {
 
             <div className="space-y-2">
               <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
-                Country
+                Country <span className="text-rose-500">*</span>
               </label>
               <div className="relative" ref={countryRef}>
                 <input type="hidden" name="country" value={selectedCountry?.code || ""} />
@@ -347,7 +347,7 @@ function RegisterContent() {
 
             <div>
               <label htmlFor="phone" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                Phone Number
+                Phone Number <span className="text-rose-500">*</span>
               </label>
               <div className="flex gap-2">
                 <div className="w-20 bg-slate-100 border-2 border-slate-100 rounded-2xl flex items-center justify-center text-sm font-black text-slate-500">
@@ -370,7 +370,7 @@ function RegisterContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
-                  Type
+                  Type <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative" ref={typeRef}>
                   <input type="hidden" name="businessType" value={selectedBusinessType || ""} />
@@ -418,7 +418,7 @@ function RegisterContent() {
 
               <div>
                 <label htmlFor="slug" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                  Custom URL
+                  Custom URL <span className="text-rose-500">*</span>
                 </label>
                 <div className={`flex rounded-2xl shadow-sm overflow-hidden border-2 transition-all ${
                   fieldErrors.slug ? "border-rose-100 bg-rose-50" : "border-slate-100 bg-slate-50"
@@ -466,8 +466,14 @@ function RegisterContent() {
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <div className="premium-pulsar-container">
+          <div className="liquid-loader">
+            <div className="liquid-blob"></div>
+            <div className="liquid-blob"></div>
+            <div className="liquid-blob"></div>
+          </div>
+        </div>
       </div>
     }>
       <RegisterContent />

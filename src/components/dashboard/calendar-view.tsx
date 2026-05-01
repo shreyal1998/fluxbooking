@@ -213,7 +213,7 @@ export function CalendarView({
     }
 
     return {
-      className: baseClass + "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-100 dark:border-slate-700 shadow-sm border-l-4",
+      className: baseClass + "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 shadow-sm border-l-4",
       style: { borderLeftColor: event.color || "#6366f1" }
     };
   };
@@ -227,7 +227,7 @@ export function CalendarView({
 
     return (
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-700">
+        <div className="grid grid-cols-7 border-b border-slate-300 dark:border-slate-600">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <div key={day} className="py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest bg-slate-50/30 dark:bg-slate-900/50">
               {day}
@@ -240,7 +240,7 @@ export function CalendarView({
             return (
               <div
                 key={idx}
-                className={`p-3 border-r border-b border-slate-100 dark:border-slate-700 last:border-r-0 relative transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 ${
+                className={`p-3 border-r border-b border-slate-200 dark:border-slate-700 last:border-r-0 relative transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 ${
                   !isSameMonth(day, monthStart) ? "bg-slate-50/30 dark:bg-slate-950/30 opacity-40" : ""      
                 }`}
               >
@@ -325,7 +325,7 @@ export function CalendarView({
               return (
                 <div 
                   key={slotIdx} 
-                  className={`flex border-b border-slate-100 dark:border-slate-700 group relative transition-colors ${isClosed ? 'bg-zebra cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-crosshair hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10'}`}
+                  className={`flex border-b border-slate-200 dark:border-slate-700 group relative transition-colors ${isClosed ? 'bg-zebra cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-crosshair hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10'}`}
                   style={{ 
                     height: `${slotHeight}px`,
                     backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined
@@ -334,7 +334,10 @@ export function CalendarView({
                   onDrop={(e) => handleDrop(e, currentSlotTime)}
                   onClick={() => !isClosed && onSlotClick?.(currentSlotTime)}
                 >
-                    <span className={`w-[80px] p-2 text-[10px] whitespace-nowrap uppercase tracking-tight text-left pl-4 border-r border-slate-100 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 ${isMainHour ? 'font-black text-slate-600 dark:text-slate-300' : 'font-bold text-slate-400 dark:text-slate-500'}`}>
+                    <span 
+                      className={`w-[80px] p-2 text-[10px] whitespace-nowrap uppercase tracking-tight text-left pl-4 border-r border-slate-300 dark:border-slate-600 ${isClosed ? 'bg-zebra' : 'bg-white/50 dark:bg-slate-900/50'} ${isMainHour ? 'font-black text-slate-600 dark:text-slate-300' : 'font-bold text-slate-400 dark:text-slate-500'}`}
+                      style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }}
+                    >
                       {format(currentSlotTime, "h:mm a")}
                     </span>
                     <div className="flex-1 relative">
@@ -374,7 +377,7 @@ export function CalendarView({
                  draggable={event.type !== 'blocked'}
                  onDragStart={(e) => handleDragStart(e, event.id)}
                  onDragEnd={handleDragEnd}
-                 className={`absolute left-[90px] right-8 rounded-2xl border p-4 shadow-sm overflow-hidden transition-all hover:scale-[1.01] z-10 cursor-move ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500 ring-offset-2' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}  
+                 className={`absolute left-[90px] right-8 rounded-2xl border p-4 shadow-sm overflow-hidden transition-all hover:scale-[1.01] z-10 cursor-move ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}  
                  style={{
                    top: `${top}px`,
                    height: `${height}px`,
@@ -423,26 +426,29 @@ export function CalendarView({
         <div className="grid" style={{ gridTemplateColumns: '80px repeat(7, 1fr)', minWidth: '800px' }}>
           
           {/* Header Row - Sticky Top */}
-          <div className="sticky top-0 z-50 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center p-4 border-r dark:border-slate-700">
+          <div className="sticky top-0 z-50 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center p-4 border-r border-slate-300 dark:border-slate-600">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Week</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-200">{format(startDate, "w")}</p>
           </div>
           {weekDays.map((day, i) => (
-            <div key={day.toString()} className={`sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-r border-slate-100 dark:border-slate-700 p-4 text-center ${i === 6 ? 'border-r-0' : ''} ${now && isSameDay(day, now) ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}>
+            <div key={day.toString()} className={`sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-r border-slate-200 dark:border-slate-700 p-4 text-center ${i === 6 ? 'border-r-0' : ''} ${now && isSameDay(day, now) ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}>
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{format(day, "EEE")}</p>
                <p className={`text-lg font-black ${now && isSameDay(day, now) ? "text-indigo-600 dark:text-indigo-400" : "text-slate-900 dark:text-slate-200"}`}>{format(day, "d")}</p>
             </div>
           ))}
 
           {/* Time Labels Column - Sticky Left */}
-          <div className="sticky left-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-100 dark:border-slate-700">
+          <div className="sticky left-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-300 dark:border-slate-600">
              {slots.map(slotIdx => {
                const totalMinutes = slotIdx * slotDuration;
                const minute = totalMinutes % 60;
                const isMainHour = minute === 0;
                const currentSlotTime = parse(`${Math.floor(totalMinutes / 60)}:${minute}`, "H:m", new Date());
+               
+               // In Week View, we don't know "isClosed" easily for the time column without checking all days, 
+               // but we will align the background if it ever gets used.
                return (
-                <div key={slotIdx} className={`border-b border-slate-100 dark:border-slate-700 p-2 text-[10px] whitespace-nowrap uppercase tracking-tight text-left pl-3 flex items-center ${isMainHour ? 'font-black text-slate-600 dark:text-slate-300' : 'font-bold text-slate-400 dark:text-slate-500'}`} style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className={`border-b border-slate-200 dark:border-slate-700 p-2 text-[10px] whitespace-nowrap uppercase tracking-tight text-left pl-3 flex items-center ${isMainHour ? 'font-black text-slate-600 dark:text-slate-300' : 'font-bold text-slate-400 dark:text-slate-500'}`} style={{ height: `${slotHeight}px` }}>
                   {format(currentSlotTime, "h:mm a")}
                 </div>
                );
@@ -456,7 +462,7 @@ export function CalendarView({
              const bizHours = parsedBizHours?.[dayName];
 
              return (
-               <div key={day.toString()} className={`relative border-r border-slate-100 dark:border-slate-700 ${dayIdx === 6 ? 'border-r-0' : ''}`}>
+               <div key={day.toString()} className={`relative border-r border-slate-200 dark:border-slate-700 ${dayIdx === 6 ? 'border-r-0' : ''}`}>
                   
                   {/* Grid Lines & Background */}
                   <div className="absolute inset-0 z-0">
@@ -473,7 +479,7 @@ export function CalendarView({
                       return (
                         <div 
                           key={slotIdx} 
-                          className={`border-b border-slate-100 dark:border-slate-700 transition-colors group relative ${isClosed ? 'bg-zebra cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-crosshair'}`}
+                          className={`border-b border-slate-200 dark:border-slate-700 transition-colors group relative ${isClosed ? 'bg-zebra cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-crosshair'}`}
                           style={{ 
                             height: `${slotHeight}px`,
                             backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined
@@ -565,12 +571,12 @@ export function CalendarView({
         <div className="grid" style={{ gridTemplateColumns: `80px repeat(${staffList.length}, 1fr)`, minWidth: `${Math.max(800, staffList.length * 200)}px` }}>
           
           {/* Header Row */}
-          <div className="sticky top-0 z-50 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center p-4 border-r dark:border-slate-700">
+          <div className="sticky top-0 z-50 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center p-4 border-r border-slate-300 dark:border-slate-600">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Team</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-200">{staffList.length}</p>
           </div>
           {staffList.map((staff, i) => (
-            <div key={staff.id} className={`sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-r border-slate-100 dark:border-slate-700 p-4 text-center ${i === staffList.length - 1 ? 'border-r-0' : ''}`}>
+            <div key={staff.id} className={`sticky top-0 z-40 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-r border-slate-200 dark:border-slate-700 p-4 text-center ${i === staffList.length - 1 ? 'border-r-0' : ''}`}>
                <div className="flex flex-col items-center gap-2">
                   <div className="h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-black" style={{ backgroundColor: staff.color }}>
                     {staff.name.substring(0, 2).toUpperCase()}
@@ -581,14 +587,14 @@ export function CalendarView({
           ))}
 
           {/* Time Column */}
-          <div className="sticky left-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-100 dark:border-slate-700">
+          <div className="sticky left-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-300 dark:border-slate-600">
              {slots.map(slotIdx => {
                const totalMinutes = slotIdx * slotDuration;
                const minute = totalMinutes % 60;
                const isMainHour = minute === 0;
                const currentSlotTime = parse(`${Math.floor(totalMinutes / 60)}:${minute}`, "H:m", currentDate);
                return (
-                <div key={slotIdx} className={`border-b border-slate-100 dark:border-slate-700 p-2 text-[10px] whitespace-nowrap uppercase tracking-tight text-left pl-3 flex items-center ${isMainHour ? 'font-black text-slate-600 dark:text-slate-300' : 'font-bold text-slate-400 dark:text-slate-500'}`} style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className={`border-b border-slate-200 dark:border-slate-700 p-2 text-[10px] whitespace-nowrap uppercase tracking-tight text-left pl-3 flex items-center ${isMainHour ? 'font-black text-slate-600 dark:text-slate-300' : 'font-bold text-slate-400 dark:text-slate-500'}`} style={{ height: `${slotHeight}px` }}>
                   {format(currentSlotTime, "h:mm a")}
                 </div>
                );
@@ -602,7 +608,7 @@ export function CalendarView({
              const staffDaySchedule = staffAvailability?.[dayName];
 
              return (
-               <div key={staff.id} className={`relative border-r border-slate-100 dark:border-slate-700 ${staffIdx === staffList.length - 1 ? 'border-r-0' : ''}`}>
+               <div key={staff.id} className={`relative border-r border-slate-200 dark:border-slate-700 ${staffIdx === staffList.length - 1 ? 'border-r-0' : ''}`}>
                   
                   {/* Grid Lines */}
                   <div className="absolute inset-0 z-0">
@@ -629,7 +635,7 @@ export function CalendarView({
                       return (
                         <div 
                           key={slotIdx} 
-                          className={`border-b border-slate-100 dark:border-slate-700 transition-colors group relative ${isDisabled ? 'bg-zebra cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-crosshair'}`}
+                          className={`border-b border-slate-200 dark:border-slate-700 transition-colors group relative ${isDisabled ? 'bg-zebra cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-crosshair'}`}
                           style={{ 
                             height: `${slotHeight}px`,
                             backgroundPositionY: isDisabled ? `-${slotIdx * slotHeight}px` : undefined
