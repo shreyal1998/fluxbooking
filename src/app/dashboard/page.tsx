@@ -98,9 +98,10 @@ export default async function DashboardPage() {
             </div>
           )}
           <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">
-            {userRole === "STAFF" ? `Hello, ${session.user?.name.split(' ')[0]}` : `Welcome back, ${session.user?.name}`}
-          </h2>
-          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">
+           {userRole === "STAFF" 
+             ? `Hello, ${(session?.user?.name || 'Team Member').split(' ')[0]}` 
+             : `Welcome back, ${session?.user?.name || 'User'}`}
+          </h2>          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">
             Here's what's happening at <span className="text-indigo-600 dark:text-indigo-400 font-bold decoration-indigo-500/30 underline-offset-4 decoration-2">{tenant?.name}</span> today.
           </p>
         </div>
