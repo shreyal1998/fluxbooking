@@ -24,6 +24,7 @@ import { Logo } from "../logo";
 import { TrialBanner } from "./trial-banner";
 import { CompactThemeToggle } from "./compact-theme-toggle";
 import NProgress from "nprogress";
+import { Portal } from "../ui/portal";
 
 export function DashboardShell({ 
   children,
