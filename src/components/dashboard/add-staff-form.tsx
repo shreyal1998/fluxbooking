@@ -330,14 +330,13 @@ export function AddStaffForm({
                        />
                     </div>
                   </div>
-                  <div className="space-y-3">
                     <div>
                       <input
                         name="password"
                         type="password"
                         onChange={() => clearFieldError("password")}
                         placeholder="Password *"
-                        className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
+                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 ${
                           fieldErrors.password ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                         }`}
                       />
@@ -349,13 +348,12 @@ export function AddStaffForm({
                         type="password"
                         onChange={() => clearFieldError("confirmPassword")}
                         placeholder="Confirm Password *"
-                        className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
+                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 ${
                           fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
                         }`}
                       />
                       <InputError message={fieldErrors.confirmPassword} />
                     </div>
-                  </div>
                </div>
              </div>
           </div>

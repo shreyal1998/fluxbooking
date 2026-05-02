@@ -425,3 +425,66 @@ export async function rejectLeaveRequest(requestId: string) {
     return { error: "Failed to reject request" };
   }
 }
+
+export async function searchGlobal(query: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const tenantId = (session.user as any).tenantId;
+
+  if (!query || query.length < 2) return { results: [] };
+
+  try {
+    const [customers, bookings, staff, services] = await Promise.all([
+      prisma.customer.findMany({
+        where: {
+          tenantId,
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { email: { contains: query, mode: 'insensitive' } },
+            { phone: { contains: query, mode: 'insensitive' } },
+          ]
+        },
+        take: 3
+      }),
+      prisma.booking.findMany({
+        where: {
+          tenantId,
+          OR: [
+            { customerName: { contains: query, mode: 'insensitive' } },
+            { service: { name: { contains: query, mode: 'insensitive' } } },
+          ]
+        },
+        include: { service: true, staff: true },
+        take: 3,
+        orderBy: { startTime: 'desc' }
+      }),
+      prisma.staff.findMany({
+        where: {
+          tenantId,
+          name: { contains: query, mode: 'insensitive' }
+        },
+        take: 3
+      }),
+      prisma.service.findMany({
+        where: {
+          tenantId,
+          name: { contains: query, mode: 'insensitive' }
+        },
+        take: 3
+      })
+    ]);
+
+    const results = [
+      ...customers.map(c => ({ id: c.id, type: 'customer', title: c.name, subtitle: c.email || c.phone, href: '/dashboard/customers' })),
+      ...bookings.map(b => ({ id: b.id, type: 'appointment', title: b.customerName, subtitle: b.service.name + " with " + b.staff.name, href: '/dashboard/appointments' })),
+      ...staff.map(s => ({ id: s.id, type: 'staff', title: s.name, subtitle: 'Team Member', href: '/dashboard/staff' })),
+      ...services.map(s => ({ id: s.id, type: 'service', title: s.name, subtitle: 'Service', href: '/dashboard/services' })),
+    ];
+
+    return { results };
+  } catch (error) {
+    console.error("Global Search Error:", error);
+    return { error: "Failed to perform search" };
+  }
+}

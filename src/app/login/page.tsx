@@ -128,10 +128,10 @@ function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   required
                   onChange={() => clearFieldError("password")}
-                  className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
+                  className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
                     fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                   }`}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="........"
                 />
                 <button
                   type="button"
