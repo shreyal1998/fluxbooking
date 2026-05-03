@@ -36,6 +36,17 @@ function InputError({ message }: { message?: string }) {
   );
 }
 
+interface ManualBookingProps {
+  tenantId: string;
+  services: any[];
+  staff: any[];
+  mode?: "create" | "edit";
+  initialData?: any;
+  onClose?: () => void;
+  inline?: boolean;
+  businessType?: any;
+}
+
 export function ManualBooking({ 
   tenantId, 
   services, 
@@ -45,7 +56,7 @@ export function ManualBooking({
   onClose,
   inline = false,
   businessType
-}: any) {
+}: ManualBookingProps) {
   const labels = getLabels(businessType);
   const [isOpen, setIsOpen] = useState(mode === "edit" || inline);
   const [step, setStep] = useState(mode === "edit" ? 2 : (initialData?.startTime ? 1 : 1));

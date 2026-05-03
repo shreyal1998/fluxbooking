@@ -23,6 +23,7 @@ interface EditStaffFormProps {
   isAdmin: boolean;
   onSuccess?: () => void;
   services: any[];
+  businessType?: any;
 }
 
 const InputError = ({ message }: { message?: string }) => {
