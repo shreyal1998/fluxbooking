@@ -177,8 +177,13 @@ export async function updateService(serviceId: string, formData: FormData) {
 
   const name = formData.get("name") as string;
   const durationMinutes = parseInt(formData.get("duration") as string);
+  const bufferTime = parseInt(formData.get("bufferTime") as string) || 0;
   const price = parseFloat(formData.get("price") as string);
   const color = formData.get("color") as string;
+
+  if (isNaN(durationMinutes) || isNaN(price)) {
+    return { error: "Invalid duration or price format" };
+  }
 
   try {
     await prisma.service.update({
@@ -186,6 +191,7 @@ export async function updateService(serviceId: string, formData: FormData) {
       data: {
         name,
         durationMinutes,
+        bufferTime,
         price,
         color,
       },

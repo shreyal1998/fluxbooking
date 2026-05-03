@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Users, X, Lock, Settings2, Clock, Scissors, Check } from "lucide-react";
+import { Users, X, Lock, Settings2, Clock, Scissors, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { AvailabilityEditor } from "./availability-editor";
 import { EditStaffForm } from "./edit-staff-form";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
+import { Tooltip } from "@/components/ui/tooltip";
+
+import { getLabels } from "@/lib/labels";
 
 interface StaffMember {
   id: string;
@@ -24,19 +27,36 @@ interface StaffListProps {
   staffMembers: StaffMember[];
   currentLimit: number;
   services: any[];
+  businessType?: any;
 }
 
-export function StaffList({ staffMembers, currentLimit, services }: StaffListProps) {
+export function StaffList({ staffMembers, currentLimit, services, businessType }: StaffListProps) {
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [activeTab, setActiveTab] = useState<"profile" | "availability">("profile");
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const labels = getLabels(businessType);
+
   useLockBodyScroll(!!editingStaff);
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStaff = staffMembers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(staffMembers.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {staffMembers.map((member, index) => {
-          const isLocked = index >= currentLimit;
+        {currentStaff.map((member, index) => {
+          // Adjust index for pagination to check limit correctly
+          const actualIndex = indexOfFirstItem + index;
+          const isLocked = actualIndex >= currentLimit;
 
           return (
             <div key={member.id} className={`p-6 rounded-xl border transition-all ${
@@ -54,7 +74,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                       <Lock className="h-5 w-5" />
                     </div>
                   ) : (
-                    <Users className="h-6 w-6" style={{ color: member.color }} />
+                    <labels.staffIcon className="h-6 w-6" style={{ color: member.color }} />
                   )}
                 </div>
                 <div>
@@ -62,7 +82,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                     {member.name}
                     {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded">Locked</span>}
                   </h4>
-                  <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">{isLocked ? "Limit Reached" : member.user?.email || "Staff Member"}</p>
+                  <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">{isLocked ? "Limit Reached" : member.user?.email || labels.staff}</p>
                 </div>
               </div>
 
@@ -88,16 +108,18 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
               )}
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                 {!isLocked ? (
-                  <button 
-                    onClick={() => {
-                      setEditingStaff(member);
-                      setActiveTab("profile");
-                    }}
-                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-2"
-                  >
-                    <Settings2 className="h-3.5 w-3.5" />
-                    Manage Staff
-                  </button>
+                  <Tooltip content={`Configure ${member.name}'s Profile`} position="right">
+                    <button 
+                      onClick={() => {
+                        setEditingStaff(member);
+                        setActiveTab("profile");
+                      }}
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-2"
+                    >
+                      <Settings2 className="h-3.5 w-3.5" />
+                      Manage {labels.staff}
+                    </button>
+                  </Tooltip>
                 ) : (
                   <span className="text-xs font-medium text-slate-400">Inactive on current plan</span>
                 )}
@@ -106,6 +128,42 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
           );
         })}
       </div>
+
+      {/* Pagination Footer */}
+      {staffMembers.length > itemsPerPage && (
+        <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, staffMembers.length)}</span> of <span className="text-slate-900 dark:text-white">{staffMembers.length}</span> {labels.staffLower}s
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <Tooltip content="Previous Page" position="top">
+              <button
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </Tooltip>
+
+            <div className="flex items-center gap-1 px-3">
+              <span className="text-[10px] font-black text-slate-900 dark:text-white">PAGE {currentPage}</span>
+              <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+            </div>
+
+            <Tooltip content="Next Page" position="top">
+              <button
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+      )}
 
       {/* Management Modal */}
       {editingStaff && (
@@ -124,10 +182,10 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                     className="h-10 w-10 rounded-full flex items-center justify-center border-2"
                     style={{ borderColor: editingStaff.color, backgroundColor: `${editingStaff.color}10` }}
                   >
-                    <Users className="h-5 w-5" style={{ color: editingStaff.color }} />
+                    <labels.staffIcon className="h-5 w-5" style={{ color: editingStaff.color }} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Manage Staff</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Manage {labels.staff}</h3>
                     <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Configuring {editingStaff.name}</p>
                   </div>
                 </div>
@@ -172,6 +230,7 @@ export function StaffList({ staffMembers, currentLimit, services }: StaffListPro
                     isAdmin={true} 
                     onSuccess={() => setEditingStaff(null)} 
                     services={services}
+                    businessType={businessType}
                   />
                 ) : (
                   <AvailabilityEditor 

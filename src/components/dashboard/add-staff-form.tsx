@@ -5,21 +5,28 @@ import { UserPlus, AlertCircle, Loader2, Search, ChevronDown, Scissors, Check } 
 import { addStaff } from "@/app/actions/dashboard";
 import { COUNTRIES } from "@/config/countries";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { getLabels } from "@/lib/labels";
 
 export function AddStaffForm({ 
   users, 
   services, 
-  onSuccess 
+  onSuccess,
+  businessType
 }: { 
   users: any[], 
   services: any[], 
-  onSuccess?: () => void 
+  onSuccess?: () => void,
+  businessType?: any
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [showPasswordField, setShowPasswordField] = useState(true);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+
+  const labels = getLabels(businessType);
   
   // Country Code State
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -101,7 +108,7 @@ export function AddStaffForm({
     const confirmPassword = formData.get("confirmPassword") as string;
 
     const errors: Record<string, string> = {};
-    if (!name) errors.name = "Team member name is required";
+    if (!name) errors.name = `${labels.staff} name is required`;
     
     if (!userId) {
       if (!email) errors.email = "Email is required for new account";
@@ -131,7 +138,8 @@ export function AddStaffForm({
       toast.error(result.error);
       setLoading(false);
     } else {
-      toast.success("Team member added successfully!");
+      toast.success(`${labels.staff} added successfully!`);
+      router.refresh();
       (e.target as HTMLFormElement).reset();
       setFieldErrors({});
       setGeneralError(null);
@@ -170,7 +178,7 @@ export function AddStaffForm({
             type="text"
             required
             onChange={() => clearFieldError("name")}
-            placeholder="e.g., Sarah Smith"
+            placeholder={labels.staffPlaceholder}
             className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
               fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
             }`}
@@ -362,8 +370,8 @@ export function AddStaffForm({
         {/* Service Selection */}
         <div>
           <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 flex items-center gap-2">
-            <Scissors className="h-3.5 w-3.5" />
-            Assigned Services
+            <labels.serviceIcon className="h-3.5 w-3.5" />
+            Assigned {labels.service}s
           </label>
           <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-hide">
             {services?.map((service: any) => (
@@ -387,7 +395,7 @@ export function AddStaffForm({
           </div>
           {services.length === 0 && (
             <p className="text-[10px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-100 dark:border-slate-700">
-              No services created yet.
+              No {labels.serviceLower}s created yet.
             </p>
           )}
         </div>
@@ -397,7 +405,7 @@ export function AddStaffForm({
           <textarea
             name="bio"
             rows={2}
-            placeholder="e.g., Expert colorist"
+            placeholder={`Describe this ${labels.staffLower}'s expertise...`}
             className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
           />
         </div>
@@ -410,7 +418,7 @@ export function AddStaffForm({
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
               <Check className="h-5 w-5" />
-              Add Member
+              Add {labels.staff}
             </>
           )}
         </button>

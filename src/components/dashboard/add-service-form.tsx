@@ -4,11 +4,16 @@ import { useState } from "react";
 import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2, Check } from "lucide-react";
 import { addService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { getLabels } from "@/lib/labels";
 
-export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
+export function AddServiceForm({ onSuccess, businessType }: { onSuccess?: () => void, businessType?: any }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  const labels = getLabels(businessType);
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -31,7 +36,7 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
     const price = formData.get("price") as string;
 
     const errors: Record<string, string> = {};
-    if (!name) errors.name = "Service name is required";
+    if (!name) errors.name = `${labels.service} name is required`;
     if (!duration) errors.duration = "Duration is required";
     if (!price) errors.price = "Price is required";
 
@@ -48,7 +53,8 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
       toast.error(result.error);
       setLoading(false);
     } else {
-      toast.success("Service created successfully!");
+      toast.success(`${labels.service} created successfully!`);
+      router.refresh();
       (e.target as HTMLFormElement).reset();
       setFieldErrors({});
       setGeneralError(null);
@@ -78,14 +84,14 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <div>
           <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-            Service Name <span className="text-rose-500">*</span>
+            {labels.service} Name <span className="text-rose-500">*</span>
           </label>
           <input
             name="name"
             type="text"
             required
             onChange={() => clearFieldError("name")}
-            placeholder="e.g., Haircut & Style"
+            placeholder={labels.servicePlaceholder}
             className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
               fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
             }`}
@@ -180,7 +186,7 @@ export function AddServiceForm({ onSuccess }: { onSuccess?: () => void }) {
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
               <Check className="h-5 w-5" />
-              Create Service
+              Create {labels.service}
             </>
           )}
         </button>

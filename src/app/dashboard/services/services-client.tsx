@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check } from "lucide-react";
+import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { AddServiceForm } from "@/components/dashboard/add-service-form";
 import { updateService, deleteService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
 import { getLabels } from "@/lib/labels";
 import { useRouter } from "next/navigation";
+import { Tooltip } from "@/components/ui/tooltip";
 
 export function ServicesClient({ 
   initialServices, 
@@ -21,7 +22,38 @@ export function ServicesClient({
 }) {
   const router = useRouter();
   const [services, setServices] = useState(initialServices);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Sync state when initialServices changes (e.g. after router.refresh())
+  useEffect(() => {
+    setServices(initialServices);
+  }, [initialServices]);
+
+  // Reset to page 1 if services change (e.g. after a delete)
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(services.length / itemsPerPage));
+    if (currentPage > maxPage) {
+      setCurrentPage(maxPage);
+    }
+  }, [services.length]);
+
   const labels = getLabels(businessType);
+  
+  // Pagination Calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = services.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(services.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    const tableElement = document.getElementById("services-table");
+    if (tableElement) {
+      tableElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const [editingService, setEditingService] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -107,32 +139,38 @@ export function ServicesClient({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
-        <div>
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">{labels.service}s</h2>
-          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">Manage the services your business offers to clients.</p>
+    <div className="flex-1 flex flex-col animate-fade-in">
+      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+        
+        {/* Unified Dashboard Header */}
+        <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.service}s</h2>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {userRole === "ADMIN" && (
+              <Tooltip content={`Add New ${labels.service}`} position="bottom">
+                <button 
+                  onClick={() => {
+                    setFieldErrors({});
+                    setIsAddModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add
+                </button>
+              </Tooltip>
+            )}
+          </div>
         </div>
-        {userRole === "ADMIN" && (
-          <button 
-            onClick={() => {
-              setFieldErrors({});
-              setIsAddModalOpen(true);
-            }}
-            className="flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-medium text-sm shadow-xl shadow-indigo-100 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10"
-          >
-            <Plus className="h-5 w-5" />
-            Add Service
-          </button>
-        )}
-      </div>
 
-      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-0">
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 p-10 pt-8" id="services-table">
           {services.length === 0 ? (
             <div className="bg-slate-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
-              <Scissors className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
-              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No services added yet. Create your first service to start taking bookings.</p>
+              <labels.serviceIcon className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
+              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No {labels.serviceLower}s added yet. Create your first {labels.serviceLower} to start taking bookings.</p>
               {userRole === "ADMIN" && (
                 <button 
                   onClick={() => {
@@ -141,56 +179,108 @@ export function ServicesClient({
                   }}
                   className="mt-8 px-8 py-4 bg-indigo-600 text-white rounded-2xl font-medium text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10"
                 >
-                  Add Your First Service
+                  Add Your First {labels.service}
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {services?.map((service) => (
-                <div key={service.id} className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-8 group hover:border-indigo-200 dark:hover:border-indigo-900 transition-all relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-2 h-full" style={{ backgroundColor: service.color }}></div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">{service.name}</h4>
-                      <div className="flex items-center gap-3 mt-2">
-                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" /> {service.durationMinutes} min
-                        </p>
-                        {service.bufferTime > 0 && (
-                          <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-medium uppercase tracking-widest border border-indigo-100 dark:border-indigo-800">
-                            +{service.bufferTime}m buffer
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {userRole === "ADMIN" && (
-                      <button 
-                        onClick={() => {
-                          setFieldErrors({});
-                          setEditingService(service);
-                        }}
-                        className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2">
-                       <div className="w-4 h-4 rounded-lg shadow-sm border border-white/20" style={{ backgroundColor: service.color }}></div>
-                       <span className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest opacity-40">Brand Color</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-0.5 opacity-40">Price</p>
-                      <span className="text-lg font-medium text-indigo-600 dark:text-indigo-400">${service.price.toString()}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                   <thead>
+                     <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                       <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.service} Name</th>
+                       <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Duration & Buffer</th>
+                       <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Price</th>
+                       <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                     {currentItems?.map((service) => (
+                       <tr key={service.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                         <td className="px-8 py-5 whitespace-nowrap">
+                           <div className="flex items-center gap-4">
+                             <div className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: service.color }}></div>
+                             <p className="text-sm font-bold text-slate-900 dark:text-white">{service.name}</p>
+                           </div>
+                         </td>
+                         <td className="px-8 py-5 whitespace-nowrap">
+                           <div className="flex items-center gap-3">
+                             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+                               <Clock className="h-3.5 w-3.5" />
+                               {service.durationMinutes}m
+                             </div>
+                             {service.bufferTime > 0 && (
+                               <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-tight border border-indigo-100 dark:border-indigo-800/50">
+                                 +{service.bufferTime}m buffer
+                               </span>
+                             )}
+                           </div>
+                         </td>
+                         <td className="px-8 py-5 whitespace-nowrap">
+                            <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">${service.price.toString()}</span>
+                         </td>
+                         <td className="px-8 py-5 whitespace-nowrap text-right">
+                            {userRole === "ADMIN" && (
+                              <div className="flex items-center justify-end gap-2">
+                                <Tooltip content={`Edit ${labels.service}`} position="bottom">
+                                  <button 
+                                    onClick={() => {
+                                      setFieldErrors({});
+                                      setEditingService(service);
+                                    }}
+                                    className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                </Tooltip>
+                              </div>
+                            )}
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
             </div>
           )}
         </div>
+
+        {/* Pagination Footer - At bottom of main card */}
+        {services.length > itemsPerPage && (
+          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, services.length)}</span> of <span className="text-slate-900 dark:text-white">{services.length}</span> {labels.serviceLower}s
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <Tooltip content="Previous Page" position="top">
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              </Tooltip>
+
+              <div className="flex items-center gap-1 px-3">
+                <span className="text-[10px] font-black text-slate-900 dark:text-white">PAGE {currentPage}</span>
+                <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+              </div>
+
+              <Tooltip content="Next Page" position="top">
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Service Modal */}
@@ -203,13 +293,13 @@ export function ServicesClient({
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">Add New Service</h3>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Add New {labels.service}</h3>
                 <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                   <X className="h-4 w-4 text-slate-400" />
                 </button>
               </div>
               <div className="max-h-[80vh] overflow-y-auto">
-                <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} />
+                <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} businessType={businessType} />
               </div>
             </div>
           </div>
@@ -226,7 +316,7 @@ export function ServicesClient({
              />
              <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                   <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit Service</h3>
+                   <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit {labels.service}</h3>
                    <button onClick={closeEditModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
                    </button>
@@ -236,7 +326,7 @@ export function ServicesClient({
                   <form onSubmit={handleUpdate} className="space-y-6" noValidate>
                     <div>
                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                        Service Name <span className="text-rose-500">*</span>
+                        {labels.service} Name <span className="text-rose-500">*</span>
                       </label>
                       <input
                         name="name"
@@ -244,6 +334,7 @@ export function ServicesClient({
                         required
                         defaultValue={editingService.name}
                         onChange={() => clearFieldError("name")}
+                        placeholder={labels.servicePlaceholder}
                         className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
                           fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
                         }`}
@@ -256,26 +347,34 @@ export function ServicesClient({
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
                           Duration (min) <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          name="duration"
-                          type="number"
-                          required
-                          defaultValue={editingService.durationMinutes}
-                          onChange={() => clearFieldError("duration")}
-                          className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                            fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
-                          }`}
-                        />
+                        <div className="relative">
+                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input
+                            name="duration"
+                            type="number"
+                            required
+                            defaultValue={editingService.durationMinutes}
+                            onChange={() => clearFieldError("duration")}
+                            placeholder="30"
+                            className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
+                              fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+                            }`}
+                          />
+                        </div>
                         <InputError message={fieldErrors.duration} />
                       </div>
                       <div>
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer (min)</label>
-                        <input
-                          name="bufferTime"
-                          type="number"
-                          defaultValue={editingService.bufferTime}
-                          className="w-full rounded-2xl border-2 border-slate-100 dark:border-slate-700 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
-                        />
+                        <div className="relative">
+                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input
+                            name="bufferTime"
+                            type="number"
+                            defaultValue={editingService.bufferTime}
+                            placeholder="10"
+                            className="w-full pl-11 rounded-2xl border-2 border-slate-100 dark:border-slate-700 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -283,17 +382,21 @@ export function ServicesClient({
                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
                         Price ($) <span className="text-rose-500">*</span>
                       </label>
-                      <input
-                        name="price"
-                        type="number"
-                        step="0.01"
-                        required
-                        defaultValue={editingService.price.toString()}
-                        onChange={() => clearFieldError("price")}
-                        className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                          fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
-                        }`}
-                      />
+                      <div className="relative">
+                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <input
+                          name="price"
+                          type="number"
+                          step="0.01"
+                          required
+                          defaultValue={editingService.price.toString()}
+                          onChange={() => clearFieldError("price")}
+                          placeholder="50.00"
+                          className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
+                            fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+                          }`}
+                        />
+                      </div>
                       <InputError message={fieldErrors.price} />
                     </div>
 
@@ -338,7 +441,7 @@ export function ServicesClient({
                         {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                           <>
                             <Trash2 className="h-4 w-4" />
-                            {confirmDelete ? "Click again to confirm delete" : "Delete Service"}
+                            {confirmDelete ? "Click again to confirm delete" : `Delete ${labels.service}`}
                           </>
                         )}
                       </button>

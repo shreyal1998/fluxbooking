@@ -3,6 +3,8 @@
 import { MapPin, Plus, Trash2, Globe, Building2 } from "lucide-react";
 import { useState } from "react";
 
+import { getLabels } from "@/lib/labels";
+
 interface Location {
   id: string;
   name: string;
@@ -14,10 +16,12 @@ interface Location {
 interface LocationListProps {
   locations: Location[];
   isPro: boolean;
+  businessType?: any;
 }
 
-export function LocationList({ locations: initialLocations, isPro }: LocationListProps) {
+export function LocationList({ locations: initialLocations, isPro, businessType }: LocationListProps) {
   const [locations, setLocations] = useState(initialLocations);
+  const labels = getLabels(businessType);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -65,7 +69,7 @@ export function LocationList({ locations: initialLocations, isPro }: LocationLis
             <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300">
                <Globe className="h-6 w-6" />
             </div>
-            <p className="text-sm font-medium text-slate-500">No locations added yet.</p>
+            <p className="text-sm font-medium text-slate-500">No locations added for this {labels.businessTypeName} yet.</p>
           </div>
         )}
       </div>

@@ -226,7 +226,7 @@ function RegisterContent() {
                     className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
                       fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                     }`}
-                    placeholder="........"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
@@ -251,7 +251,7 @@ function RegisterContent() {
                     className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
                       fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                     }`}
-                    placeholder="........"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
@@ -382,9 +382,9 @@ function RegisterContent() {
                     }`}
                   >
                     <span className={!selectedBusinessType ? "text-slate-400" : ""}>
-                      {selectedBusinessType === "SALON" ? "Salon / Spa" : 
-                       selectedBusinessType === "GYM" ? "Gym / Fitness" : 
-                       selectedBusinessType === "CLINIC" ? "Healthcare & Wellness" : 
+                      {selectedBusinessType === "SALON" ? "Salon & Beauty" : 
+                       selectedBusinessType === "GYM" ? "Fitness & Gym" : 
+                       selectedBusinessType === "CLINIC" ? "Medical & Health" : 
                        "Select Type"}
                     </span>
                     <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${openDropdown === "type" ? "rotate-180" : ""}`} />

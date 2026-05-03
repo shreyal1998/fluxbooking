@@ -22,6 +22,9 @@ import { searchCustomers, addCustomer } from "@/app/actions/customer";
 import { toast } from "sonner";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
+import { Tooltip } from "@/components/ui/tooltip";
+
+import { getLabels } from "@/lib/labels";
 
 function InputError({ message }: { message?: string }) {
   if (!message) return null;
@@ -40,8 +43,10 @@ export function ManualBooking({
   mode = "create", 
   initialData = null,
   onClose,
-  inline = false
+  inline = false,
+  businessType
 }: any) {
+  const labels = getLabels(businessType);
   const [isOpen, setIsOpen] = useState(mode === "edit" || inline);
   const [step, setStep] = useState(mode === "edit" ? 2 : (initialData?.startTime ? 1 : 1));
   const [loading, setLoading] = useState(false);
@@ -83,7 +88,7 @@ export function ManualBooking({
   const [selectedSlot, setSelectedSlot] = useState<any>(initialData?.startTime ? { 
     time: format(new Date(initialData.startTime), "HH:mm"),
     staffId: initialData.staffId,
-    staffName: initialData.staff?.name || "Staff"
+    staffName: initialData.staff?.name || labels.staff
   } : null);
 
   const [customerInfo, setCustomerInfo] = useState({
@@ -159,7 +164,7 @@ export function ManualBooking({
 
     const result = await addCustomer(formData);
     if (result.success) {
-      toast.success("Customer created and selected!");
+      toast.success(`${labels.customer} created and selected!`);
       handleSelectCustomer(result.customer);
     } else {
       if (result.error?.includes("email")) {
@@ -193,7 +198,7 @@ export function ManualBooking({
     }
 
     if (result.success) {
-      toast.success(mode === "edit" ? "Booking updated successfully!" : "Booking created successfully!");
+      toast.success(mode === "edit" ? `${labels.appointment} updated successfully!` : `${labels.appointment} created successfully!`);
       handleClose();
     } else {
       toast.error(result.error);
@@ -224,7 +229,7 @@ export function ManualBooking({
                     </div>
                     <div>
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                        {mode === 'edit' ? 'Edit Booking' : 'Add Booking'}
+                        {mode === 'edit' ? `Edit ${labels.appointment}` : `Add ${labels.appointment}`}
                         </h2>
                         <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Step {step} of 3</p>
                     </div>
@@ -243,9 +248,9 @@ export function ManualBooking({
             <div className="space-y-6">
                 <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    Select Service
+                    Select {labels.service}
                 </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Which service is the customer booking?</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Which {labels.serviceLower} is the {labels.customerLower} booking?</p>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                 {services?.map((service: any) => (
@@ -283,7 +288,7 @@ export function ManualBooking({
                     <div className="w-1.5 h-4 rounded-full" style={{ backgroundColor: selectedService?.color }}></div>
                     <span className="text-sm font-bold text-slate-900 dark:text-white">{selectedService?.name}</span>
                 </div>
-                <button onClick={() => setStep(1)} className="text-xs font-bold text-indigo-600 hover:underline">Change Service</button>
+                <button onClick={() => setStep(1)} className="text-xs font-bold text-indigo-600 hover:underline">Change {labels.service}</button>
                 </div>
                 <div>
                     <h3 className="text-lg font-black text-slate-900 dark:text-white">Select Date & Time</h3>
@@ -352,7 +357,7 @@ export function ManualBooking({
                 <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between">
                     <div className="flex flex-wrap gap-6">
                         <div>
-                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Service</p>
+                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">{labels.service}</p>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedService?.name}</p>
                         </div>
                         <div>
@@ -369,13 +374,13 @@ export function ManualBooking({
                 <div className="space-y-6">
                 {!customerInfo.id && !isAddingNewCustomer ? (
                     <div className="space-y-4">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Search Customer</label>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Search {labels.customer}</label>
                     <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <input 
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
-                        placeholder="Start typing name or email..."
+                        placeholder={`Start typing ${labels.customerLower} name or email...`}
                         className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         />
                     </div>
@@ -404,13 +409,13 @@ export function ManualBooking({
                         onClick={() => setIsAddingNewCustomer(true)}
                         className="w-full py-4 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
                     >
-                        <UserPlus className="h-4 w-4" /> Add New Customer Instead
+                        <UserPlus className="h-4 w-4" /> Add New {labels.customer} Instead
                     </button>
                     </div>
                 ) : isAddingNewCustomer ? (
                     <form onSubmit={handleCreateNewCustomer} className="space-y-4 animate-fade-in" noValidate>
                     <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">New Customer Details</h4>
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">New {labels.customer} Details</h4>
                         <button type="button" onClick={() => setIsAddingNewCustomer(false)} className="text-[10px] font-bold text-indigo-600">Back to search</button>
                     </div>
                     <div>
@@ -438,7 +443,7 @@ export function ManualBooking({
                     </div>
                     <input name="phone" placeholder="Phone Number (Optional)" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
                     <button type="submit" disabled={loading} className="w-full py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all">
-                        {loading ? "Creating..." : "Create & Select Customer"}
+                        {loading ? "Creating..." : `Create & Select ${labels.customer}`}
                     </button>
                     </form>
                 ) : (
@@ -470,7 +475,7 @@ export function ManualBooking({
                     >
                         {loading ? "Saving..." : (
                         <>
-                            {mode === 'edit' ? 'Update Booking' : 'Confirm Booking'} <ArrowRight className="h-4 w-4" />
+                            {mode === 'edit' ? `Update ${labels.appointment}` : `Confirm ${labels.appointment}`} <ArrowRight className="h-4 w-4" />
                         </>
                         )}
                     </button>
@@ -487,13 +492,15 @@ export function ManualBooking({
   return (
     <>
       {mode === "create" && (
-        <button 
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10"
-        >
-          <Plus className="h-4 w-4" />
-          Add Booking
-        </button>
+        <Tooltip content={`Add New ${labels.appointment}`} position="bottom">
+          <button 
+            onClick={() => setIsOpen(true)}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+        </Tooltip>
       )}
 
       {isOpen && (

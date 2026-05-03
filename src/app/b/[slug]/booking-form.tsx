@@ -21,6 +21,8 @@ import { createBooking, rescheduleBookingByCustomer } from "@/app/actions/bookin
 import { toast } from "sonner";
 import { LiquidLoader } from "@/components/ui/liquid-loader";
 
+import { getLabels } from "@/lib/labels";
+
 interface Service {
   id: string;
   name: string;
@@ -51,13 +53,16 @@ export function BookingForm({
   tenantId, 
   services, 
   staff,
-  primaryColor = "#6366f1"
+  primaryColor = "#6366f1",
+  businessType
 }: { 
   tenantId: string; 
   services: Service[]; 
   staff: Staff[];
   primaryColor?: string;
+  businessType?: any;
 }) {
+  const labels = getLabels(businessType);
   const searchParams = useSearchParams();
   const rescheduleId = searchParams.get("reschedule");
   const isRescheduling = !!rescheduleId;
@@ -153,7 +158,7 @@ export function BookingForm({
       );
       setSubmitting(false);
       if (result.success) {
-        toast.success("Appointment rescheduled successfully!");
+        toast.success(`${labels.appointment} rescheduled successfully!`);
         setSuccess(true);
       } else {
         toast.error(result.error);
@@ -170,7 +175,7 @@ export function BookingForm({
       setSubmitting(false);
 
       if (result.success) {
-        toast.success("Booking confirmed! Please check your email.");
+        toast.success(`${labels.appointment} confirmed! Please check your email.`);
         setSuccess(true);
       } else {
         toast.error(result.error);
@@ -185,12 +190,12 @@ export function BookingForm({
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-3xl font-black text-slate-900">{isRescheduling ? "Update Successful!" : "Booking Confirmed!"}</h3>
+          <h3 className="text-3xl font-black text-slate-900">{isRescheduling ? "Update Successful!" : `${labels.appointment} Confirmed!`}</h3>
           <p className="text-slate-500 font-medium">We've sent a confirmation email with all the details.</p>
         </div>
         <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 text-left max-w-sm mx-auto">
            <div className="flex justify-between mb-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Service</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{labels.service}</span>
               <span className="text-sm font-bold text-slate-900">{selectedService?.name}</span>
            </div>
            <div className="flex justify-between mb-2">
@@ -198,7 +203,7 @@ export function BookingForm({
               <span className="text-sm font-bold text-slate-900">{format(selectedDate, "MMM d")} at {selectedSlot?.time}</span>
            </div>
            <div className="flex justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Staff</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{labels.staff}</span>
               <span className="text-sm font-bold text-slate-900">{selectedSlot?.staffName}</span>
            </div>
         </div>
@@ -207,7 +212,7 @@ export function BookingForm({
           className="text-sm font-bold transition-colors"
           style={{ color: primaryColor }}
         >
-          {isRescheduling ? "Back to booking" : "Book another appointment"}
+          {isRescheduling ? `Back to ${labels.appointmentLower}` : `Book another ${labels.appointmentLower}`}
         </button>
       </div>
     );
@@ -252,9 +257,9 @@ export function BookingForm({
           <div className="space-y-8 animate-fade-in">
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <Sparkles className="h-6 w-6" style={{ color: primaryColor }} /> {isRescheduling ? "Confirm Service" : "Select a Service"}
+                <Sparkles className="h-6 w-6" style={{ color: primaryColor }} /> {isRescheduling ? `Confirm ${labels.service}` : `Select a ${labels.service}`}
               </h2>
-              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? "Verify the service for your new appointment time." : "Choose the service you'd like to book."}</p>
+              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? `Verify the ${labels.serviceLower} for your new ${labels.appointmentLower} time.` : `Choose the ${labels.serviceLower} you'd like to book.`}</p>
             </div>
             <div className="grid gap-4">
               {services.map((service) => (
@@ -302,7 +307,7 @@ export function BookingForm({
               onClick={() => setStep(1)}
               className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors mb-2"
             >
-              <ChevronLeft className="h-4 w-4" /> Back to services
+              <ChevronLeft className="h-4 w-4" /> Back to {labels.serviceLower}s
             </button>
             
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -319,7 +324,7 @@ export function BookingForm({
                     selectedStaffId === "any" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                   }`}
                  >
-                   Any Staff
+                   Any {labels.staff}
                  </button>
                  {filteredStaff.map(s => (
                    <button 
@@ -395,7 +400,7 @@ export function BookingForm({
               </div>
             ) : (
               <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-100">
-                <p className="text-slate-500 font-medium">No slots available for this day. Try another date or staff member!</p>
+                <p className="text-slate-500 font-medium">No slots available for this day. Try another date or {labels.staffLower} member!</p>
               </div>
             )}
           </div>
@@ -412,7 +417,7 @@ export function BookingForm({
 
             <div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase tracking-tighter">{isRescheduling ? "Confirm Change" : "Your Details"}</h2>
-              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? "Verify your new appointment details." : "Review and confirm your appointment."}</p>
+              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? `Verify your new ${labels.appointmentLower} details.` : `Review and confirm your ${labels.appointmentLower}.`}</p>
             </div>
 
             <div className="bg-opacity-5 rounded-3xl p-6 border space-y-4" style={{ backgroundColor: `${primaryColor}05`, borderColor: `${primaryColor}20` }}>
@@ -421,7 +426,7 @@ export function BookingForm({
                      <Users className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500" style={{ color: `${primaryColor}cc` }}>{isRescheduling ? "Updated Service" : "Appointment"}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500" style={{ color: `${primaryColor}cc` }}>{isRescheduling ? `Updated ${labels.service}` : labels.appointment}</p>
                     <p className="font-bold text-slate-900">{selectedService?.name} with {selectedSlot?.staffName}</p>
                   </div>
                </div>
@@ -483,11 +488,11 @@ export function BookingForm({
                 {submitting ? (
                   <>
                     <Loader2 className="h-6 w-6 animate-spin" /> 
-                    <span>Updating Appointment...</span>
+                    <span>Updating {labels.appointment}...</span>
                   </>
                 ) : (
                   <>
-                    <span>{isRescheduling ? "Confirm New Time" : "Confirm Booking"}</span>
+                    <span>{isRescheduling ? "Confirm New Time" : `Confirm ${labels.appointment}`}</span>
                     <ArrowRight className="h-5 w-5" />
                   </>
                 )}

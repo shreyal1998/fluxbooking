@@ -15,13 +15,19 @@ import {
   RotateCcw,
   Archive,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { updateCustomer, toggleCustomerStatus } from "@/app/actions/customer";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { getLabels } from "@/lib/labels";
+import { Tooltip } from "@/components/ui/tooltip";
 
 const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -33,8 +39,17 @@ const InputError = ({ message }: { message?: string }) => {
   );
 };
 
-export function CustomerList({ initialCustomers, userRole }: { initialCustomers: any[], userRole: string }) {
+export function CustomerList({ initialCustomers, userRole, businessType }: { initialCustomers: any[], userRole: string, businessType?: any }) {
+  const router = useRouter();
   const [customers, setCustomers] = useState(initialCustomers);
+
+  const labels = getLabels(businessType);
+
+  // Sync state when initialCustomers changes (e.g. after router.refresh())
+  useEffect(() => {
+    setCustomers(initialCustomers);
+  }, [initialCustomers]);
+
   const [search, setSearch] = useState("");
   // Admin starts with ACTIVE filter, Staff is locked to ACTIVE
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ACTIVE");
@@ -44,6 +59,10 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
   const [archiveReason, setArchiveReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useLockBodyScroll(!!editingCustomer || !!archivingCustomer);
 
@@ -59,6 +78,19 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
     if (statusFilter === "ALL") return matchesSearch;
     return matchesSearch && c.status === statusFilter;
   });
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCustomers = filteredCustomers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -78,7 +110,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
     const email = formData.get("email") as string;
 
     const errors: Record<string, string> = {};
-    if (!name) errors.name = "Customer name is required";
+    if (!name) errors.name = `${labels.customer} name is required`;
     if (!email) errors.email = "Email is required";
 
     if (Object.keys(errors).length > 0) {
@@ -90,14 +122,8 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
     const result = await updateCustomer(editingCustomer.id, formData);
     
     if (result.success) {
-      toast.success("Customer updated successfully!");
-      setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? { ...c, 
-        name: formData.get('name'), 
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        notes: formData.get('notes'),
-        status: formData.get('status')
-      } : c));
+      toast.success(`${labels.customer} updated successfully!`);
+      router.refresh();
       setEditingCustomer(null);
     } else {
       if (result.error?.includes("email")) {
@@ -115,8 +141,8 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
       const result = await toggleCustomerStatus(id, newStatus, reason);
       
       if (result.success) {
-          toast.success(newStatus === 'ACTIVE' ? "Customer restored successfully!" : "Customer archived successfully!");
-          setCustomers(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+          toast.success(newStatus === 'ACTIVE' ? `${labels.customer} restored successfully!` : `${labels.customer} archived successfully!`);
+          router.refresh();
           setArchivingCustomer(null);
           setArchiveReason("");
       } else {
@@ -140,7 +166,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input 
             type="text"
-            placeholder="Search customers..."
+            placeholder={`Search ${labels.customerLower}s...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none dark:text-white"
@@ -171,7 +197,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
               <tr>
-                <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Customer</th>
+                <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">{labels.customer}</th>
                 <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Contact Details</th>
                 {userRole === "ADMIN" && (
                   <th className="px-8 py-5 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest">Status</th>
@@ -180,7 +206,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredCustomers.map((customer) => (
+              {currentCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                   <td className="px-8 py-5 whitespace-nowrap">
                     <div className="flex items-center gap-4">
@@ -228,34 +254,40 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       
                       {customer.status === 'ACTIVE' ? (
-                          <button 
-                            onClick={() => handleArchiveRequest(customer)}
-                            disabled={processingId === customer.id}
-                            className="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-100"
-                            title="Archive Customer"
-                          >
-                            <Archive className="h-4 w-4" />
-                          </button>
+                          <Tooltip content={`Archive ${labels.customer}`} position="bottom">
+                            <button 
+                              onClick={() => handleArchiveRequest(customer)}
+                              disabled={processingId === customer.id}
+                              className="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-100"
+                              title=""
+                            >
+                              <Archive className="h-4 w-4" />
+                            </button>
+                          </Tooltip>
                       ) : (
                         userRole === "ADMIN" && (
-                          <button 
-                            onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
-                            disabled={processingId === customer.id}
-                            className="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100"
-                            title="Set Active"
-                          >
-                            <UserCheck className="h-4 w-4" />
-                          </button>
+                          <Tooltip content={`Restore ${labels.customer}`} position="bottom">
+                            <button 
+                              onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
+                              disabled={processingId === customer.id}
+                              className="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100"
+                              title=""
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </button>
+                          </Tooltip>
                         )
                       )}
 
-                      <button 
-                        onClick={() => setEditingCustomer(customer)}
-                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                        title="Edit Profile"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      <Tooltip content={`Edit ${labels.customer} Profile`} position="bottom">
+                        <button 
+                          onClick={() => setEditingCustomer(customer)}
+                          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                          title=""
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>
@@ -263,6 +295,42 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {filteredCustomers.length > itemsPerPage && (
+          <div className="px-8 py-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredCustomers.length)}</span> of <span className="text-slate-900 dark:text-white">{filteredCustomers.length}</span> {labels.customerLower}s
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <Tooltip content="Previous Page" position="top">
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              </Tooltip>
+
+              <div className="flex items-center gap-1 px-3">
+                <span className="text-[10px] font-black text-slate-900 dark:text-white">PAGE {currentPage}</span>
+                <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+              </div>
+
+              <Tooltip content="Next Page" position="top">
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+        )}
       </div>
 
       {editingCustomer && (
@@ -274,7 +342,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
              />
              <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                   <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Customer Profile</h3>
+                   <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{labels.customer} Profile</h3>
                    <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
                    </button>
@@ -301,6 +369,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                                 defaultValue={editingCustomer.name} 
                                 required 
                                 onChange={() => clearFieldError("name")}
+                                placeholder={labels.customerPlaceholder}
                                 className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
                                   fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
                                 }`}
@@ -356,7 +425,7 @@ export function CustomerList({ initialCustomers, userRole }: { initialCustomers:
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Archive Customer?</h3>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Archive {labels.customer}?</h3>
                 <p className="text-sm text-slate-900 dark:text-white font-normal opacity-60 mb-8">
                   Warning: You are moving <span className="font-semibold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive. 
                   They will be hidden from your list. Only an Administrator can restore them.

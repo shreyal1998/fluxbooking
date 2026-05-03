@@ -80,24 +80,24 @@ export default async function DashboardPage() {
   }, 0);
 
   const stats = [
-    { name: labels.service + "s", value: servicesCount, icon: Scissors, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
-    { name: labels.staff + " Team", value: staffCount, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: "Total", hidden: userRole === "STAFF" },
+    { name: labels.service + "s", value: servicesCount, icon: labels.serviceIcon, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
+    { name: labels.staff + " Team", value: staffCount, icon: labels.staffIcon, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: "Total", hidden: userRole === "STAFF" },
     { name: userRole === "STAFF" ? `My Active ${labels.appointment}s` : `Pending ${labels.appointment}s`, value: bookingsCount, icon: CalendarIcon, color: "text-rose-600", bg: "bg-rose-50/50", trend: "Waiting" },
     { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
   ].filter(s => !s.hidden);
 
   return (
-    <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col animate-fade-in p-4 md:p-6 lg:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
           {userRole === "STAFF" && (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 mb-3">
               <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Users className="h-3 w-3" /> Staff Portal
+                <labels.staffIcon className="h-3 w-3" /> Staff Portal
               </span>
             </div>
           )}
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
            {userRole === "STAFF" 
              ? `Hello, ${(session?.user?.name || 'Team Member').split(' ')[0]}` 
              : `Welcome back, ${session?.user?.name || 'User'}`}
@@ -239,9 +239,9 @@ export default async function DashboardPage() {
                   <>
                     <a href="/dashboard/services" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                        <Scissors className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
+                        <labels.serviceIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
-                      <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Services</span>
+                      <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">{labels.service}s</span>
                     </a>
                     <a href="/dashboard/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">

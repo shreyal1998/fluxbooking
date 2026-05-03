@@ -42,6 +42,8 @@ import { Portal } from "@/components/ui/portal";
 import { ManualBooking } from "@/components/dashboard/manual-booking";
 import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
 import { useRouter } from "next/navigation";
+import { getLabels } from "@/lib/labels";
+import { Tooltip } from "@/components/ui/tooltip";
 
 export function AppointmentsClient({ 
   bookings, 
@@ -53,6 +55,7 @@ export function AppointmentsClient({
   tenant
 }: any) {
   const router = useRouter();
+  const labels = getLabels(tenant?.businessType);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">("week");
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
@@ -115,7 +118,7 @@ export function AppointmentsClient({
   };
 
   const getHeaderText = () => {
-    if (viewMode === "list") return "All Appointments";
+    if (viewMode === "list") return `All ${labels.appointment}s`;
     if (!currentDate) return "";
     if (viewMode === "month") return format(currentDate, "MMMM yyyy");
     if (viewMode === "day" || viewMode === "team") return format(currentDate, "d MMMM yyyy");
@@ -201,12 +204,11 @@ export function AppointmentsClient({
   const selectedStaffName = staffFilter === "all" ? "All Staff Members" : staff.find((s: any) => s.id === staffFilter)?.name;
 
   return (
-    <div className="h-full flex flex-col transition-colors p-4 md:p-6 lg:p-8 overflow-hidden">
+    <div className="flex-1 flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Booking Calendar</h1>
-          <p className="text-sm font-normal mt-1 text-slate-500 dark:text-slate-400">Manage your team, venue and appointments</p>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Booking Calendar</h2>
         </div>
         
         <div className="flex items-center gap-3">
@@ -214,6 +216,7 @@ export function AppointmentsClient({
             tenantId={tenantId} 
             services={services} 
             staff={staff} 
+            businessType={tenant?.businessType}
           />
           
           {userRole === "ADMIN" && (
@@ -337,25 +340,29 @@ export function AppointmentsClient({
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                       <button 
-                        onClick={() => setActionType("book")}
-                        className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group"
-                       >
-                          <div className="h-16 w-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                             <Scissors className="h-8 w-8" />
-                          </div>
-                          <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Book Appointment</span>
-                       </button>
+                       <Tooltip content={`Schedule a new ${labels.appointment}`} position="top">
+                         <button 
+                          onClick={() => setActionType("book")}
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                         >
+                            <div className="h-16 w-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                               <labels.serviceIcon className="h-8 w-8" />
+                            </div>
+                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Add</span>
+                         </button>
+                       </Tooltip>
 
-                       <button 
-                        onClick={() => setActionType("block")}
-                        className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group"
-                       >
-                          <div className="h-16 w-16 rounded-3xl bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                             <Ban className="h-8 w-8" />
-                          </div>
-                          <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Block Time</span>
-                       </button>
+                       <Tooltip content="Block specific time on calendar" position="top">
+                         <button 
+                          onClick={() => setActionType("block")}
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                         >
+                            <div className="h-16 w-16 rounded-3xl bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                               <Ban className="h-8 w-8" />
+                            </div>
+                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Block Time</span>
+                         </button>
+                       </Tooltip>
                     </div>
 
                     <button 
@@ -379,6 +386,7 @@ export function AppointmentsClient({
                       }}
                       onClose={() => setSelectedSlotInfo(null)}
                       inline={true}
+                      businessType={tenant?.businessType}
                     />
                  </div>
                ) : (
@@ -405,23 +413,29 @@ export function AppointmentsClient({
       )}
 
       {/* Toolbar & Content Card */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-1">
-              <button onClick={prevDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-              </button>
-              <button 
-                onClick={() => setCurrentDate(new Date())} 
-                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors border-x border-slate-200 dark:border-slate-700"
-              >
-                Today
-              </button>
-              <button onClick={nextDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-              </button>
+              <Tooltip content="Previous Period" position="bottom">
+                <button onClick={prevDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                  <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                </button>
+              </Tooltip>
+              <Tooltip content="Jump to Today" position="bottom">
+                <button 
+                  onClick={() => setCurrentDate(new Date())} 
+                  className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors border-x border-slate-200 dark:border-slate-700"
+                >
+                  Today
+                </button>
+              </Tooltip>
+              <Tooltip content="Next Period" position="bottom">
+                <button onClick={nextDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                  <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                </button>
+              </Tooltip>
             </div>
             
             {viewMode !== "list" && (
@@ -471,13 +485,13 @@ export function AppointmentsClient({
         </div>
 
         {/* Main Content Card */}
-        <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
           {viewMode === "list" ? (
             <div className="flex-1 overflow-auto">
               {bookings.length === 0 ? (
                 <div className="p-12 text-center">
                   <CalendarIcon className="h-12 w-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
-                  <p className="text-slate-500 dark:text-slate-200 font-medium">No bookings found yet.</p>
+                  <p className="text-slate-500 dark:text-slate-200 font-medium">No {labels.appointmentLower}s found yet.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">

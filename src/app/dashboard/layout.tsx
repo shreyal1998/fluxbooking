@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   });
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col">
       <DashboardShell session={session} tenant={tenant}>{children}</DashboardShell>
     </div>
   );

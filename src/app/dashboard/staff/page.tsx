@@ -7,6 +7,7 @@ import { StaffList } from "@/components/dashboard/staff-list";
 import { LeaveRequestsManager } from "@/components/dashboard/leave-requests-manager";
 import { TeamHeader } from "@/components/dashboard/team-header";
 import Link from "next/link";
+import { getLabels } from "@/lib/labels";
 
 export default async function StaffPage() {
   const session = await getServerSession(authOptions);
@@ -48,7 +49,7 @@ export default async function StaffPage() {
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { plan: true, planStatus: true }
+      select: { plan: true, planStatus: true, businessType: true }
     }),
     prisma.service.findMany({
       where: { tenantId },
@@ -56,6 +57,7 @@ export default async function StaffPage() {
     })
   ]);
 
+  const labels = getLabels(tenant?.businessType);
   const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
   let currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
   if (tenant?.planStatus === "TRIALING" && currentLimit < 5) currentLimit = 5;
@@ -85,8 +87,14 @@ export default async function StaffPage() {
   }));
 
   return (
-    <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
-      <TeamHeader users={users} services={serializedServices} staffMembersCount={staffMembers.length} currentLimit={currentLimit} />
+    <div className="flex-1 flex flex-col animate-fade-in p-4 md:p-6 lg:p-8">
+      <TeamHeader 
+        users={users} 
+        services={serializedServices} 
+        staffMembersCount={staffMembers.length} 
+        currentLimit={currentLimit} 
+        businessType={tenant?.businessType}
+      />
 
       <div className="flex-1 space-y-12 pb-8">
         {/* Plan Limit Warning */}
@@ -98,7 +106,7 @@ export default async function StaffPage() {
               </div>
               <div>
                 <h4 className="font-medium text-amber-900 dark:text-amber-200 text-sm uppercase tracking-tight">Plan Limit Exceeded</h4>
-                <p className="text-xs text-amber-700 dark:text-amber-300 font-normal opacity-80">Your {tenant?.plan === 'FREE' && tenant?.planStatus !== 'TRIALING' ? 'Free' : tenant?.plan} plan allows up to {currentLimit} staff member(s).</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 font-normal opacity-80">Your {tenant?.plan === 'FREE' && tenant?.planStatus !== 'TRIALING' ? 'Free' : tenant?.plan} plan allows up to {currentLimit} {labels.staffLower}(s).</p>
               </div>
             </div>
             <Link href="/dashboard/settings" className="px-8 py-3 bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-700 transition-all shadow-xl shadow-amber-200 dark:shadow-none">
@@ -117,22 +125,25 @@ export default async function StaffPage() {
                 {pendingRequests.length}
               </span>
           </div>
-          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <LeaveRequestsManager initialRequests={requestsWithConflicts} />
+          
+          <div className="w-full">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <LeaveRequestsManager initialRequests={requestsWithConflicts} />
+            </div>
           </div>
-        </div>
 
-        <div className="w-full">
-          {staffMembers.length === 0 ? (
-            <div className="p-24 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
-              <Users className="h-16 w-16 text-slate-200 dark:text-slate-800 mb-6" />
-              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No team members added yet. Add your team to start taking appointments.</p>
-            </div>
-          ) : (
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-8">
-              <StaffList staffMembers={serializedStaff} currentLimit={currentLimit} services={serializedServices} />
-            </div>
-          )}
+          <div className="w-full">
+            {staffMembers.length === 0 ? (
+              <div className="p-24 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
+                <labels.staffIcon className="h-16 w-16 text-slate-200 dark:text-slate-800 mb-6" />
+                <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No {labels.staffLower}s added yet. Add your team to start taking appointments.</p>
+              </div>
+            ) : (
+              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm p-8 overflow-hidden">
+                <StaffList staffMembers={serializedStaff} currentLimit={currentLimit} services={serializedServices} businessType={tenant?.businessType} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

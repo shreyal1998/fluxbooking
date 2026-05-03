@@ -6,6 +6,7 @@ import { updateStaffProfile, deleteStaff } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { getLabels } from "@/lib/labels";
 
 interface EditStaffFormProps {
   staff: {
@@ -34,7 +35,8 @@ const InputError = ({ message }: { message?: string }) => {
   );
 };
 
-export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaffFormProps) {
+export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessType }: EditStaffFormProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -43,6 +45,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
   const [selectedServices, setSelectedServices] = useState<string[]>(
     staff.services?.map(s => s.id) || []
   );
+
+  const labels = getLabels(businessType);
 
   // Clear errors when the staff member changes
   useEffect(() => {
@@ -79,7 +83,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
     const name = formData.get("name") as string;
 
     const errors: Record<string, string> = {};
-    if (isAdmin && !name) errors.name = "Staff name is required";
+    if (isAdmin && !name) errors.name = `${labels.staff} name is required`;
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -98,6 +102,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
       setLoading(false);
     } else {
       toast.success("Profile updated successfully!");
+      router.refresh();
       setLoading(false);
       setFieldErrors({});
       setGeneralError(null);
@@ -121,7 +126,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
       setDeleteLoading(false);
       setConfirmDelete(false);
     } else {
-      toast.success("Staff member removed successfully!");
+      toast.success(`${labels.staff} removed successfully!`);
+      router.refresh();
       setDeleteLoading(false);
       setFieldErrors({});
       setGeneralError(null);
@@ -223,8 +229,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
         {isAdmin && (
           <div className="pt-2">
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-              <Scissors className="h-4 w-4 text-slate-400" />
-              Assigned Services
+              <labels.serviceIcon className="h-4 w-4 text-slate-400" />
+              Assigned {labels.service}s
             </label>
             <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 scrollbar-hide">
               {services?.map((service) => (
@@ -266,7 +272,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
               <h4 className="text-sm">Danger Zone</h4>
             </div>
             <p className="text-xs text-rose-600 dark:text-rose-400/70 mb-4">
-              Deleting this staff member will also remove their historical data and past appointments. This cannot be undone.
+              Deleting this {labels.staffLower} will also remove their historical data and past appointments. This cannot be undone.
             </p>
             <button
               onClick={handleDelete}
@@ -280,7 +286,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services }: EditStaff
               {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
                 <>
                   <Trash2 className="h-4 w-4" />
-                  {confirmDelete ? "Click again to confirm delete" : "Remove Staff Member"}
+                  {confirmDelete ? "Click again to confirm delete" : `Remove ${labels.staff}`}
                 </>
               )}
             </button>

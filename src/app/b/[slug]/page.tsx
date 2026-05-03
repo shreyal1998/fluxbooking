@@ -95,6 +95,7 @@ export default async function PublicBookingPage({
               }))
             })) as any} 
             primaryColor={tenant.primaryColor}
+            businessType={tenant.businessType}
           />
         </div>
 

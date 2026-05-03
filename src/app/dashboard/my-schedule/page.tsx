@@ -8,6 +8,7 @@ import { LeaveRequestForm } from "@/components/dashboard/leave-request-form";
 import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
 import { Clock, Calendar, History, Ban, Sparkles, ChevronRight, User } from "lucide-react";
 import { format, differenceInMinutes, parse, startOfToday, endOfToday } from "date-fns";
+import { getLabels } from "@/lib/labels";
 
 export default async function MySchedulePage() {
   const session = await getServerSession(authOptions);
@@ -16,7 +17,7 @@ export default async function MySchedulePage() {
   const userId = (session.user as any).id;
   const tenantId = (session.user as any).tenantId;
   
-  const [staffProfile, services, nextAppointment] = await Promise.all([
+  const [staffProfile, services, nextAppointment, tenant] = await Promise.all([
     prisma.staff.findUnique({
       where: { userId },
       include: {
@@ -45,6 +46,10 @@ export default async function MySchedulePage() {
         },
         include: { service: true },
         orderBy: { startTime: "asc" }
+    }),
+    prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { businessType: true }
     })
   ]);
 
@@ -63,6 +68,8 @@ export default async function MySchedulePage() {
     );
   }
 
+  const labels = getLabels(tenant?.businessType);
+
   // Calculate total weekly hours
   const availability = typeof staffProfile.availabilityJson === 'string' 
     ? JSON.parse(staffProfile.availabilityJson) 
@@ -79,11 +86,10 @@ export default async function MySchedulePage() {
   const totalHours = Math.floor(totalMinutes / 60);
 
   return (
-    <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col animate-fade-in p-4 md:p-6 lg:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">My Schedule</h2>
-          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">Manage your personal availability and time off.</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">My Schedule</h2>
         </div>
         
         <div className="flex items-center gap-3">
@@ -109,7 +115,7 @@ export default async function MySchedulePage() {
                 </div>
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-6">
-                        <div className="px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Next Appointment</div>
+                        <div className="px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Next {labels.appointment}</div>
                         <span className="text-xs font-bold text-indigo-400">{format(new Date(nextAppointment.startTime), "EEEE, MMM do")}</span>
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -123,7 +129,7 @@ export default async function MySchedulePage() {
                             </div>
                         </div>
                         <a href="/dashboard/appointments" className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-all">
-                            View Bookings
+                            View {labels.appointment}s
                             <ChevronRight className="h-4 w-4" />
                         </a>
                     </div>

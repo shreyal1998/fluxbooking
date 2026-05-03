@@ -13,6 +13,7 @@ import {
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
 import { LocationList } from "@/components/dashboard/location-list";
+import { getLabels } from "@/lib/labels";
 
 type TabType = "business" | "billing" | "appearance" | "security";
 
@@ -34,6 +35,7 @@ export function SettingsClient({
   sessionUser: any 
 }) {
   const [activeTab, setActiveTab] = useState<TabType>("business");
+  const labels = getLabels(tenant?.businessType);
 
   const tabs: Tab[] = [
     { 
@@ -74,7 +76,6 @@ export function SettingsClient({
                 <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-medium text-slate-900 dark:text-white">Business Profile</h3>
-                  <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Core information about your venue.</p>
                 </div>
               </div>
               <div className="p-8 space-y-6">
@@ -93,7 +94,7 @@ export function SettingsClient({
                     <input
                       type="text"
                       disabled
-                      value={tenant?.businessType}
+                      value={labels.businessTypeName}
                       className="block w-full rounded-2xl border-none bg-slate-50/50 dark:bg-slate-800/50 px-5 py-4 text-sm text-slate-900 dark:text-white font-medium"
                     />
                   </div>
@@ -122,6 +123,7 @@ export function SettingsClient({
               <LocationList 
                 locations={tenant?.locations || []} 
                 isPro={tenant?.plan === "PRO"} 
+                businessType={tenant?.businessType}
               />
             )}
           </div>
@@ -196,11 +198,10 @@ export function SettingsClient({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white tracking-tight">Settings</h2>
-          <p className="text-slate-900 dark:text-white font-normal mt-1 opacity-60">Manage your business profile and preferences.</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Settings</h2>
         </div>
       </div>
 
@@ -229,7 +230,7 @@ export function SettingsClient({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-hide px-4">
+      <div className="flex-1 px-4">
         {renderTabContent()}
       </div>
     </div>
