@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { AddServiceForm } from "@/components/dashboard/add-service-form";
 import { updateService, deleteService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ export function ServicesClient({
 }) {
   const router = useRouter();
   const [services, setServices] = useState(initialServices);
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -30,21 +31,30 @@ export function ServicesClient({
     setServices(initialServices);
   }, [initialServices]);
 
-  // Reset to page 1 if services change (e.g. after a delete)
+  const filteredServices = services.filter(s => 
+    s.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Reset to page 1 if search changes
   useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(services.length / itemsPerPage));
+    setCurrentPage(1);
+  }, [search]);
+
+  // Reset to page 1 if filtered services change (e.g. after a delete)
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredServices.length / itemsPerPage));
     if (currentPage > maxPage) {
       setCurrentPage(maxPage);
     }
-  }, [services.length]);
+  }, [filteredServices.length]);
 
   const labels = getLabels(businessType);
   
   // Pagination Calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = services.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(services.length / itemsPerPage);
+  const currentItems = filteredServices.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
 
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -149,6 +159,16 @@ export function ServicesClient({
           </div>
           
           <div className="flex items-center gap-4">
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input 
+                type="text"
+                placeholder={`Search ${labels.serviceLower}s...`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs dark:text-white focus:ring-2 focus:ring-indigo-600/20 transition-all outline-none w-48 lg:w-64"
+              />
+            </div>
             {userRole === "ADMIN" && (
               <Tooltip content={`Add New ${labels.service}`} position="bottom">
                 <button 
@@ -167,11 +187,13 @@ export function ServicesClient({
         </div>
 
         <div className="flex-1 p-10 pt-8" id="services-table">
-          {services.length === 0 ? (
+          {filteredServices.length === 0 ? (
             <div className="bg-slate-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
               <labels.serviceIcon className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
-              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No {labels.serviceLower}s added yet. Create your first {labels.serviceLower} to start taking bookings.</p>
-              {userRole === "ADMIN" && (
+              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">
+                {search ? `No ${labels.serviceLower}s found matching "${search}"` : `No ${labels.serviceLower}s added yet. Create your first ${labels.serviceLower} to start taking bookings.`}
+              </p>
+              {userRole === "ADMIN" && !search && (
                 <button 
                   onClick={() => {
                     setFieldErrors({});
@@ -288,8 +310,7 @@ export function ServicesClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              onClick={() => setIsAddModalOpen(false)}
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
@@ -311,8 +332,7 @@ export function ServicesClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
              <div 
-               onClick={closeEditModal}
-               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
              />
              <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
                 <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">

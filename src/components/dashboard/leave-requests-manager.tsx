@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { approveLeaveRequest, rejectLeaveRequest } from "@/app/actions/dashboard";
 import { Check, X, Clock, Calendar, User, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function LeaveRequestsManager({ initialRequests }: { initialRequests: any[] }) {
+  const router = useRouter();
   const [requests, setRequests] = useState(initialRequests);
   const [processing, setProcessing] = useState<string | null>(null);
+
+  // Sync state when props change (after router.refresh())
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
 
   const handleAction = async (id: string, action: 'approve' | 'reject') => {
     setProcessing(id);
@@ -16,7 +23,7 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
     
     if (result.success) {
       toast.success(action === 'approve' ? "Request approved" : "Request rejected");
-      setRequests(prev => prev.filter(r => r.id !== id));
+      router.refresh();
     } else {
       toast.error(result.error);
     }
@@ -34,7 +41,7 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 transition-colors">
+    <div className="flex flex-col gap-4 transition-colors">
       {requests.map((request) => (
         <div key={request.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-soft group hover:shadow-xl hover:shadow-indigo-500/5 transition-all">
           <div className="flex items-center justify-between mb-4">

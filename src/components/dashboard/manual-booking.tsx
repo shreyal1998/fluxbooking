@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useRouter } from "next/navigation";
 
 import { getLabels } from "@/lib/labels";
 
@@ -57,6 +58,7 @@ export function ManualBooking({
   inline = false,
   businessType
 }: ManualBookingProps) {
+  const router = useRouter();
   const labels = getLabels(businessType);
   const [isOpen, setIsOpen] = useState(mode === "edit" || inline);
   const [step, setStep] = useState(mode === "edit" ? 2 : (initialData?.startTime ? 1 : 1));
@@ -87,8 +89,10 @@ export function ManualBooking({
       staffId,
       initialData?.id
     );
-    if ((result as any).slots) {
-      setAvailableSlots((result as any).slots);
+    if (Array.isArray(result)) {
+      setAvailableSlots(result);
+    } else if (result && 'error' in result) {
+      toast.error(result.error as string);
     }
     setLoading(false);
   };
@@ -210,6 +214,7 @@ export function ManualBooking({
 
     if (result.success) {
       toast.success(mode === "edit" ? `${labels.appointment} updated successfully!` : `${labels.appointment} created successfully!`);
+      router.refresh();
       handleClose();
     } else {
       toast.error(result.error);
@@ -331,30 +336,49 @@ export function ManualBooking({
                     <div className="h-8 w-8 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
                     </div>
                 ) : availableSlots?.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-3">
-                    {availableSlots?.map((slot, idx) => {
-                        const isSelected = selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId;
-                        return (
-                        <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                                setSelectedSlot(slot);
-                                setStep(3);
-                            }}
-                            className={`p-3 rounded-xl border-2 transition-all text-left ${
-                            isSelected
-                                ? "bg-indigo-600 border-indigo-600 text-white shadow-lg"
-                                : "border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-100 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800"
-                            }`}
-                        >
-                            <span className="block text-xs font-black">
-                            {format(parse(slot.time, "HH:mm", new Date()), "h:mm a")}
-                            </span>
-                            <span className={`block text-[8px] uppercase tracking-tighter mt-0.5 ${isSelected ? 'text-indigo-100' : 'opacity-60'}`}>{slot.staffName.split(' ')[0]}</span>
-                        </button>
-                        );
-                    })}
+                    <div className="space-y-8">
+                        {[
+                            { label: 'Morning', icon: Sparkles, filter: (s: any) => parseInt(s.time.split(':')[0]) < 12 },
+                            { label: 'Afternoon', icon: Clock, filter: (s: any) => parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 17 },
+                            { label: 'Evening', icon: Clock, filter: (s: any) => parseInt(s.time.split(':')[0]) >= 17 },
+                        ].map((section) => {
+                            const sectionSlots = availableSlots.filter(section.filter);
+                            if (sectionSlots.length === 0) return null;
+
+                            return (
+                                <div key={section.label} className="space-y-3">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{section.label}</h3>
+                                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700 ml-2"></div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {sectionSlots.map((slot, idx) => {
+                                            const isSelected = selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId;
+                                            return (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedSlot(slot);
+                                                    setStep(3);
+                                                }}
+                                                className={`p-3 rounded-xl border-2 transition-all text-left ${
+                                                isSelected
+                                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg"
+                                                    : "border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-100 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800"
+                                                }`}
+                                            >
+                                                <span className="block text-xs font-black">
+                                                {format(parse(slot.time, "HH:mm", new Date()), "h:mm a")}
+                                                </span>
+                                                <span className={`block text-[8px] uppercase tracking-tighter mt-0.5 ${isSelected ? 'text-indigo-100' : 'opacity-60'}`}>{slot.staffName.split(' ')[0]}</span>
+                                            </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 ) : (
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No available slots for this date.</p>
@@ -518,8 +542,7 @@ export function ManualBooking({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              onClick={handleClose}
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
             <div className="relative w-full max-w-2xl">
               {content}

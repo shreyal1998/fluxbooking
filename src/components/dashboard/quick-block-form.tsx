@@ -5,6 +5,7 @@ import { blockTimeSlot, deleteBlockedSlot } from "@/app/actions/dashboard";
 import { Clock, Ban, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, addHours } from "date-fns";
+import { useRouter } from "next/navigation";
 
 function InputError({ message }: { message?: string }) {
   if (!message) return null;
@@ -29,6 +30,7 @@ export function QuickBlockForm({
   onSuccess?: () => void,
   inline?: boolean
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -81,6 +83,7 @@ export function QuickBlockForm({
       toast.success("Time blocked successfully!");
       if (!inline) (e.target as HTMLFormElement).reset();
       setFieldErrors({});
+      router.refresh();
       if (onSuccess) onSuccess();
     } else {
       toast.error(result.error || "Failed to block time");
@@ -94,6 +97,7 @@ export function QuickBlockForm({
     if (result.success) {
       toast.success("Block removed");
       setFieldErrors({});
+      router.refresh();
     } else {
       toast.error(result.error);
     }

@@ -156,6 +156,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
               type="text"
               required
               defaultValue={staff.name}
+              placeholder={labels.staffPlaceholder}
               onChange={() => clearFieldError("name")}
               className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
                 fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"

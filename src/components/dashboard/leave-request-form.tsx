@@ -4,6 +4,7 @@ import { useState } from "react";
 import { submitLeaveRequest } from "@/app/actions/dashboard";
 import { Calendar, Clock, Send, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -16,6 +17,7 @@ const InputError = ({ message }: { message?: string }) => {
 };
 
 export function LeaveRequestForm() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -59,6 +61,7 @@ export function LeaveRequestForm() {
       toast.success("Leave request submitted successfully!");
       setMessage({ type: 'success', text: "Request submitted! Waiting for Admin approval." });
       (e.target as HTMLFormElement).reset();
+      router.refresh();
     } else {
       toast.error(result.error || "Failed to submit request");
       setMessage({ type: 'error', text: result.error || "Failed to submit request" });

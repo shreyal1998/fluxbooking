@@ -46,8 +46,8 @@ import { getLabels } from "@/lib/labels";
 import { Tooltip } from "@/components/ui/tooltip";
 
 export function AppointmentsClient({ 
-  bookings, 
-  blockedSlots, 
+  bookings: initialBookings, 
+  blockedSlots: initialBlockedSlots, 
   services, 
   staff, 
   tenantId,
@@ -56,6 +56,8 @@ export function AppointmentsClient({
 }: any) {
   const router = useRouter();
   const labels = getLabels(tenant?.businessType);
+  const [bookings, setBookings] = useState(initialBookings);
+  const [blockedSlots, setBlockedSlots] = useState(initialBlockedSlots);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">("week");
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
@@ -63,9 +65,27 @@ export function AppointmentsClient({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
   
+  // Sync state when props change (after router.refresh())
+  useEffect(() => {
+    setBookings(initialBookings);
+  }, [initialBookings]);
+
+  useEffect(() => {
+    setBlockedSlots(initialBlockedSlots);
+  }, [initialBlockedSlots]);
+
+  // Pagination State for List View
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Custom Staff Dropdown State
   const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
   const staffDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Reset to page 1 when staff filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [staffFilter]);
 
   // Click outside to close staff dropdown
   useEffect(() => {
@@ -137,6 +157,7 @@ export function AppointmentsClient({
     const result = await updateBookingStatus(id, status);
     if (result.success) {
       toast.success(`Booking ${status.toLowerCase()}`);
+      router.refresh();
     } else {
       toast.error(result.error);
     }
@@ -150,10 +171,31 @@ export function AppointmentsClient({
     const result = await deleteBooking(id);
     if (result.success) {
       toast.success("Booking deleted");
+      router.refresh();
     } else {
       toast.error(result.error);
     }
     setProcessingId(null);
+  };
+
+  // Filtered Bookings for List View
+  const listFilteredBookings = useMemo(() => {
+    if (userRole !== "ADMIN" || staffFilter === "all") return bookings;
+    return bookings.filter((b: any) => b.staffId === staffFilter);
+  }, [bookings, staffFilter, userRole]);
+
+  // Pagination Calculations for List View
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentListItems = listFilteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.max(1, Math.ceil(listFilteredBookings.length / itemsPerPage));
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    const tableElement = document.getElementById("bookings-table-top");
+    if (tableElement) {
+      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   // Filter events based on selected staff
@@ -289,8 +331,7 @@ export function AppointmentsClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              onClick={() => setShowHoursModal(false)}
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
@@ -326,8 +367,7 @@ export function AppointmentsClient({
         <Portal>
            <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              onClick={() => setSelectedSlotInfo(null)}
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                {actionType === null ? (
@@ -487,90 +527,130 @@ export function AppointmentsClient({
         {/* Main Content Card */}
         <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
           {viewMode === "list" ? (
-            <div className="flex-1 overflow-auto">
-              {bookings.length === 0 ? (
-                <div className="p-12 text-center">
-                  <CalendarIcon className="h-12 w-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
-                  <p className="text-slate-500 dark:text-slate-200 font-medium">No {labels.appointmentLower}s found yet.</p>
+            <div className="flex-1 flex flex-col overflow-hidden" id="bookings-table-top">
+              {listFilteredBookings.length === 0 ? (
+                <div className="flex-1 p-24 flex flex-col items-center justify-center text-center">
+                  <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-6">
+                    <CalendarIcon className="h-10 w-10 text-slate-200 dark:text-slate-700" />
+                  </div>
+                  <p className="text-slate-900 dark:text-white font-bold text-lg">No {labels.appointmentLower}s found</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mt-2 font-medium">Try adjusting your filters or schedule a new {labels.appointmentLower}.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                    <thead className="bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 z-10">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Date & Time</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Customer</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Service</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Staff</th>
-                        <th className="px-6 py-4 text-left text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-right text-xs font-medium text-slate-900 dark:text-white uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                      {bookings.map((booking: any) => {
-                        if (userRole === "ADMIN" && staffFilter !== "all" && booking.staffId !== staffFilter) return null;
-                        
-                        return (
-                          <tr key={booking.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-bold text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
-                              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                                <Clock className="h-3 w-3" /> {format(new Date(booking.startTime), "hh:mm a")}
+                <>
+                  <div className="flex-1 overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                      <thead>
+                        <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Date & Time</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Customer</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{labels.staff}</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                          <th className="px-10 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {currentListItems.map((booking: any) => (
+                          <tr key={booking.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group">
+                            <td className="px-10 py-6 whitespace-nowrap">
+                              <div className="text-sm font-black text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5 mt-1">
+                                <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {format(new Date(booking.startTime), "hh:mm a")}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-semibold text-slate-900 dark:text-white">{booking.customerName}</div>
-                              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                                <Mail className="h-3 w-3" /> {booking.customerEmail}
+                            <td className="px-10 py-6 whitespace-nowrap">
+                              <div className="text-sm font-black text-slate-900 dark:text-white">{booking.customerName}</div>
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5 mt-1">
+                                <Mail className="h-3.5 w-3.5 text-indigo-500/50" /> {booking.customerEmail}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-900/50">
-                                <div className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: booking.service.color }}></div>
+                            <td className="px-10 py-6 whitespace-nowrap">
+                              <div className="inline-flex items-center px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                                <div className="w-1.5 h-1.5 rounded-full mr-2" style={{ backgroundColor: booking.service.color }}></div>
                                 {booking.service.name}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                <div className="h-6 w-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                  <User className="h-3 w-3 text-slate-500 dark:text-slate-300" />
+                            <td className="px-10 py-6 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[10px] font-black text-white"
+                                  style={{ backgroundColor: booking.staff.color }}
+                                >
+                                  {booking.staff.name.substring(0, 2).toUpperCase()}
                                 </div>
-                                {booking.staff.name}
+                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">{booking.staff.name}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-10 py-6 whitespace-nowrap">
                               <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider border ${getStatusStyle(booking.status)}`}>
                                 {booking.status}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <td className="px-10 py-6 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                 {(booking.status === "PENDING" || booking.status === "CONFIRMED") && (
                                   <>
-                                    <button 
-                                      onClick={() => handleStatusUpdate(booking.id, "COMPLETED")}
-                                      disabled={processingId === booking.id}
-                                      className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                                    >
-                                      <CheckCircle2 className="h-4 w-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => handleDelete(booking.id)}
-                                      disabled={processingId === booking.id}
-                                      className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    <Tooltip content="Complete Booking" position="bottom">
+                                      <button 
+                                        onClick={() => handleStatusUpdate(booking.id, "COMPLETED")}
+                                        disabled={processingId === booking.id}
+                                        className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100"
+                                      >
+                                        <CheckCircle2 className="h-4 w-4" />
+                                      </button>
+                                    </Tooltip>
+                                    <Tooltip content="Delete Booking" position="bottom">
+                                      <button 
+                                        onClick={() => handleDelete(booking.id)}
+                                        disabled={processingId === booking.id}
+                                        className="p-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </Tooltip>
                                   </>
                                 )}
                               </div>
                             </td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Integrated Pagination Footer */}
+                  {listFilteredBookings.length > itemsPerPage && (
+                    <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="text-slate-900 dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
+                      </p>
+                      
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => paginate(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+
+                        <div className="flex items-center gap-2 px-4">
+                          <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-tighter">PAGE {currentPage}</span>
+                          <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+                        </div>
+
+                        <button
+                          onClick={() => paginate(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : (

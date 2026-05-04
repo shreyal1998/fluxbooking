@@ -40,6 +40,7 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const labels = getLabels(tenant?.businessType);
   const user = session?.user;
@@ -48,14 +49,14 @@ export function DashboardShell({
     const items = [
       { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
       { name: "Booking Calendar", href: "/dashboard/appointments", icon: Calendar },
-      { name: labels.service + "s", href: "/dashboard/services", icon: labels.serviceIcon, adminOnly: true },
-      { name: labels.staff, href: "/dashboard/staff", icon: labels.staffIcon, adminOnly: true },
+      { name: labels.service + "s", href: "/dashboard/services", icon: labels.serviceIcon },
+      { name: labels.staff + "s", href: "/dashboard/staff", icon: labels.staffIcon },
       { name: labels.customer + "s", href: "/dashboard/customers", icon: labels.customerIcon },
       { name: "My Schedule", href: "/dashboard/my-schedule", icon: Clock },
       { name: "Settings", href: "/dashboard/settings", icon: Settings },
     ];
-    return items.filter(item => !item.adminOnly || user?.role === "ADMIN");
-  }, [labels, user?.role]);
+    return items;
+  }, [labels]);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
@@ -186,7 +187,7 @@ export function DashboardShell({
         <div className="mt-auto">
           <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={() => setShowLogoutConfirm(true)}
               className="flex items-center gap-4 w-full px-5 py-4 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
             >
               <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
@@ -356,12 +357,54 @@ export function DashboardShell({
               </nav>
               <div className="mt-auto">
                  <div className="p-8 border-t border-slate-100 dark:border-slate-700">
-                    <button onClick={() => signOut()} className="flex items-center gap-4 text-rose-600 font-medium">
+                    <button onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setShowLogoutConfirm(true);
+                    }} className="flex items-center gap-4 text-rose-600 font-medium">
                       <LogOut className="h-6 w-6" /> Logout
                     </button>
                  </div>
               </div>
             </aside>
+          </div>
+        </Portal>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300"
+              onClick={() => setShowLogoutConfirm(false)}
+            />
+            <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 animate-in zoom-in-95 duration-200 overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500" />
+              
+              <div className="flex flex-col items-center text-center">
+                <div className="h-16 w-16 rounded-3xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-6">
+                  <LogOut className="h-8 w-8 text-rose-600 dark:text-rose-400" />
+                </div>
+                
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Confirm Logout</h3>
+                <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">Are you sure you want to log out of your account?</p>
+                
+                <div className="flex flex-col w-full gap-3">
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold shadow-lg shadow-rose-600/20 transition-all active:scale-[0.98]"
+                  >
+                    Yes, Logout
+                  </button>
+                  <button
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="w-full py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-2xl font-bold transition-all active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </Portal>
       )}

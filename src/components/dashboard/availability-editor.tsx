@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateStaffAvailability, updateBusinessHours } from "@/app/actions/dashboard";
 import { Clock, Save, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
@@ -25,6 +26,7 @@ export function AvailabilityEditor({
   staffId?: string,
   isBusiness?: boolean
 }) {
+  const router = useRouter();
   const [availability, setAvailability] = useState<Availability>(() => {
     try {
       const parsed = typeof initialAvailability === 'string' 
@@ -35,6 +37,17 @@ export function AvailabilityEditor({
       return {};
     }
   });
+
+  // Sync state when props change (after router.refresh())
+  useEffect(() => {
+    try {
+      const parsed = typeof initialAvailability === 'string' 
+        ? JSON.parse(initialAvailability) 
+        : initialAvailability;
+      setAvailability(parsed || {});
+    } catch (e) {}
+  }, [initialAvailability]);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -68,6 +81,7 @@ export function AvailabilityEditor({
       if (result.success) {
         toast.success('Schedule saved successfully!');
         setMessage({ type: 'success', text: 'Schedule saved successfully!' });
+        router.refresh();
       } else {
         toast.error(result.error || 'Failed to save');
         setMessage({ type: 'error', text: result.error || 'Failed to save' });

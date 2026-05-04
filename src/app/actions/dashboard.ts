@@ -18,7 +18,7 @@ export async function addStaff(formData: FormData) {
   const email = formData.get("email") as string;
   const bio = formData.get("bio") as string;
   const password = formData.get("password") as string;
-  const serviceIds = JSON.parse(formData.get("services") as string || "[]");
+  const serviceIds = formData.getAll("services") as string[];
 
   try {
     const tenant = await prisma.tenant.findUnique({
@@ -121,7 +121,7 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
   const name = formData.get("name") as string;
   const bio = formData.get("bio") as string;
   const color = formData.get("color") as string;
-  const serviceIds = JSON.parse(formData.get("services") as string || "[]");
+  const serviceIds = formData.getAll("services") as string[];
 
   try {
     await prisma.staff.update({

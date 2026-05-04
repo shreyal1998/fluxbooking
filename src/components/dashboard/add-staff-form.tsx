@@ -199,7 +199,7 @@ export function AddStaffForm({
                 userDropdownOpen ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-indigo-600"
               }`}
             >
-              <span className={!selectedUserId ? "text-slate-900 dark:text-white" : "font-medium"}>
+              <span className={!selectedUserId ? "text-slate-400 dark:text-slate-500 font-medium" : "text-slate-900 dark:text-white font-bold"}>
                 {selectedUserId 
                   ? `Use existing: ${users.find(u => u.id === selectedUserId)?.name || ""}` 
                   : "Create new login account"}

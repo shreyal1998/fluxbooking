@@ -375,28 +375,48 @@ export function BookingForm({
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Searching available slots...</p>
               </div>
             ) : slots.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {slots.map((slot, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setSelectedSlot(slot);
-                      setStep(3);
-                    }}
-                    className={`p-4 rounded-2xl border-2 font-black text-sm transition-all ${
-                      selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId
-                        ? "text-white shadow-lg"
-                        : "border-slate-100 bg-slate-50 hover:border-slate-100 text-slate-700"
-                    }`}
-                    style={{ 
-                      backgroundColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined,
-                      borderColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined
-                    }}
-                  >
-                    {slot.time}
-                    <div className="text-[8px] opacity-60 font-medium mt-1">{slot.staffName.split(' ')[0]}</div>
-                  </button>
-                ))}
+              <div className="space-y-10">
+                {[
+                  { label: 'Morning', icon: Sparkles, filter: (s: any) => parseInt(s.time.split(':')[0]) < 12 },
+                  { label: 'Afternoon', icon: Clock, filter: (s: any) => parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 17 },
+                  { label: 'Evening', icon: Clock, filter: (s: any) => parseInt(s.time.split(':')[0]) >= 17 },
+                ].map((section) => {
+                  const sectionSlots = slots.filter(section.filter);
+                  if (sectionSlots.length === 0) return null;
+                  
+                  return (
+                    <div key={section.label} className="space-y-4">
+                      <div className="flex items-center gap-2 px-1">
+                        <section.icon className="h-4 w-4 text-slate-400" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{section.label}</h3>
+                        <div className="flex-1 h-px bg-slate-100 ml-2"></div>
+                      </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {sectionSlots.map((slot, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setSelectedSlot(slot);
+                              setStep(3);
+                            }}
+                            className={`p-4 rounded-2xl border-2 font-black text-sm transition-all ${
+                              selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId
+                                ? "text-white shadow-lg"
+                                : "border-slate-100 bg-slate-50 hover:border-slate-100 text-slate-700"
+                            }`}
+                            style={{ 
+                              backgroundColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined,
+                              borderColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined
+                            }}
+                          >
+                            {slot.time}
+                            <div className="text-[8px] opacity-60 font-medium mt-1">{slot.staffName.split(' ')[0]}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-100">

@@ -97,6 +97,11 @@ export function CalendarView({
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
   const [now, setNow] = useState<Date | null>(null);
 
+  // Sync state when props change (after router.refresh())
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
+
   // Dynamic height configuration
   const slotHeight = slotDuration === 15 ? 40 : slotDuration === 30 ? 60 : 80;
   const pixelsPerMinute = slotHeight / slotDuration;
