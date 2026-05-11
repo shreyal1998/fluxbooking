@@ -2,7 +2,6 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PLANS } from "@/config/plans";
 
 const LEMON_SQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1";
 
@@ -11,19 +10,19 @@ export async function createLemonSqueezyCheckout(variantId: string) {
   const session = await getServerSession(authOptions);
   console.log("Session exists:", !!session);
   if (session) {
-    console.log("User Role:", (session.user as any).role);
-    console.log("Tenant ID:", (session.user as any).tenantId);
+    console.log("User Role:", session.user.role);
+    console.log("Tenant ID:", session.user.tenantId);
   }
   console.log("------------------");
 
   if (!session) return { error: "Not authenticated" };
 
-  if ((session.user as any).role !== "ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return { error: "Only administrators can manage billing" };
   }
 
-  const tenantId = (session.user as any).tenantId;
-  const userEmail = session.user?.email;
+  const tenantId = session.user.tenantId;
+  const userEmail = session.user.email;
 
   const apiKey = process.env.LEMON_SQUEEZY_API_KEY;
   const storeId = process.env.LEMON_SQUEEZY_STORE_ID;
@@ -60,7 +59,7 @@ export async function createLemonSqueezyCheckout(variantId: string) {
               }
             },
             product_options: {
-              redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?success=true`,
+              redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true`,
             }
           },
           relationships: {

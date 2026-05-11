@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BookingForm } from "./booking-form";
 import { Calendar, ShieldCheck, Star } from "lucide-react";
+import { ThemeCleaner } from "@/components/providers/theme-cleaner";
+import { COUNTRIES } from "@/config/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +61,16 @@ export default async function PublicBookingPage({
     );
   }
 
+  // Smart currency fallback
+  let currency = tenant.currency || "USD";
+  if (currency === "USD" && tenant.country && tenant.country !== "US") {
+    const countryData = COUNTRIES.find((c) => c.code === tenant.country);
+    if (countryData) currency = countryData.currency;
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden">
+      <ThemeCleaner />
       {/* Background Decorative Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/20 rounded-full blur-[120px]"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-200/20 rounded-full blur-[120px]"></div>
@@ -93,9 +103,11 @@ export default async function PublicBookingPage({
                 ...srv,
                 price: srv.price.toString()
               }))
-            })) as any} 
+            }))} 
             primaryColor={tenant.primaryColor}
             businessType={tenant.businessType}
+            timezone={tenant.timezone}
+            currency={currency}
           />
         </div>
 

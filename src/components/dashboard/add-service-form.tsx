@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2, Check } from "lucide-react";
+import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2, Check, Landmark } from "lucide-react";
 import { addService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
 
-export function AddServiceForm({ onSuccess, businessType }: { onSuccess?: () => void, businessType?: any }) {
+interface AddServiceFormProps {
+  onSuccess?: () => void;
+  businessType?: any;
+  currency?: string;
+}
+
+export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: AddServiceFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -137,10 +143,10 @@ export function AddServiceForm({ onSuccess, businessType }: { onSuccess?: () => 
 
         <div>
           <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-            Price ($) <span className="text-rose-500">*</span>
+            Price ({currency}) <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
-            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               name="price"
               type="number"
@@ -181,7 +187,7 @@ export function AddServiceForm({ onSuccess, businessType }: { onSuccess?: () => 
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:opacity-50 transition-all active:scale-[0.98]"
+          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-200 dark:disabled:border-slate-800 transition-all active:scale-[0.98]"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>

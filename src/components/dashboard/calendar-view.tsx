@@ -109,6 +109,7 @@ export function CalendarView({
   // Helper to get time at venue
   const getVenueTime = () => {
     try {
+        if (!timezone || timezone === "UTC") return new Date();
         const str = new Date().toLocaleString("en-US", { timeZone: timezone });
         return new Date(str);
     } catch (e) {

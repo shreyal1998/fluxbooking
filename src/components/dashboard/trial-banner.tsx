@@ -59,7 +59,7 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
       </div>
       
       <Link 
-        href="/dashboard/settings" 
+        href="/settings/billing" 
         className={`flex items-center justify-center gap-2 w-full py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg ${
           isCritical 
           ? "bg-gradient-to-r from-rose-500 to-red-600 text-white hover:from-rose-600 hover:to-red-700 shadow-rose-500/30" 

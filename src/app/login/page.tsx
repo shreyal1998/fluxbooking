@@ -4,8 +4,19 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Loader2, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { ThemeCleaner } from "@/components/providers/theme-cleaner";
+
+const InputError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+};
 
 function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -55,22 +66,13 @@ function LoginForm() {
       setGeneralError("Invalid email or password");
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.push("/overview");
     }
   }
 
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
+      <ThemeCleaner />
       <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100">
         <div className="flex flex-col items-center">
           <Link href="/" className="mb-6 outline-none">
@@ -80,7 +82,7 @@ function LoginForm() {
             Welcome back
           </h2>
           <p className="mt-2 text-center text-sm font-medium text-slate-500">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/register" className="font-bold text-indigo-600 hover:text-indigo-500 underline-offset-4 hover:underline">
               Register business
             </Link>
@@ -169,17 +171,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <div className="premium-pulsar-container">
-          <div className="liquid-loader">
-            <div className="liquid-blob"></div>
-            <div className="liquid-blob"></div>
-            <div className="liquid-blob"></div>
-          </div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={null}>
       <LoginForm />
     </Suspense>
   );

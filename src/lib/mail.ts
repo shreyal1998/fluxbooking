@@ -1,7 +1,5 @@
 import { format } from "date-fns";
 
-const SUPPORT_EMAIL = "support@fluxbooking.com";
-
 /**
  * EMAIL ENGINE (Simulation Mode)
  */
@@ -198,7 +196,7 @@ export async function sendWelcomeEmail({
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px;">
       <h1 style="color: #4f46e5; font-size: 28px; font-weight: 900; margin-bottom: 16px;">Welcome to FluxBooking!</h1>
       <p style="color: #64748b;">Hi ${adminName}, <strong>${businessName}</strong> is now live.</p>
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; margin: 32px 0;">Go to Dashboard</a>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/overview" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; margin: 32px 0;">Go to Dashboard</a>
       ${NO_REPLY_FOOTER}
     </div>
   `;

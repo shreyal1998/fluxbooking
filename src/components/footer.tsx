@@ -43,8 +43,26 @@ export function Footer() {
           <div>
             <h5 className="font-bold mb-6 uppercase text-[10px] tracking-widest text-slate-500">Platform</h5>
             <ul className="space-y-4 text-sm font-semibold text-slate-400">
-              <li><Link href="/#features" className="hover:text-white transition-colors">Features</Link></li>
-              <li><Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li>
+                <Link 
+                  href="/features" 
+                  scroll={false} 
+                  onClick={() => window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "features" }))}
+                  className="hover:text-white transition-colors"
+                >
+                  Features
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  href="/pricing" 
+                  scroll={false} 
+                  onClick={() => window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "pricing" }))}
+                  className="hover:text-white transition-colors"
+                >
+                  Pricing
+                </Link>
+              </li>
               <li><Link href="/register" className="hover:text-white transition-colors">Register</Link></li>
               <li><Link href="/login" className="hover:text-white transition-colors">Login</Link></li>
             </ul>

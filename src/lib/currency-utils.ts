@@ -8,16 +8,20 @@ import { COUNTRIES } from "@/config/countries";
  */
 export function formatCurrency(amount: number | string, currencyCode: string = "USD") {
   const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-  
+  const code = currencyCode.toUpperCase();
+
   try {
-    return new Intl.NumberFormat("en-US", {
+    // Use a locale that matches the currency for better symbol support
+    const locale = code === 'INR' ? 'en-IN' : 'en-US';
+
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: currencyCode,
-      minimumFractionDigits: 2,
+      currency: code,
+      currencyDisplay: "symbol",
     }).format(numericAmount);
-  } catch (error) {
+  } catch {
     // Fallback if Intl fails
-    const country = COUNTRIES.find(c => c.currency === currencyCode);
+    const country = COUNTRIES.find(c => c.currency === code);
     const symbol = country?.symbol || "$";
     return `${symbol}${numericAmount.toFixed(2)}`;
   }

@@ -18,7 +18,11 @@ export default async function ServicesPage() {
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { businessType: true }
+      select: { 
+        businessType: true,
+        currency: true,
+        country: true
+      }
     })
   ]);
 
@@ -27,12 +31,21 @@ export default async function ServicesPage() {
     price: s.price.toString() 
   }));
 
+  // Smart currency fallback
+  let currency = tenant?.currency || "USD";
+  if (currency === "USD" && tenant?.country && tenant.country !== "US") {
+    const { COUNTRIES } = require("@/config/countries");
+    const countryData = COUNTRIES.find((c: any) => c.code === tenant.country);
+    if (countryData) currency = countryData.currency;
+  }
+
   return (
     <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
       <ServicesClient 
         initialServices={serializedServices} 
         userRole={userRole} 
         businessType={tenant?.businessType}
+        currency={currency}
       />
     </div>
   );

@@ -111,31 +111,6 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
-
-    setDeleteLoading(true);
-    setGeneralError(null);
-    const result = await deleteStaff(staff.id);
-
-    if (result?.error) {
-      setGeneralError(result.error);
-      toast.error(result.error);
-      setDeleteLoading(false);
-      setConfirmDelete(false);
-    } else {
-      toast.success(`${labels.staff} removed successfully!`);
-      router.refresh();
-      setDeleteLoading(false);
-      setFieldErrors({});
-      setGeneralError(null);
-      if (onSuccess) onSuccess();
-    }
-  };
-
   return (
     <div className="space-y-6">
       {generalError && (
@@ -260,49 +235,11 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         <button
           type="submit"
           disabled={loading || deleteLoading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-200 dark:disabled:border-slate-800"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Profile Changes"}
         </button>
       </form>
-
-      {isAdmin && (
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-700">
-          <div className="bg-rose-50 dark:bg-rose-900/10 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/20">
-            <div className="flex items-center gap-2 text-rose-800 dark:text-rose-400 font-bold mb-1">
-              <ShieldAlert className="h-4 w-4" />
-              <h4 className="text-sm">Danger Zone</h4>
-            </div>
-            <p className="text-xs text-rose-600 dark:text-rose-400/70 mb-4">
-              Deleting this {labels.staffLower} will also remove their historical data and past appointments. This cannot be undone.
-            </p>
-            <button
-              onClick={handleDelete}
-              disabled={loading || deleteLoading}
-              className={`w-full py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                confirmDelete 
-                  ? "bg-rose-600 text-white hover:bg-rose-700" 
-                  : "bg-white dark:bg-slate-950 text-rose-600 border border-rose-200 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-              }`}
-            >
-              {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                <>
-                  <Trash2 className="h-4 w-4" />
-                  {confirmDelete ? "Click again to confirm delete" : `Remove ${labels.staff}`}
-                </>
-              )}
-            </button>
-            {confirmDelete && (
-              <button 
-                onClick={() => setConfirmDelete(false)}
-                className="w-full mt-2 text-[10px] font-bold text-slate-500 hover:underline"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

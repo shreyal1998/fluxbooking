@@ -37,21 +37,21 @@ export async function POST(req: Request) {
       const status = attributes.status; // active, trialing, past_due, etc.
       
       // Map variant ID to internal plan ID
-      let planId: SubscriptionPlan = "PRO"; // Default
+      let planId: SubscriptionPlan = SubscriptionPlan.PRO; // Default
       let interval: SubscriptionInterval = "MONTH";
 
       if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_PRO_YEARLY) {
-        planId = "PRO";
-        interval = "YEAR";
+        planId = SubscriptionPlan.PRO;
+        interval = SubscriptionInterval.YEAR;
       } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_PRO_MONTHLY) {
-        planId = "PRO";
-        interval = "MONTH";
+        planId = SubscriptionPlan.PRO;
+        interval = SubscriptionInterval.MONTH;
       } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_YEARLY) {
-        planId = "TEAM"; // Map Starter to TEAM in Prisma
-        interval = "YEAR";
+        planId = SubscriptionPlan.TEAM; // Map Starter to TEAM in Prisma
+        interval = SubscriptionInterval.YEAR;
       } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_MONTHLY) {
-        planId = "TEAM";
-        interval = "MONTH";
+        planId = SubscriptionPlan.TEAM;
+        interval = SubscriptionInterval.MONTH;
       }
 
       console.log(`✅ Updating Subscription: Tenant ${tenantId} -> Plan ${planId} (${interval}) Status: ${status}`);
@@ -75,8 +75,8 @@ export async function POST(req: Request) {
         where: { id: tenantId },
         data: {
           planStatus: "CANCELLED",
-          plan: "FREE",
-          planInterval: "MONTH",
+          plan: SubscriptionPlan.FREE,
+          planInterval: SubscriptionInterval.MONTH,
         },
       });
     }

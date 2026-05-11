@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import { getSuggestedSlots } from "@/app/actions/booking";
 import { ManageActions } from "./manage-actions";
 import { Logo } from "@/components/logo";
+import { ThemeCleaner } from "@/components/providers/theme-cleaner";
 
 interface ManageBookingPageProps {
   params: Promise<{
@@ -44,6 +45,7 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      <ThemeCleaner />
       {/* Header */}
       <header className="sticky top-0 w-full z-50 glass">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">

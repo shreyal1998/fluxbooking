@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { updateStaffAvailability, updateBusinessHours } from "@/app/actions/dashboard";
-import { Clock, Save, Trash2, Plus } from "lucide-react";
+import { Clock, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Prisma } from "@prisma/client";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
@@ -22,7 +23,7 @@ export function AvailabilityEditor({
   staffId,
   isBusiness = false 
 }: { 
-  initialAvailability: any, 
+  initialAvailability: Prisma.JsonValue, 
   staffId?: string,
   isBusiness?: boolean
 }) {
@@ -32,21 +33,11 @@ export function AvailabilityEditor({
       const parsed = typeof initialAvailability === 'string' 
         ? JSON.parse(initialAvailability) 
         : initialAvailability;
-      return parsed || {};
+      return (parsed as Availability) || {};
     } catch (e) {
       return {};
     }
   });
-
-  // Sync state when props change (after router.refresh())
-  useEffect(() => {
-    try {
-      const parsed = typeof initialAvailability === 'string' 
-        ? JSON.parse(initialAvailability) 
-        : initialAvailability;
-      setAvailability(parsed || {});
-    } catch (e) {}
-  }, [initialAvailability]);
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -154,7 +145,7 @@ export function AvailabilityEditor({
         <button
           onClick={handleSave}
           disabled={loading}
-          className="ml-auto flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-lg shadow-indigo-200 dark:shadow-none"
+          className="ml-auto flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 border border-transparent disabled:border-slate-200 dark:disabled:border-slate-800 shadow-lg shadow-indigo-200 dark:shadow-none"
         >
           {loading ? (
             <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

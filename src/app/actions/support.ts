@@ -7,7 +7,7 @@ import prisma from "@/lib/prisma";
 export async function sendSupportRequest(formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
-    const tenantId = (session?.user as any)?.tenantId;
+    const tenantId = session?.user.tenantId;
     
     let isPriority = false;
     if (tenantId) {

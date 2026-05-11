@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import Link from "next/link";
 import { 
   Users, 
   Scissors, 
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { getLabels } from "@/lib/labels";
 import { format } from "date-fns";
+import { formatCurrency } from "@/lib/currency-utils";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -23,7 +25,17 @@ export default async function DashboardPage() {
   const userRole = (session.user as any).role;
   const userId = (session.user as any).id;
 
-  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  const tenant = await prisma.tenant.findUnique({ 
+    where: { id: tenantId },
+    select: {
+      name: true,
+      businessType: true,
+      timezone: true,
+      currency: true,
+      country: true,
+      businessHoursJson: true
+    }
+  });
   const labels = getLabels(tenant?.businessType);
 
   // For staff, we need their staff profile ID
@@ -79,11 +91,19 @@ export default async function DashboardPage() {
     return sum + Number(booking.service.price);
   }, 0);
 
+  // Smart currency fallback: If it's still USD but the country is different, sync it.
+  let currency = tenant?.currency || "USD";
+  if (currency === "USD" && tenant?.country && tenant.country !== "US") {
+    const { COUNTRIES } = require("@/config/countries");
+    const countryData = COUNTRIES.find((c: any) => c.code === tenant.country);
+    if (countryData) currency = countryData.currency;
+  }
+
   const stats = [
     { name: labels.service + "s", value: servicesCount, icon: labels.serviceIcon, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
     { name: labels.staff + " Team", value: staffCount, icon: labels.staffIcon, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: "Total", hidden: userRole === "STAFF" },
     { name: userRole === "STAFF" ? `My Active ${labels.appointment}s` : `Pending ${labels.appointment}s`, value: bookingsCount, icon: CalendarIcon, color: "text-rose-600", bg: "bg-rose-50/50", trend: "Waiting" },
-    { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
+    { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: formatCurrency(totalRevenue, currency), icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
   ].filter(s => !s.hidden);
 
   return (
@@ -101,7 +121,8 @@ export default async function DashboardPage() {
            {userRole === "STAFF" 
              ? `Hello, ${(session?.user?.name || 'Team Member').split(' ')[0]}` 
              : `Welcome back, ${session?.user?.name || 'User'}`}
-          </h2>          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">
+          </h2>
+          <p className="font-normal mt-1 text-slate-500 dark:text-slate-400">
             Here's what's happening at <span className="text-indigo-600 dark:text-indigo-400 font-bold decoration-indigo-500/30 underline-offset-4 decoration-2">{tenant?.name}</span> today.
           </p>
         </div>
@@ -114,27 +135,27 @@ export default async function DashboardPage() {
       <div className="flex-1 space-y-10 pb-8">
         {userRole === "STAFF" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-500">
-             <a href="/dashboard/appointments" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
+             <Link href={`/${labels.appointmentSlug}`} className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
                 <div className="h-12 w-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
                    <CalendarIcon className="h-6 w-6" />
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white">Today's Schedule</h4>
                 <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">View and manage your upcoming bookings.</p>
-             </a>
-             <a href="/dashboard/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-900 transition-all">
-                <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+             </Link>
+             <Link href="/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-900 transition-all">
+                <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
                    <Clock className="h-6 w-6" />
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white">My Availability</h4>
                 <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">Update your working hours and blocks.</p>
-             </a>
-             <a href="/dashboard/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-rose-200 dark:hover:border-rose-900 transition-all">
-                <div className="h-12 w-12 rounded-2xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 group-hover:scale-110 transition-transform">
+             </Link>
+             <Link href="/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-rose-200 dark:hover:border-rose-900 transition-all">
+                <div className="h-12 w-12 rounded-2xl bg-rose-50 dark:bg-rose-950/20 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 group-hover:scale-110 transition-transform">
                    <ArrowUpRight className="h-6 w-6" />
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white">Request Leave</h4>
                 <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">Submit sick leave or vacation requests.</p>
-             </a>
+             </Link>
           </div>
         )}
 
@@ -146,13 +167,13 @@ export default async function DashboardPage() {
             <div className="relative z-10">
               <h3 className="text-2xl font-medium mb-2">Complete Your Setup</h3>
               <p className="text-indigo-100 font-normal max-w-md mb-6">Verify your working hours and availability to ensure customers can book appointments with you correctly.</p>
-              <a 
-                href="/dashboard/my-schedule" 
+              <Link 
+                href="/my-schedule" 
                 className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-medium text-xs uppercase tracking-widest hover:bg-indigo-50 transition-colors"
               >
                 Set My Availability
                 <ArrowUpRight className="h-4 w-4" />
-              </a>
+              </Link>
             </div>
           </div>
         )}
@@ -187,7 +208,7 @@ export default async function DashboardPage() {
                   </div>
                   <h3 className="text-xl font-medium text-slate-900 dark:text-white tracking-tight">Recent Activity</h3>
                 </div>
-                <a href="/dashboard/appointments" className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:text-indigo-700 transition-colors">View all</a>
+                <Link href={`/${labels.appointmentSlug}`} className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:text-indigo-700 transition-colors">View Booking Calendar</Link>
               </div>
               <div className="space-y-6">
                 {recentBookings.length === 0 ? (
@@ -237,33 +258,33 @@ export default async function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 {userRole === "ADMIN" ? (
                   <>
-                    <a href="/dashboard/services" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                    <Link href={`/${labels.serviceSlug}`} className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <labels.serviceIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">{labels.service}s</span>
-                    </a>
-                    <a href="/dashboard/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                    </Link>
+                    <Link href="/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <Clock className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Schedule</span>
-                    </a>
+                    </Link>
                   </>
                 ) : (
                   <>
-                    <a href="/dashboard/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                    <Link href="/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Schedule</span>
-                    </a>
-                    <a href="/dashboard/appointments" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                    </Link>
+                    <Link href={`/${labels.appointmentSlug}`} className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
                       <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Bookings</span>
-                    </a>
+                    </Link>
                   </>
                 )}
               </div>

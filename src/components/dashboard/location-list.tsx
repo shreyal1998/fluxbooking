@@ -41,20 +41,20 @@ export function LocationList({ locations: initialLocations, isPro, businessType 
       <div className="divide-y divide-slate-200 dark:divide-slate-800">
         {locations.length > 0 ? (
           locations.map((loc) => (
-            <div key={loc.id} className="p-6 flex items-start justify-between group">
+            <div key={loc.id} className="p-6 flex items-start justify-between group hover:bg-slate-50/80 transition-all">
               <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                <div className="h-10 w-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:border-indigo-500/30 transition-all shadow-sm">
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-bold text-slate-900 dark:text-white">{loc.name}</h4>
                     {loc.isPrimary && (
-                      <span className="text-[10px] font-black uppercase bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">Primary</span>
+                      <span className="text-xs font-black uppercase bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/50">Primary</span>
                     )}
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400">{loc.address || "No address set"}</p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{loc.phone || "No phone number"}</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">{loc.phone || "No phone number"}</p>
                 </div>
               </div>
               {isPro && !loc.isPrimary && (
@@ -77,7 +77,11 @@ export function LocationList({ locations: initialLocations, isPro, businessType 
       {!isPro && (
         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border-t border-indigo-100 dark:border-indigo-800 flex items-center justify-between">
            <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300">Upgrade to Pro for multiple location support</p>
-           <button className="text-xs font-black text-indigo-600 underline">View Plans</button>
+           <button 
+             onClick={() => window.location.href = '/settings/billing'}             className="text-xs font-black text-indigo-600 underline"
+           >
+             View Plans
+           </button>
         </div>
       )}
     </div>

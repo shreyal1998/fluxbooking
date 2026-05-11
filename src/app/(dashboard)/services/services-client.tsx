@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight, Search, Landmark } from "lucide-react";
 import { AddServiceForm } from "@/components/dashboard/add-service-form";
 import { updateService, deleteService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
@@ -10,15 +10,18 @@ import { Portal } from "@/components/ui/portal";
 import { getLabels } from "@/lib/labels";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
+import { formatCurrency } from "@/lib/currency-utils";
 
 export function ServicesClient({ 
   initialServices, 
   userRole,
-  businessType
+  businessType,
+  currency = "USD"
 }: { 
   initialServices: any[], 
   userRole: string,
-  businessType?: any
+  businessType?: any,
+  currency?: string
 }) {
   const router = useRouter();
   const [services, setServices] = useState(initialServices);
@@ -71,8 +74,10 @@ export function ServicesClient({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  const [deletingService, setDeletingService] = useState<any | null>(null);
+
   // Lock scroll when any modal is open
-  useLockBodyScroll(isAddModalOpen || !!editingService);
+  useLockBodyScroll(isAddModalOpen || !!editingService || !!deletingService);
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -114,24 +119,6 @@ export function ServicesClient({
     setLoading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
-    setDeleteLoading(true);
-    const result = await deleteService(id);
-    if (result.success) {
-      toast.success("Service deleted");
-      setEditingService(null);
-      router.refresh();
-    } else {
-      toast.error(result.error);
-    }
-    setDeleteLoading(false);
-    setConfirmDelete(false);
-  };
-
   const InputError = ({ message }: { message?: string }) => {
     if (!message) return null;
     return (
@@ -166,7 +153,7 @@ export function ServicesClient({
                 placeholder={`Search ${labels.serviceLower}s...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs dark:text-white focus:ring-2 focus:ring-indigo-600/20 transition-all outline-none w-48 lg:w-64"
+                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
               />
             </div>
             {userRole === "ADMIN" && (
@@ -176,7 +163,7 @@ export function ServicesClient({
                     setFieldErrors({});
                     setIsAddModalOpen(true);
                   }}
-                  className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
                 >
                   <Plus className="h-4 w-4" />
                   Add
@@ -240,11 +227,20 @@ export function ServicesClient({
                            </div>
                          </td>
                          <td className="px-8 py-5 whitespace-nowrap">
-                            <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">${service.price.toString()}</span>
+                            <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(service.price, currency)}</span>
                          </td>
                          <td className="px-8 py-5 whitespace-nowrap text-right">
                             {userRole === "ADMIN" && (
                               <div className="flex items-center justify-end gap-2">
+                                <Tooltip content={`Delete ${labels.service}`} position="bottom">
+                                  <button 
+                                    onClick={() => setDeletingService(service)}
+                                    className="p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100 rounded-xl"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </Tooltip>
+
                                 <Tooltip content={`Edit ${labels.service}`} position="bottom">
                                   <button 
                                     onClick={() => {
@@ -320,7 +316,56 @@ export function ServicesClient({
                 </button>
               </div>
               <div className="max-h-[80vh] overflow-y-auto">
-                <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} businessType={businessType} />
+                <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} businessType={businessType} currency={currency} />
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingService && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 text-center">
+                <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-900/50">
+                  <AlertCircle className="h-8 w-8 text-rose-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Delete {labels.service}?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-8">
+                  Are you sure you want to delete <span className="font-bold text-slate-900 dark:text-white">{deletingService.name}</span>? This action cannot be undone and may affect existing bookings.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <button 
+                    onClick={() => setDeletingService(null)}
+                    className="py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      setDeleteLoading(true);
+                      const result = await deleteService(deletingService.id);
+                      if (result.success) {
+                        toast.success(`${labels.service} deleted`);
+                        setDeletingService(null);
+                        router.refresh();
+                      } else {
+                        toast.error(result.error);
+                      }
+                      setDeleteLoading(false);
+                    }}
+                    disabled={deleteLoading}
+                    className="bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-rose-700 transition-all shadow-xl shadow-rose-100 dark:shadow-none disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Delete"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -400,10 +445,10 @@ export function ServicesClient({
 
                     <div>
                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-                        Price ($) <span className="text-rose-500">*</span>
+                        Price ({currency}) <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <input
                           name="price"
                           type="number"
@@ -439,31 +484,13 @@ export function ServicesClient({
                       </div>
                     </div>
 
-                    <div className="pt-4 space-y-4">
+                    <div className="pt-4">
                       <button
                         type="submit"
                         disabled={loading || deleteLoading}
                         className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                       >
                         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Save Changes</>}
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(editingService.id)}
-                        disabled={loading || deleteLoading}
-                        className={`w-full py-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                          confirmDelete 
-                          ? "bg-rose-600 text-white hover:bg-rose-700" 
-                          : "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/10"
-                        }`}
-                      >
-                        {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                          <>
-                            <Trash2 className="h-4 w-4" />
-                            {confirmDelete ? "Click again to confirm delete" : `Delete ${labels.service}`}
-                          </>
-                        )}
                       </button>
                     </div>
                   </form>

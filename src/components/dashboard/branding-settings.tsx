@@ -43,7 +43,7 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
         </div>
         <div>
           <h3 className="font-black text-slate-900 dark:text-white">Business Branding</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Customize your public booking page.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Customize your public booking page.</p>
         </div>
       </div>
 
@@ -67,8 +67,8 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-800">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Preview</p>
+        <div className="p-6 bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Preview</p>
            <div className="flex flex-col sm:flex-row items-center gap-6">
               <button 
                 className="px-8 py-3 rounded-2xl text-white font-black text-sm shadow-xl dark:shadow-none border border-transparent dark:border-white/10"
@@ -89,14 +89,14 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
           <button
             onClick={() => setSelectedColor(initialColor)}
             disabled={loading || selectedColor === initialColor}
-            className="flex-1 py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-30"
+            className="flex-1 py-4 rounded-2xl font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent disabled:border-slate-300 dark:disabled:border-slate-700 disabled:bg-slate-50/50 dark:disabled:bg-slate-900/50"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={loading || selectedColor === initialColor}
-            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2"
+            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:border-slate-300 dark:disabled:border-slate-700 flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Branding Changes"}
           </button>

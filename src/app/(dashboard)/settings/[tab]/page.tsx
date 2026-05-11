@@ -2,11 +2,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { SettingsClient } from "./settings-client";
+import { SettingsClient } from "../settings-client";
 
-export default async function SettingsPage() {
+export default async function SettingsTabPage({ params }: { params: Promise<{ tab: string }> }) {
+  const { tab } = await params;
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const validTabs = ["business", "billing", "appearance", "security"];
+  if (!validTabs.includes(tab)) {
+    redirect("/settings/business");
+  }
 
   const tenantId = (session.user as any).tenantId;
   const tenant = await prisma.tenant.findUnique({

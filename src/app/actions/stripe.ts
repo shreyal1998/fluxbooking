@@ -6,19 +6,19 @@ import { stripe } from "@/lib/stripe";
 import prisma from "@/lib/prisma";
 import { PLANS } from "@/config/plans";
 
-export async function createCheckoutSession(planId: string, interval: "MONTH" | "YEAR") {
+export async function createCheckoutSession(planId: string) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
-  if ((session.user as any).role !== "ADMIN") {
+  if (session.user.role !== "ADMIN") {
     return { error: "Only administrators can manage subscriptions" };
   }
 
-  const tenantId = (session.user as any).tenantId;
-  const userEmail = session.user?.email;
+  const tenantId = session.user.tenantId;
+  const userEmail = session.user.email;
 
   const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
+    where: { id: tenantId || "" },
   });
 
   if (!tenant) return { error: "Tenant not found" };
@@ -31,7 +31,7 @@ export async function createCheckoutSession(planId: string, interval: "MONTH" | 
   try {
     const checkoutSession = await stripe.checkout.sessions.create({
       customer_email: userEmail || undefined,
-      client_reference_id: tenantId,
+      client_reference_id: tenantId || undefined,
       line_items: [
         {
           price: priceId,
@@ -39,12 +39,12 @@ export async function createCheckoutSession(planId: string, interval: "MONTH" | 
         },
       ],
       mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
       subscription_data: {
         trial_period_days: 14,
         metadata: {
-          tenantId: tenantId,
+          tenantId: tenantId || "",
         },
       },
     });

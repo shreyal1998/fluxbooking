@@ -26,6 +26,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 
 import { getLabels } from "@/lib/labels";
+import { formatCurrency } from "@/lib/currency-utils";
 
 function InputError({ message }: { message?: string }) {
   if (!message) return null;
@@ -46,6 +47,7 @@ interface ManualBookingProps {
   onClose?: () => void;
   inline?: boolean;
   businessType?: any;
+  currency?: string;
 }
 
 export function ManualBooking({ 
@@ -56,7 +58,8 @@ export function ManualBooking({
   initialData = null,
   onClose,
   inline = false,
-  businessType
+  businessType,
+  currency = "USD"
 }: ManualBookingProps) {
   const router = useRouter();
   const labels = getLabels(businessType);
@@ -287,7 +290,7 @@ export function ManualBooking({
                         <div className="w-2 h-10 rounded-full" style={{ backgroundColor: service.color }}></div>
                         <div>
                             <p className="font-bold text-slate-900 dark:text-white">{service.name}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{service.durationMinutes} mins â€¢ ${service.price}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{service.durationMinutes} mins • {formatCurrency(service.price, currency)}</p>
                         </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
@@ -410,13 +413,13 @@ export function ManualBooking({
                 {!customerInfo.id && !isAddingNewCustomer ? (
                     <div className="space-y-4">
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Search {labels.customer}</label>
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                         <input 
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
                         placeholder={`Start typing ${labels.customerLower} name or email...`}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl py-4 pl-12 pr-4 text-sm dark:text-white outline-none focus:bg-white dark:focus:bg-slate-800 transition-all focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
                         />
                     </div>
                     

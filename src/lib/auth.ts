@@ -1,4 +1,3 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -6,7 +5,6 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
@@ -16,8 +14,8 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
+      clientId: process.env.GITHUB_ID || "placeholder",
+      clientSecret: process.env.GITHUB_SECRET || "placeholder",
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -59,26 +57,36 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        return {
-          ...token,
-          id: user.id,
-          role: (user as any).role,
-          tenantId: (user as any).tenantId,
-        };
+      try {
+        if (user) {
+          return {
+            ...token,
+            id: user.id,
+            role: user.role,
+            tenantId: user.tenantId,
+          };
+        }
+        return token;
+      } catch (error) {
+        console.error("JWT Callback Error:", error);
+        return token;
       }
-      return token;
     },
     async session({ session, token }) {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          role: token.role,
-          tenantId: token.tenantId,
-        },
-      };
+      try {
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.id,
+            role: token.role,
+            tenantId: token.tenantId,
+          },
+        };
+      } catch (error) {
+        console.error("Session Callback Error:", error);
+        return session;
+      }
     },
   },
 };

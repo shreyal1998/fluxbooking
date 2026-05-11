@@ -1,26 +1,19 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import { 
   Calendar as CalendarIcon, 
-  List, 
   Clock, 
-  User, 
   Mail, 
-  LayoutGrid, 
   Filter,
   CheckCircle2,
-  AlertCircle,
-  Pencil,
   Trash2,
   Users,
   ChevronLeft,
   ChevronRight,
-  Plus,
   X,
   Ban,
-  Scissors,
   Check
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
@@ -44,6 +37,33 @@ import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
 import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Booking, Service, Staff, Tenant, UserRole, BlockedSlot, BookingStatus } from "@prisma/client";
+
+type BookingWithRelations = Booking & {
+  service: Service;
+  staff: Staff;
+};
+
+type BlockedSlotWithRelations = BlockedSlot & {
+  staff: Staff;
+};
+
+type SerializedService = Omit<Service, "price"> & { price: string };
+
+type SerializedBooking = Omit<Booking, "service"> & {
+  service: SerializedService;
+  staff: Staff;
+};
+
+interface AppointmentsClientProps {
+  bookings: SerializedBooking[];
+  blockedSlots: BlockedSlotWithRelations[];
+  services: SerializedService[];
+  staff: Staff[];
+  tenantId: string;
+  userRole: UserRole;
+  tenant: Tenant | null;
+}
 
 export function AppointmentsClient({ 
   bookings: initialBookings, 
@@ -53,26 +73,15 @@ export function AppointmentsClient({
   tenantId,
   userRole,
   tenant
-}: any) {
+}: AppointmentsClientProps) {
   const router = useRouter();
   const labels = getLabels(tenant?.businessType);
-  const [bookings, setBookings] = useState(initialBookings);
-  const [blockedSlots, setBlockedSlots] = useState(initialBlockedSlots);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">("week");
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
   const [staffFilter, setStaffFilter] = useState<string>("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
-  
-  // Sync state when props change (after router.refresh())
-  useEffect(() => {
-    setBookings(initialBookings);
-  }, [initialBookings]);
-
-  useEffect(() => {
-    setBlockedSlots(initialBlockedSlots);
-  }, [initialBlockedSlots]);
 
   // Pagination State for List View
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,11 +90,6 @@ export function AppointmentsClient({
   // Custom Staff Dropdown State
   const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
   const staffDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Reset to page 1 when staff filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [staffFilter]);
 
   // Click outside to close staff dropdown
   useEffect(() => {
@@ -99,15 +103,16 @@ export function AppointmentsClient({
   }, []);
 
   // Helper to get current date at venue
-  const getVenueDate = () => {
+  const getVenueDate = useCallback(() => {
     try {
       const tz = tenant?.timezone || "UTC";
+      if (tz === "UTC") return new Date();
       const str = new Date().toLocaleString("en-US", { timeZone: tz });
       return new Date(str);
-    } catch (e) {
+    } catch {
       return new Date();
     }
-  };
+  }, [tenant]);
 
   // Slot Action State
   const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ date: Date, staffId?: string } | null>(null);
@@ -115,8 +120,9 @@ export function AppointmentsClient({
 
   // Initialize date on client only to avoid hydration mismatch
   useEffect(() => {
-    setCurrentDate(getVenueDate());
-  }, []);
+    const venueDate = getVenueDate();
+    setCurrentDate(venueDate);
+  }, [getVenueDate]);
 
   const handleSlotClick = (date: Date, staffId?: string) => {
     setSelectedSlotInfo({ date, staffId });
@@ -124,22 +130,23 @@ export function AppointmentsClient({
   };
 
   const nextDate = () => {
-    if (!currentDate) return;
-    if (viewMode === "month") setCurrentDate(addMonths(currentDate, 1));
-    else if (viewMode === "week") setCurrentDate(addWeeks(currentDate, 1));
-    else setCurrentDate(addDays(currentDate, 1));
+    setCurrentDate((prev) => {
+      if (viewMode === "month") return addMonths(prev, 1);
+      if (viewMode === "week") return addWeeks(prev, 1);
+      return addDays(prev, 1);
+    });
   };
 
   const prevDate = () => {
-    if (!currentDate) return;
-    if (viewMode === "month") setCurrentDate(subMonths(currentDate, 1));
-    else if (viewMode === "week") setCurrentDate(subWeeks(currentDate, 1));
-    else setCurrentDate(subDays(currentDate, 1));
+    setCurrentDate((prev) => {
+      if (viewMode === "month") return subMonths(prev, 1);
+      if (viewMode === "week") return subWeeks(prev, 1);
+      return subDays(prev, 1);
+    });
   };
 
   const getHeaderText = () => {
     if (viewMode === "list") return `All ${labels.appointment}s`;
-    if (!currentDate) return "";
     if (viewMode === "month") return format(currentDate, "MMMM yyyy");
     if (viewMode === "day" || viewMode === "team") return format(currentDate, "d MMMM yyyy");
     
@@ -180,9 +187,9 @@ export function AppointmentsClient({
 
   // Filtered Bookings for List View
   const listFilteredBookings = useMemo(() => {
-    if (userRole !== "ADMIN" || staffFilter === "all") return bookings;
-    return bookings.filter((b: any) => b.staffId === staffFilter);
-  }, [bookings, staffFilter, userRole]);
+    if (userRole !== "ADMIN" || staffFilter === "all") return initialBookings;
+    return initialBookings.filter((b) => b.staffId === staffFilter);
+  }, [initialBookings, staffFilter, userRole]);
 
   // Pagination Calculations for List View
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -200,16 +207,16 @@ export function AppointmentsClient({
 
   // Filter events based on selected staff
   const filteredEvents = useMemo(() => {
-    let filteredBookings = bookings;
-    let filteredBlocked = blockedSlots;
+    let filteredBookings = initialBookings;
+    let filteredBlocked = initialBlockedSlots;
 
     if (userRole === "ADMIN" && staffFilter !== "all") {
-      filteredBookings = bookings.filter((b: any) => b.staffId === staffFilter);
-      filteredBlocked = blockedSlots.filter((s: any) => s.staffId === staffFilter);
+      filteredBookings = initialBookings.filter((b) => b.staffId === staffFilter);
+      filteredBlocked = initialBlockedSlots.filter((s) => s.staffId === staffFilter);
     }
 
     return [
-      ...(filteredBookings?.map((b: any) => ({
+      ...(filteredBookings?.map((b) => ({
         id: b.id,
         title: `${b.customerName} - ${b.service.name}`,
         start: new Date(b.startTime),
@@ -219,21 +226,19 @@ export function AppointmentsClient({
         status: b.status,
         color: b.service.color
       })) || []),
-      ...(filteredBlocked?.map((s: any) => ({
+      ...(filteredBlocked?.map((s) => ({
         id: s.id,
         title: s.reason || "Blocked",
         start: new Date(s.startTime),
         end: new Date(s.endTime),
         type: "blocked" as const,
         resourceName: s.staff.name,
-        leaveType: s.type
+        leaveType: (s as any).type // Some slots might be from leave requests
       })) || [])
     ];
-  }, [bookings, blockedSlots, staffFilter, userRole]);
+  }, [initialBookings, initialBlockedSlots, staffFilter, userRole]);
 
-  if (!currentDate) return null;
-
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: BookingStatus) => {
     switch (status) {
       case "PENDING": return "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900/50";
       case "CONFIRMED": return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900/50";
@@ -243,7 +248,7 @@ export function AppointmentsClient({
     }
   };
 
-  const selectedStaffName = staffFilter === "all" ? "All Staff Members" : staff.find((s: any) => s.id === staffFilter)?.name;
+  const selectedStaffName = staffFilter === "all" ? "All Staff Members" : staff.find((s) => s.id === staffFilter)?.name;
 
   return (
     <div className="flex-1 flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
@@ -259,6 +264,7 @@ export function AppointmentsClient({
             services={services} 
             staff={staff} 
             businessType={tenant?.businessType}
+            currency={tenant?.currency || "USD"}
           />
           
           {userRole === "ADMIN" && (
@@ -291,7 +297,7 @@ export function AppointmentsClient({
                   </div>
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
                     <button
-                      onClick={() => { setStaffFilter("all"); setIsStaffFilterOpen(false); }}
+                      onClick={() => { setStaffFilter("all"); setCurrentPage(1); setIsStaffFilterOpen(false); }}
                       className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                     >
                       <div className="flex items-center gap-3">
@@ -303,10 +309,10 @@ export function AppointmentsClient({
                       {staffFilter === "all" && <Check className="h-4 w-4 text-indigo-600" />}
                     </button>
 
-                    {staff.map((s: any) => (
+                    {staff.map((s) => (
                       <button
                         key={s.id}
-                        onClick={() => { setStaffFilter(s.id); setIsStaffFilterOpen(false); }}
+                        onClick={() => { setStaffFilter(s.id); setCurrentPage(1); setIsStaffFilterOpen(false); }}
                         className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                       >
                         <div className="flex items-center gap-3">
@@ -353,7 +359,7 @@ export function AppointmentsClient({
               </div>
               <div className="p-8 max-h-[70vh] overflow-y-auto">
                 <AvailabilityEditor 
-                  initialAvailability={tenant?.businessHoursJson} 
+                  initialAvailability={tenant?.businessHoursJson as any} 
                   isBusiness={true} 
                 />
               </div>
@@ -422,11 +428,12 @@ export function AppointmentsClient({
                       initialData={{
                         startTime: selectedSlotInfo.date,
                         staffId: selectedSlotInfo.staffId,
-                        staff: staff.find((s: any) => s.id === selectedSlotInfo.staffId)
+                        staff: staff.find((s) => s.id === selectedSlotInfo.staffId)
                       }}
                       onClose={() => setSelectedSlotInfo(null)}
                       inline={true}
                       businessType={tenant?.businessType}
+                      currency={tenant?.currency || "USD"}
                     />
                  </div>
                ) : (
@@ -551,7 +558,7 @@ export function AppointmentsClient({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {currentListItems.map((booking: any) => (
+                        {currentListItems.map((booking) => (
                           <tr key={booking.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group">
                             <td className="px-10 py-6 whitespace-nowrap">
                               <div className="text-sm font-black text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
@@ -588,7 +595,7 @@ export function AppointmentsClient({
                               </span>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                              <div className="flex items-center justify-end gap-2 transition-all">
                                 {(booking.status === "PENDING" || booking.status === "CONFIRMED") && (
                                   <>
                                     <Tooltip content="Complete Booking" position="bottom">
@@ -657,8 +664,8 @@ export function AppointmentsClient({
             <CalendarView 
               initialEvents={filteredEvents} 
               userRole={userRole} 
-              staffList={staff} 
-              businessHours={tenant?.businessHoursJson}
+              staffList={staff as any} 
+              businessHours={tenant?.businessHoursJson as any}
               timezone={tenant?.timezone || "UTC"}
               onSlotClick={handleSlotClick}
               currentDate={currentDate}

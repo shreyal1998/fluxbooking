@@ -9,7 +9,15 @@ export function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
   // 1. EARLY EXIT: Identify pages where the utility should NEVER appear
-  const hideOnPages = ["/register", "/login", "/dashboard"];
+  const hideOnPages = [
+    "/register", "/login", "/overview", "/appointments", 
+    "/bookings", "/sessions",
+    "/services", "/staff", "/customers", 
+    "/classes", "/treatments",
+    "/team", "/trainers", "/practitioners",
+    "/clients", "/members", "/patients",
+    "/my-schedule", "/settings"
+  ];
   const shouldHide = hideOnPages.some(path => pathname === path || pathname.startsWith(path + "/"));
 
   useEffect(() => {

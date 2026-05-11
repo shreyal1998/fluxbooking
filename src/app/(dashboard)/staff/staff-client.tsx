@@ -18,6 +18,7 @@ import {
   Calendar
 } from "lucide-react";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
+import { toast } from "sonner";
 import { Portal } from "@/components/ui/portal";
 import { Tooltip } from "@/components/ui/tooltip";
 import { getLabels } from "@/lib/labels";
@@ -25,7 +26,9 @@ import { AddStaffForm } from "@/components/dashboard/add-staff-form";
 import { EditStaffForm } from "@/components/dashboard/edit-staff-form";
 import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { LeaveRequestsManager } from "@/components/dashboard/leave-requests-manager";
+import { deleteStaff } from "@/app/actions/dashboard";
 import Link from "next/link";
+import { Trash2, AlertCircle, Loader2 } from "lucide-react";
 
 interface StaffClientProps {
   initialStaff: any[];
@@ -58,9 +61,11 @@ export function StaffClient({
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"profile" | "availability">("profile");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [deletingStaff, setDeletingStaff] = useState<any | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const labels = getLabels(businessType);
-  useLockBodyScroll(isAddModalOpen || !!editingStaff);
+  useLockBodyScroll(isAddModalOpen || !!editingStaff || !!deletingStaff);
 
   // Sync state when props change (after router.refresh())
   useEffect(() => {
@@ -129,7 +134,7 @@ export function StaffClient({
                     placeholder={`Search ${labels.staffLower}s...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs dark:text-white focus:ring-2 focus:ring-indigo-600/20 transition-all outline-none w-48 lg:w-64"
+                    className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
                   />
                 </div>
                 {userRole === "ADMIN" && (
@@ -221,20 +226,31 @@ export function StaffClient({
                             <td className="px-10 py-6 whitespace-nowrap text-right">
                               {userRole === "ADMIN" ? (
                                 !isLocked ? (
-                                  <Tooltip content={`Manage ${member.name}`} position="bottom">
-                                    <button 
-                                      onClick={() => {
-                                        setEditingStaff(member);
-                                        setActiveTab("profile");
-                                      }}
-                                      className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
-                                    >
-                                      <Settings2 className="h-4.5 w-4.5" />
-                                    </button>
-                                  </Tooltip>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Tooltip content={`Delete ${labels.staff}`} position="bottom">
+                                      <button 
+                                        onClick={() => setDeletingStaff(member)}
+                                        className="p-3 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-2xl transition-all border border-rose-100 shadow-sm hover:shadow-md active:scale-95"
+                                      >
+                                        <Trash2 className="h-4.5 w-4.5" />
+                                      </button>
+                                    </Tooltip>
+
+                                    <Tooltip content={`Manage ${member.name}`} position="bottom">
+                                      <button 
+                                        onClick={() => {
+                                          setEditingStaff(member);
+                                          setActiveTab("profile");
+                                        }}
+                                        className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
+                                      >
+                                        <Settings2 className="h-4.5 w-4.5" />
+                                      </button>
+                                    </Tooltip>
+                                  </div>
                                 ) : (
                                   <Tooltip content="Upgrade Plan" position="bottom">
-                                    <Link href="/dashboard/settings" className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl inline-block hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                    <Link href="/settings?tab=billing" className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl inline-block hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                                       <Lock className="h-4.5 w-4.5" />
                                     </Link>
                                   </Tooltip>
@@ -299,7 +315,7 @@ export function StaffClient({
               <p className="text-xs font-medium text-amber-50 leading-relaxed mb-6">
                 Your current {plan} plan is capped at {currentLimit} {labels.staffLower}s. Some members are locked.
               </p>
-              <Link href="/dashboard/settings" className="block w-full text-center py-4 bg-white text-amber-600 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all active:scale-95 shadow-lg">
+              <Link href="/settings/billing" className="block w-full text-center py-4 bg-white text-amber-600 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all active:scale-95 shadow-lg">
                   Upgrade Now
               </Link>
             </div>
@@ -439,6 +455,55 @@ export function StaffClient({
                     initialAvailability={editingStaff.availabilityJson} 
                   />
                 )}
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingStaff && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+            />
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 text-center">
+                <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-900/50">
+                  <AlertCircle className="h-8 w-8 text-rose-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Remove {labels.staff}?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-8">
+                  Are you sure you want to remove <span className="font-bold text-slate-900 dark:text-white">{deletingStaff.name}</span>? This will permanently delete their profile and associated user account.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <button 
+                    onClick={() => setDeletingStaff(null)}
+                    className="py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      setDeleteLoading(true);
+                      const result = await deleteStaff(deletingStaff.id);
+                      if (result.success) {
+                        toast.success(`${labels.staff} removed`);
+                        setDeletingStaff(null);
+                        setStaff(staff.filter(s => s.id !== deletingStaff.id));
+                      } else {
+                        toast.error(result.error);
+                      }
+                      setDeleteLoading(false);
+                    }}
+                    disabled={deleteLoading}
+                    className="bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-rose-700 transition-all shadow-xl shadow-rose-100 dark:shadow-none disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Remove"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

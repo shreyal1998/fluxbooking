@@ -2,11 +2,23 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { Calendar, Loader2, Eye, EyeOff, ArrowRight, Globe, ChevronDown, Check, Search, AlertCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowRight, ChevronDown, Search, AlertCircle } from "lucide-react";
 import { registerBusiness } from "@/app/actions/register";
 import { COUNTRIES } from "@/config/countries";
 import { Logo } from "@/components/logo";
+import { ThemeCleaner } from "@/components/providers/theme-cleaner";
+
+const InputError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+};
 
 function RegisterContent() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -135,22 +147,28 @@ function RegisterContent() {
       }
       setLoading(false);
     } else {
-      router.push("/login?registered=true");
+      // Automatically log in the user after successful registration
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+      
+      const signInResult = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // If auto-login fails for some weird reason, send them to login page with success message
+        router.push("/login?registered=true");
+      } else {
+        router.push("/overview");
+      }
     }
   }
 
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
+      <ThemeCleaner />
       <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100">
         <div className="flex flex-col items-center">
           <Link href="/" className="mb-6 outline-none">
@@ -307,8 +325,8 @@ function RegisterContent() {
                     dropdownDirection === "up" ? "bottom-full mb-2" : "top-full mt-2"
                   }`}>
                     <div className="px-3 pb-2 pt-1 border-b border-slate-100 mb-1 sticky top-0 bg-white z-10">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                         <input 
                           ref={searchInputRef}
                           type="text"
@@ -316,21 +334,21 @@ function RegisterContent() {
                           value={countrySearch}
                           onChange={(e) => setCountrySearch(e.target.value)}
                           autoComplete="off"
-                          className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                          className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
                         />
                       </div>
                     </div>
                     <div className="overflow-y-auto flex-1 custom-scrollbar">
                       {filteredCountries.length === 0 ? (
                         <div className="px-5 py-8 text-center">
-                          <p className="text-xs font-bold text-slate-400 italic">No countries found matching "{countrySearch}"</p>
+                          <p className="text-xs font-bold text-slate-400 italic">No countries found matching &quot;{countrySearch}&quot;</p>
                         </div>
                       ) : (
                         filteredCountries.map((c) => (
                           <button
                             key={c.code}
                             type="button"
-                            onClick={() => handleCountrySelect(c as any)}
+                            onClick={() => handleCountrySelect(c)}
                             className={`flex items-center w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
                               selectedCountry?.code === c.code ? "bg-indigo-50 text-indigo-600" : "text-slate-700 hover:bg-slate-50"
                             }`}
@@ -465,17 +483,7 @@ function RegisterContent() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <div className="premium-pulsar-container">
-          <div className="liquid-loader">
-            <div className="liquid-blob"></div>
-            <div className="liquid-blob"></div>
-            <div className="liquid-blob"></div>
-          </div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={null}>
       <RegisterContent />
     </Suspense>
   );

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import prisma from "@/lib/prisma";
 import Stripe from "stripe";
+import { SubscriptionPlan } from "@prisma/client";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -16,8 +17,9 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || ""
     );
-  } catch (error: any) {
-    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
@@ -36,10 +38,10 @@ export async function POST(req: Request) {
         where: { id: tenantId },
         data: {
           lemonSqueezyCustomerId: session.customer as string,
-          lemonSqueezySubscriptionId: (subscription as any).id,
+          lemonSqueezySubscriptionId: subscription.id,
           planStatus: "ACTIVE",
-          plan: "PRO", // Default for stripe legacy
-          subscriptionEndsAt: new Date((subscription as any).current_period_end * 1000),
+          plan: SubscriptionPlan.PRO, // Default for stripe legacy
+          subscriptionEndsAt: new Date(subscription.current_period_end * 1000),
         },
       });
     }

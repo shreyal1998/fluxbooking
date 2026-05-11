@@ -6,14 +6,15 @@ import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcrypt";
 import { sendStaffWelcomeEmail } from "@/lib/mail";
+import { getLabels } from "@/lib/labels";
 
 export async function addStaff(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return { error: "Only administrators can add staff members." };
   }
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const bio = formData.get("bio") as string;
@@ -22,7 +23,7 @@ export async function addStaff(formData: FormData) {
 
   try {
     const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
+      where: { id: tenantId || "" },
       include: { staff: true }
     });
 
@@ -45,7 +46,7 @@ export async function addStaff(formData: FormData) {
           email,
           password: hashedPassword,
           role: "STAFF",
-          tenantId,
+          tenantId: tenantId || "",
         },
       });
       targetUserId = newUser.id;
@@ -55,7 +56,7 @@ export async function addStaff(formData: FormData) {
       data: {
         name,
         bio,
-        tenantId,
+        tenantId: tenantId || "",
         userId: targetUserId || null,
         availabilityJson: JSON.stringify({
           monday: { start: "09:00", end: "17:00" },
@@ -78,7 +79,7 @@ export async function addStaff(formData: FormData) {
       });
     }
 
-    revalidatePath("/dashboard/staff");
+    revalidatePath("/staff");
     return { success: true };
   } catch (error) {
     console.error("Add Staff Error:", error);
@@ -88,13 +89,13 @@ export async function addStaff(formData: FormData) {
 
 export async function deleteStaff(staffId: string) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
 
   try {
     const staff = await prisma.staff.findUnique({
-      where: { id: staffId, tenantId },
+      where: { id: staffId, tenantId: tenantId || "" },
       include: { user: true }
     });
 
@@ -106,7 +107,7 @@ export async function deleteStaff(staffId: string) {
 
     await prisma.staff.delete({ where: { id: staffId } });
 
-    revalidatePath("/dashboard/staff");
+    revalidatePath("/staff");
     return { success: true };
   } catch (error) {
     console.error("Delete Staff Error:", error);
@@ -136,18 +137,59 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
       }
     });
 
-    revalidatePath("/dashboard/staff");
+    revalidatePath("/staff");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to update staff profile" };
+  }
+}
+
+export async function updateTenantCountry(countryCode: string, currency: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = session.user.tenantId;
+
+  try {
+    await prisma.tenant.update({
+      where: { id: tenantId || "" },
+      data: { 
+        country: countryCode,
+        currency
+      },
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: "Failed to update country settings" };
+  }
+}
+
+export async function updateTenantTimezone(timezone: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = session.user.tenantId;
+
+  try {
+    await prisma.tenant.update({
+      where: { id: tenantId || "" },
+      data: { timezone },
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: "Failed to update timezone" };
   }
 }
 
 export async function addService(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
   const name = formData.get("name") as string;
   const durationMinutes = parseInt(formData.get("duration") as string);
   const price = parseFloat(formData.get("price") as string);
@@ -160,20 +202,20 @@ export async function addService(formData: FormData) {
         durationMinutes,
         price,
         color,
-        tenantId,
+        tenantId: tenantId || "",
       },
     });
 
-    revalidatePath("/dashboard/services");
+    revalidatePath("/services");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to create service" };
   }
 }
 
 export async function updateService(serviceId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
   const name = formData.get("name") as string;
   const durationMinutes = parseInt(formData.get("duration") as string);
@@ -197,49 +239,49 @@ export async function updateService(serviceId: string, formData: FormData) {
       },
     });
 
-    revalidatePath("/dashboard/services");
+    revalidatePath("/services");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to update service" };
   }
 }
 
 export async function deleteService(serviceId: string) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
   try {
     await prisma.service.delete({
       where: { id: serviceId }
     });
 
-    revalidatePath("/dashboard/services");
+    revalidatePath("/services");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to delete service" };
   }
 }
 
 export async function updateTenantBranding(formData: FormData) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
   const primaryColor = formData.get("primaryColor") as string;
   const logoUrl = formData.get("logoUrl") as string;
 
   try {
     await prisma.tenant.update({
-      where: { id: tenantId },
+      where: { id: tenantId || "" },
       data: {
         primaryColor,
         logoUrl,
       },
     });
 
-    revalidatePath("/dashboard/settings");
+    revalidatePath("/", "layout");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to update branding" };
   }
 }
@@ -256,10 +298,10 @@ export async function updateStaffAvailability(staffId: string, availability: any
       }
     });
 
-    revalidatePath("/dashboard/staff");
-    revalidatePath("/dashboard/my-schedule");
+    revalidatePath("/staff");
+    revalidatePath("/my-schedule");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to update availability" };
   }
 }
@@ -272,7 +314,7 @@ export async function addBlockedSlot(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
   const staffId = formData.get("staffId") as string;
   const reason = formData.get("reason") as string;
   const startTime = new Date(formData.get("startTime") as string);
@@ -281,7 +323,7 @@ export async function addBlockedSlot(formData: FormData) {
   try {
     await prisma.blockedSlot.create({
       data: {
-        tenantId,
+        tenantId: tenantId || "",
         staffId,
         reason,
         startTime,
@@ -289,10 +331,10 @@ export async function addBlockedSlot(formData: FormData) {
       }
     });
 
-    revalidatePath("/dashboard/my-schedule");
-    revalidatePath("/dashboard/appointments");
+    revalidatePath("/my-schedule");
+    revalidatePath("/appointments");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to add block" };
   }
 }
@@ -310,32 +352,32 @@ export async function removeBlockedSlot(slotId: string) {
       where: { id: slotId }
     });
 
-    revalidatePath("/dashboard/my-schedule");
-    revalidatePath("/dashboard/appointments");
+    revalidatePath("/my-schedule");
+    revalidatePath("/appointments");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to remove block" };
   }
 }
 
 export async function updateBusinessHours(hours: any) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
 
   try {
     await prisma.tenant.update({
-      where: { id: tenantId },
+      where: { id: tenantId || "" },
       data: {
         businessHoursJson: JSON.stringify(hours)
       }
     });
 
-    revalidatePath("/dashboard/settings");
-    revalidatePath("/dashboard/appointments");
+    revalidatePath("/", "layout");
+    revalidatePath("/appointments");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to update business hours" };
   }
 }
@@ -344,8 +386,8 @@ export async function submitLeaveRequest(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
-  const tenantId = (session.user as any).tenantId;
-  const userId = (session.user as any).id;
+  const tenantId = session.user.tenantId;
+  const userId = session.user.id;
 
   const startTime = new Date(formData.get("startTime") as string);
   const endTime = new Date(formData.get("endTime") as string);
@@ -361,7 +403,7 @@ export async function submitLeaveRequest(formData: FormData) {
 
     await prisma.leaveRequest.create({
       data: {
-        tenantId,
+        tenantId: tenantId || "",
         staffId: staff.id,
         type,
         startTime,
@@ -371,17 +413,17 @@ export async function submitLeaveRequest(formData: FormData) {
       }
     });
 
-    revalidatePath("/dashboard/staff");
-    revalidatePath("/dashboard/my-schedule");
+    revalidatePath("/staff");
+    revalidatePath("/my-schedule");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to submit leave request" };
   }
 }
 
 export async function approveLeaveRequest(requestId: string) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
   try {
     const request = await prisma.leaveRequest.findUnique({
@@ -407,17 +449,17 @@ export async function approveLeaveRequest(requestId: string) {
       }
     });
 
-    revalidatePath("/dashboard/staff");
-    revalidatePath("/dashboard/appointments");
+    revalidatePath("/staff");
+    revalidatePath("/appointments");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to approve request" };
   }
 }
 
 export async function rejectLeaveRequest(requestId: string) {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user as any)?.role !== "ADMIN") return { error: "Unauthorized" };
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
 
   try {
     await prisma.leaveRequest.update({
@@ -425,9 +467,9 @@ export async function rejectLeaveRequest(requestId: string) {
       data: { status: "REJECTED" }
     });
 
-    revalidatePath("/dashboard/staff");
+    revalidatePath("/staff");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Failed to reject request" };
   }
 }
@@ -436,7 +478,7 @@ export async function searchGlobal(query: string) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = session.user.tenantId;
 
   if (!query || query.length < 2) return { results: [] };
 
@@ -444,7 +486,7 @@ export async function searchGlobal(query: string) {
     const [customers, bookings, staff, services] = await Promise.all([
       prisma.customer.findMany({
         where: {
-          tenantId,
+          tenantId: tenantId || "",
           OR: [
             { name: { contains: query, mode: 'insensitive' } },
             { email: { contains: query, mode: 'insensitive' } },
@@ -455,7 +497,7 @@ export async function searchGlobal(query: string) {
       }),
       prisma.booking.findMany({
         where: {
-          tenantId,
+          tenantId: tenantId || "",
           OR: [
             { customerName: { contains: query, mode: 'insensitive' } },
             { service: { name: { contains: query, mode: 'insensitive' } } },
@@ -467,25 +509,31 @@ export async function searchGlobal(query: string) {
       }),
       prisma.staff.findMany({
         where: {
-          tenantId,
+          tenantId: tenantId || "",
           name: { contains: query, mode: 'insensitive' }
         },
         take: 3
       }),
       prisma.service.findMany({
         where: {
-          tenantId,
+          tenantId: tenantId || "",
           name: { contains: query, mode: 'insensitive' }
         },
         take: 3
       })
     ]);
 
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId || "" },
+      select: { businessType: true }
+    });
+    const labels = getLabels(tenant?.businessType);
+
     const results = [
-      ...customers.map(c => ({ id: c.id, type: 'customer', title: c.name, subtitle: c.email || c.phone, href: '/dashboard/customers' })),
-      ...bookings.map(b => ({ id: b.id, type: 'appointment', title: b.customerName, subtitle: b.service.name + " with " + b.staff.name, href: '/dashboard/appointments' })),
-      ...staff.map(s => ({ id: s.id, type: 'staff', title: s.name, subtitle: 'Team Member', href: '/dashboard/staff' })),
-      ...services.map(s => ({ id: s.id, type: 'service', title: s.name, subtitle: 'Service', href: '/dashboard/services' })),
+      ...customers.map(c => ({ id: c.id, type: 'customer', title: c.name, subtitle: c.email || c.phone, href: `/${labels.customerSlug}` })),
+      ...bookings.map(b => ({ id: b.id, type: 'appointment', title: b.customerName, subtitle: b.service.name + " with " + b.staff.name, href: `/${labels.appointmentSlug}` })),
+      ...staff.map(s => ({ id: s.id, type: 'staff', title: s.name, subtitle: 'Team Member', href: `/${labels.staffSlug}` })),
+      ...services.map(s => ({ id: s.id, type: 'service', title: s.name, subtitle: 'Service', href: `/${labels.serviceSlug}` })),
     ];
 
     return { results };

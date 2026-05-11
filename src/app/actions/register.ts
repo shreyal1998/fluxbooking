@@ -14,15 +14,18 @@ export async function registerBusiness(formData: FormData) {
   const businessType = formData.get("businessType") as BusinessType;
   const slug = formData.get("slug") as string;
   const country = (formData.get("country") as string) || "US";
-  const currency = (formData.get("currency") as string) || "USD";
-  const timezone = (formData.get("timezone") as string) || "UTC";
   
+  // Combine phone with country code
+  const selectedCountryData = COUNTRIES.find(c => c.code === country);
+  const currency = selectedCountryData?.currency || "USD";
+  
+  // Use country-specific timezone if available, fallback to UTC
+  const timezone = selectedCountryData?.timezone || "UTC";
+
   // New Plan Selection Fields
   const selectedPlan = (formData.get("plan") as SubscriptionPlan) || "FREE";
   const selectedInterval = (formData.get("interval") as SubscriptionInterval) || "MONTH";
-
-  // Combine phone with country code
-  const selectedCountryData = COUNTRIES.find(c => c.code === country);
+  
   const rawPhone = formData.get("phone") as string;
   const fullPhone = selectedCountryData && rawPhone ? `+${selectedCountryData.phoneCode}${rawPhone}` : rawPhone;
 

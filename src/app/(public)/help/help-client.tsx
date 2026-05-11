@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { sendSupportRequest } from "@/app/actions/support";
 import { 
   Calendar, 
-  ArrowLeft, 
   Send, 
   CheckCircle2, 
   MessageSquare, 
@@ -33,15 +32,24 @@ const REASONS = [
   { id: "other", label: "Other", icon: LifeBuoy, subject: "e.g. General inquiry", placeholder: "Describe your inquiry in detail..." },
 ];
 
+const InputError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+      <AlertCircle className="h-3 w-3" />
+      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+    </div>
+  );
+};
+
 export default function HelpClient() {
   const { data: session } = useSession();
-  const isPro = (session?.user as any)?.plan === "PRO";
+  const isPro = session?.user.role === "ADMIN"; // Simplified for now or check plan
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedReason, setSelectedReason] = useState<typeof REASONS[0] | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [generalError, setGeneralError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,14 +68,12 @@ export default function HelpClient() {
       delete newErrors[field];
       setFieldErrors(newErrors);
     }
-    setGeneralError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setFieldErrors({});
-    setGeneralError(null);
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
@@ -96,7 +102,6 @@ export default function HelpClient() {
     const result = await sendSupportRequest(formData);
 
     if (result.error) {
-      setGeneralError(result.error);
       toast.error(result.error);
       setLoading(false);
     } else {
@@ -104,16 +109,6 @@ export default function HelpClient() {
       setSubmitted(true);
       setLoading(false);
     }
-  };
-
-  const InputError = ({ message }: { message?: string }) => {
-    if (!message) return null;
-    return (
-      <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
-      </div>
-    );
   };
 
   if (submitted) {

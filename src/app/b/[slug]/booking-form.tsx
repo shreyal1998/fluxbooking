@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { format, addDays, startOfToday } from "date-fns";
+import { format, addDays, startOfToday, startOfDay } from "date-fns";
 import { 
   ChevronRight, 
   ChevronLeft, 
   Clock, 
-  User, 
   CheckCircle2, 
   Loader2,
   Calendar,
@@ -22,6 +21,8 @@ import { toast } from "sonner";
 import { LiquidLoader } from "@/components/ui/liquid-loader";
 
 import { getLabels } from "@/lib/labels";
+import { formatCurrency } from "@/lib/currency-utils";
+import { BusinessType } from "@prisma/client";
 
 interface Service {
   id: string;
@@ -36,7 +37,7 @@ interface Staff {
   name: string;
   bio?: string | null;
   color: string;
-  services?: any[];
+  services?: { id: string }[];
 }
 
 const InputError = ({ message }: { message?: string }) => {
@@ -54,24 +55,38 @@ export function BookingForm({
   services, 
   staff,
   primaryColor = "#6366f1",
-  businessType
+  businessType,
+  timezone = "UTC",
+  currency = "USD"
 }: { 
   tenantId: string; 
   services: Service[]; 
   staff: Staff[];
   primaryColor?: string;
-  businessType?: any;
+  businessType?: BusinessType;
+  timezone?: string;
+  currency?: string;
 }) {
   const labels = getLabels(businessType);
   const searchParams = useSearchParams();
   const rescheduleId = searchParams.get("reschedule");
   const isRescheduling = !!rescheduleId;
 
+  // Calculate "today" based on the business timezone
+  const getTodayAtVenue = () => {
+    try {
+      const str = new Date().toLocaleString("en-US", { timeZone: timezone });
+      return startOfDay(new Date(str));
+    } catch {
+      return startOfToday();
+    }
+  };
+
   const [hasMounted, setHasMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
-  const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
+  const [selectedDate, setSelectedDate] = useState<Date>(getTodayAtVenue());
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; staffId: string; staffName: string } | null>(null);
   const [slots, setSlots] = useState<{ time: string; staffId: string; staffName: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -93,7 +108,7 @@ export function BookingForm({
 
   // Filter staff based on selected service
   const filteredStaff = staff.filter(s => 
-    !selectedService || s.services?.some((srv: any) => srv.id === selectedService.id)
+    !selectedService || s.services?.some((srv) => srv.id === selectedService.id)
   );
 
   // Fetch slots when date, service, or staff changes
@@ -108,7 +123,7 @@ export function BookingForm({
         const response = await fetch(`/api/slots?tenantId=${tenantId}&serviceId=${selectedService.id}&date=${dateStr}${staffParam}`);
         const data = await response.json();
         setSlots(data.slots || []);
-      } catch (error) {
+      } catch {
         console.error("Failed to fetch slots");
       } finally {
         setLoadingSlots(false);
@@ -191,7 +206,7 @@ export function BookingForm({
         </div>
         <div className="space-y-2">
           <h3 className="text-3xl font-black text-slate-900">{isRescheduling ? "Update Successful!" : `${labels.appointment} Confirmed!`}</h3>
-          <p className="text-slate-500 font-medium">We've sent a confirmation email with all the details.</p>
+          <p className="text-slate-500 font-medium">We&apos;ve sent a confirmation email with all the details.</p>
         </div>
         <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 text-left max-w-sm mx-auto">
            <div className="flex justify-between mb-2">
@@ -259,7 +274,7 @@ export function BookingForm({
               <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <Sparkles className="h-6 w-6" style={{ color: primaryColor }} /> {isRescheduling ? `Confirm ${labels.service}` : `Select a ${labels.service}`}
               </h2>
-              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? `Verify the ${labels.serviceLower} for your new ${labels.appointmentLower} time.` : `Choose the ${labels.serviceLower} you'd like to book.`}</p>
+              <p className="text-slate-500 font-medium mt-1">{isRescheduling ? `Verify the ${labels.serviceLower} for your new ${labels.appointmentLower} time.` : `Choose the ${labels.serviceLower} you&apos;d like to book.`}</p>
             </div>
             <div className="grid gap-4">
               {services.map((service) => (
@@ -284,7 +299,7 @@ export function BookingForm({
                     <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
                       <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {service.durationMinutes}m</span>
                       <span className="h-1 w-1 bg-slate-300 rounded-full"></span>
-                      <span>${service.price}</span>
+                      <span>{formatCurrency(service.price, currency)}</span>
                     </div>
                   </div>
                   <div 
@@ -377,14 +392,14 @@ export function BookingForm({
             ) : slots.length > 0 ? (
               <div className="space-y-10">
                 {[
-                  { label: 'Morning', icon: Sparkles, filter: (s: any) => parseInt(s.time.split(':')[0]) < 12 },
-                  { label: 'Afternoon', icon: Clock, filter: (s: any) => parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 17 },
-                  { label: 'Evening', icon: Clock, filter: (s: any) => parseInt(s.time.split(':')[0]) >= 17 },
+                  { label: 'Morning', icon: Sparkles, filter: (s: { time: string }) => parseInt(s.time.split(':')[0]) < 12 },
+                  { label: 'Afternoon', icon: Clock, filter: (s: { time: string }) => parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 17 },
+                  { label: 'Evening', icon: Clock, filter: (s: { time: string }) => parseInt(s.time.split(':')[0]) >= 17 },
                 ].map((section) => {
                   const sectionSlots = slots.filter(section.filter);
                   if (sectionSlots.length === 0) return null;
                   
-                  return (
+                  return ( sectionSlots.length > 0 && 
                     <div key={section.label} className="space-y-4">
                       <div className="flex items-center gap-2 px-1">
                         <section.icon className="h-4 w-4 text-slate-400" />

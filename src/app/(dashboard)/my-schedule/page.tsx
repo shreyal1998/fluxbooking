@@ -9,6 +9,7 @@ import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
 import { Clock, Calendar, History, Ban, Sparkles, ChevronRight, User } from "lucide-react";
 import { format, differenceInMinutes, parse, startOfToday, endOfToday } from "date-fns";
 import { getLabels } from "@/lib/labels";
+import Link from "next/link";
 
 export default async function MySchedulePage() {
   const session = await getServerSession(authOptions);
@@ -128,10 +129,10 @@ export default async function MySchedulePage() {
                                 <p className="text-sm font-medium text-slate-900 dark:text-white opacity-60">{nextAppointment.service.name} • {format(new Date(nextAppointment.startTime), "h:mm a")}</p>
                             </div>
                         </div>
-                        <a href="/dashboard/appointments" className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-all">
-                            View {labels.appointment}s
+                        <Link href={`/${labels.appointmentSlug}`} className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-all">
+                            Booking Calendar
                             <ChevronRight className="h-4 w-4" />
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>

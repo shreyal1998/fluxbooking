@@ -162,14 +162,14 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
   return (
     <div className="space-y-6 transition-colors">
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-2">
-        <div className="relative max-w-md w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <div className="relative max-w-md w-full group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
             <input 
             type="text"
             placeholder={`Search ${labels.customerLower}s...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none dark:text-white"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all outline-none focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
             />
         </div>
 

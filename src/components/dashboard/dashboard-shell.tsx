@@ -23,7 +23,6 @@ import { getLabels } from "@/lib/labels";
 import { Logo } from "../logo";
 import { TrialBadge } from "./trial-badge";
 import { CompactThemeToggle } from "./compact-theme-toggle";
-import NProgress from "nprogress";
 import { Portal } from "../ui/portal";
 import { searchGlobal } from "@/app/actions/dashboard";
 import { Loader2, User, Calendar as CalendarIcon, Users as UsersIcon } from "lucide-react";
@@ -47,13 +46,13 @@ export function DashboardShell({
 
   const filteredNavItems = useMemo(() => {
     const items = [
-      { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-      { name: "Booking Calendar", href: "/dashboard/appointments", icon: Calendar },
-      { name: labels.service + "s", href: "/dashboard/services", icon: labels.serviceIcon },
-      { name: labels.staff + "s", href: "/dashboard/staff", icon: labels.staffIcon },
-      { name: labels.customer + "s", href: "/dashboard/customers", icon: labels.customerIcon },
-      { name: "My Schedule", href: "/dashboard/my-schedule", icon: Clock },
-      { name: "Settings", href: "/dashboard/settings", icon: Settings },
+      { name: "Overview", href: "/overview", icon: LayoutDashboard },
+      { name: "Booking Calendar", href: `/${labels.appointmentSlug}`, icon: Calendar },
+      { name: labels.service + "s", href: `/${labels.serviceSlug}`, icon: labels.serviceIcon },
+      { name: labels.staff + "s", href: `/${labels.staffSlug}`, icon: labels.staffIcon },
+      { name: labels.customer + "s", href: `/${labels.customerSlug}`, icon: labels.customerIcon },
+      { name: "My Schedule", href: "/my-schedule", icon: Clock },
+      { name: "Settings", href: "/settings/business", icon: Settings },
     ];
     return items;
   }, [labels]);
@@ -64,12 +63,11 @@ export function DashboardShell({
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Manage body class and force-dismiss stuck loaders
+  // Manage body class once on mount
   useEffect(() => {
     document.body.classList.add('in-dashboard');
-    NProgress.done();
     return () => document.body.classList.remove('in-dashboard');
-  }, [pathname]);
+  }, []);
 
   // Global Search Logic
   useEffect(() => {
@@ -136,15 +134,9 @@ export function DashboardShell({
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
       <aside className="hidden lg:flex flex-col w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
         <div className="h-16 lg:h-20 px-6 lg:px-10 flex items-center">
-          {isLinkActive("/dashboard") ? (
-            <div className="px-2 relative -top-0.5 left-2 cursor-default">
-              <Logo size="xl" textClassName="dark:text-white" />
-            </div>
-          ) : (
-            <Link href="/dashboard" className="px-2 relative -top-0.5 left-2">
-              <Logo size="xl" textClassName="dark:text-white" />
-            </Link>
-          )}
+          <Link href="/overview" className="px-2 relative -top-0.5 left-2">
+            <Logo size="xl" textClassName="dark:text-white" />
+          </Link>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
@@ -218,7 +210,7 @@ export function DashboardShell({
               placeholder="Search appointments, customers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600/10 dark:focus:border-indigo-500/10 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
+              className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
              />
 
              {/* Search Results Dropdown */}

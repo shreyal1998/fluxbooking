@@ -42,7 +42,9 @@ export default async function AppointmentsPage() {
     }),
     prisma.service.findMany({ where: { tenantId } }),
     prisma.staff.findMany({ where: { tenantId } }),
-    prisma.tenant.findUnique({ where: { id: tenantId } })
+    prisma.tenant.findUnique({ 
+      where: { id: tenantId }
+    })
   ]);
 
   // If user is STAFF, filter the staff list to only include themselves for manual booking options
@@ -60,6 +62,16 @@ export default async function AppointmentsPage() {
     } : null
   }));
 
+  // Smart currency fallback
+  let currency = tenant?.currency || "USD";
+  if (currency === "USD" && tenant?.country && tenant.country !== "US") {
+    const { COUNTRIES } = require("@/config/countries");
+    const countryData = COUNTRIES.find((c: any) => c.code === tenant.country);
+    if (countryData) currency = countryData.currency;
+  }
+
+  const updatedTenant = tenant ? { ...tenant, currency } : null;
+
   return (
     <AppointmentsClient 
       bookings={serializedBookings as any}
@@ -68,7 +80,7 @@ export default async function AppointmentsPage() {
       staff={staff}
       tenantId={tenantId}
       userRole={userRole}
-      tenant={tenant}
+      tenant={updatedTenant}
     />
   );
 }

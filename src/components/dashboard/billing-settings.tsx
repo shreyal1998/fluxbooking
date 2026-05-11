@@ -58,7 +58,7 @@ export function BillingSettings({
               className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
                 interval === "MONTH" 
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
-                  : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                  : "text-black dark:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50"
               }`}
             >
               Monthly
@@ -68,10 +68,10 @@ export function BillingSettings({
               className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
                 interval === "YEAR" 
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
-                  : "text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                  : "text-black dark:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50"
               }`}
             >
-              Yearly <span className="ml-1 text-[8px] text-indigo-100">(-20%)</span>
+              Yearly <span className={`ml-1 text-[10px] ${interval === "YEAR" ? "text-indigo-100" : "text-indigo-600 dark:text-indigo-400"}`}>(-20%)</span>
             </button>
           </div>
         </div>
@@ -88,28 +88,28 @@ export function BillingSettings({
               return (
                 <div 
                   key={plan.id}
-                  className={`relative p-6 rounded-2xl border transition-all ${
+                  className={`relative p-6 rounded-2xl border transition-all shadow-sm ${
                     isCurrent 
                     ? "border-indigo-600 dark:border-indigo-500 ring-1 ring-indigo-600 dark:ring-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10" 
-                    : "border-slate-100 dark:border-slate-700 hover:border-slate-100 dark:hover:border-slate-700"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:border-indigo-500/30"
                   }`}
                 >
                   {isCurrent && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase">
                       Current Plan
                     </span>
                   )}
                   
                   <div className="mb-4">
-                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs">{plan.name}</h4>
+                    <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-sm">{plan.name}</h4>
                     <div className="mt-2 flex items-baseline gap-1">
                       <span className="text-3xl font-black text-slate-900 dark:text-white">
-                        ${plan.price.amount === 0 ? '0' : (interval === "YEAR" ? yearlyTotal : monthlyPrice)}
+                        {plan.price.amount === 0 ? '$0' : (interval === "YEAR" ? `$${yearlyTotal}` : `$${monthlyPrice}`)}
                       </span>
-                      <span className="text-slate-400 text-xs font-medium">/{interval === "YEAR" ? 'yr' : 'mo'}</span>
+                      <span className="text-slate-400 text-sm font-medium">/{interval === "YEAR" ? 'yr' : 'mo'}</span>
                     </div>
                     {interval === "YEAR" && plan.price.amount > 0 && (
-                      <p className="text-[10px] text-emerald-500 font-bold mt-1">Includes 2 months free</p>
+                      <p className="text-xs text-emerald-500 font-bold mt-1">Includes 2 months free</p>
                     )}
                   </div>
 
@@ -127,7 +127,7 @@ export function BillingSettings({
                     disabled={isCurrent || !!loading}
                     className={`w-full py-3 rounded-xl text-xs font-black transition-all ${
                       isCurrent 
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-default" 
+                      ? "bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 cursor-default border border-slate-300 dark:border-slate-700" 
                       : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10"
                     }`}
                   >

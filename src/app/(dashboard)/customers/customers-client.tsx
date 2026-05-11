@@ -140,7 +140,7 @@ export function CustomersClient({
                 placeholder={`Search ${labels.customerLower}s...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs dark:text-white focus:ring-2 focus:ring-indigo-600/20 transition-all outline-none w-48 lg:w-64"
+                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
               />
             </div>
 
@@ -165,7 +165,7 @@ export function CustomersClient({
             <Tooltip content={`Add New ${labels.customer}`} position="bottom">
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
               >
                 <Plus className="h-4 w-4" />
                 Add
@@ -240,7 +240,7 @@ export function CustomersClient({
                           </td>
                         )}
                         <td className="px-8 py-5 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-2 transition-opacity">
                             {customer.status === 'ACTIVE' ? (
                                 <Tooltip content={`Archive ${labels.customer}`} position="bottom">
                                   <button 
