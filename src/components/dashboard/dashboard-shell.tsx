@@ -133,8 +133,8 @@ export function DashboardShell({
   return (
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
       <aside className="hidden lg:flex flex-col w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
-        <div className="h-16 lg:h-20 px-6 lg:px-10 flex items-center">
-          <Link href="/overview" className="px-2 relative -top-0.5 left-2">
+        <div className="h-16 lg:h-20 px-8 flex items-center">
+          <Link href="/overview" className="relative -top-0.5">
             <Logo size="xl" textClassName="dark:text-white" />
           </Link>
         </div>
@@ -143,7 +143,7 @@ export function DashboardShell({
           {filteredNavItems.map((item) => {
             const isActive = isLinkActive(item.href);
             const commonProps = {
-              className: `flex items-center justify-between px-4 py-3 rounded-[1.25rem] transition-all group relative overflow-hidden ${
+              className: `flex items-center justify-between px-4 py-1.5 rounded-[1.25rem] transition-all group relative overflow-hidden ${
                 isActive 
                   ? "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 dark:shadow-none" 
                   : "text-slate-900 dark:text-white hover:bg-white dark:hover:bg-slate-800"
@@ -153,8 +153,10 @@ export function DashboardShell({
             const content = (
               <>
                 <div className="flex items-center gap-4 relative z-10">
-                  <item.icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`} />
-                  <span className={`text-sm font-medium tracking-tight`}>{item.name}</span>
+                  <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                    <item.icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`} />
+                  </div>
+                  <span className={`text-base font-medium tracking-tight`}>{item.name}</span>
                 </div>
                 {isActive && <ChevronRight className="h-4 w-4 text-white/50 relative z-10" />}
               </>
@@ -180,10 +182,12 @@ export function DashboardShell({
           <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
             <button
               onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-4 w-full px-5 py-4 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
+              className="flex items-center gap-4 w-full px-4 py-1.5 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
             >
-              <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
-              <span className="text-sm font-medium">Logout</span>
+              <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+              </div>
+              <span className="text-base font-medium">Logout</span>
             </button>
           </div>
         </div>

@@ -42,9 +42,9 @@ export function Logo({
   };
 
   return (
-    <div className={`flex items-center gap-2 group outline-none ${className}`}>
+    <div className={`flex items-center gap-4 group outline-none ${className}`}>
       {showIcon && (
-        <div className={`bg-indigo-600 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20 ${iconPaddingClasses[size]} ${iconClassName}`}>
+        <div className={`bg-indigo-600 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20 ${iconPaddingClasses[size]} ${iconClassName} shrink-0`}>
           <Calendar className={`text-white ${iconSizeClasses[size]}`} />
         </div>
       )}
