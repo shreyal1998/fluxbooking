@@ -23,11 +23,11 @@ export default function StaffManagementDocs() {
           Create profiles for your team members including their name, bio, and a unique display color for the dashboard calendar.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50 space-y-3">
+           <div className="p-6 rounded-3xl border border-slate-200 bg-slate-50/50 space-y-3">
               <h4 className="font-black text-sm text-slate-900 uppercase tracking-wider">Bio & Details</h4>
               <p className="text-xs text-slate-500 font-bold leading-relaxed">Help customers choose the right professional by adding short bios to staff profiles.</p>
            </div>
-           <div className="p-6 rounded-3xl border border-slate-100 bg-slate-50/50 space-y-3">
+           <div className="p-6 rounded-3xl border border-slate-200 bg-slate-50/50 space-y-3">
               <h4 className="font-black text-sm text-slate-900 uppercase tracking-wider">Role Permissions</h4>
               <p className="text-xs text-slate-500 font-bold leading-relaxed">Grant ADMIN or STAFF access to control who can edit business-wide settings.</p>
            </div>
@@ -55,7 +55,7 @@ export default function StaffManagementDocs() {
         <div className="absolute top-0 right-0 h-full w-1/3 bg-white/5 skew-x-12"></div>
       </section>
 
-      <div className="pt-12 border-t border-slate-100 flex justify-between">
+      <div className="pt-12 border-t border-slate-200 flex justify-between">
         <Link href="/docs/branding" className="text-sm font-black text-slate-400 hover:text-slate-600">← Branding</Link>
         <Link href="/docs/services" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Services & Pricing →</Link>
       </div>

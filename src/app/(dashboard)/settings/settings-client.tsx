@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
-import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2 } from "lucide-react";
+import { useState, useEffect, useTransition, useRef } from "react";
+import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search } from "lucide-react";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
 import { LocationList } from "@/components/dashboard/location-list";
 import { getLabels } from "@/lib/labels";
 import { timezones } from "@/config/timezones";
 import { COUNTRIES } from "@/config/countries";
-import { updateTenantTimezone, updateTenantCountry } from "@/app/actions/dashboard";
+import { updateTenantTimezone, updateTenantCountry, updateTenantTimeFormat } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter, useParams } from "next/navigation";
 
@@ -65,12 +65,62 @@ export function SettingsClient({
 
   const [timezone, setTimezone] = useState(initialTimezone);
   const [country, setCountry] = useState(initialCountry);
+  const [timeFormat, setTimeFormat] = useState(tenant?.timeFormat || "12h");
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
   const [isUpdatingCountry, setIsUpdatingCountry] = useState(false);
+  const [isUpdatingTimeFormat, setIsUpdatingTimeFormat] = useState(false);
+  
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [timezoneSearch, setTimezoneSearch] = useState("");
+
+  const countryRef = useRef<HTMLDivElement>(null);
+  const timezoneRef = useRef<HTMLDivElement>(null);
+  const timeFormatRef = useRef<HTMLDivElement>(null);
+  const countrySearchRef = useRef<HTMLInputElement>(null);
+  const timezoneSearchRef = useRef<HTMLInputElement>(null);
+
   const labels = getLabels(tenant?.businessType);
+
+  const toggleDropdown = (dropdown: string | null) => {
+    if (openDropdown === dropdown || dropdown === null) {
+      setOpenDropdown(null);
+    } else {
+      setOpenDropdown(dropdown);
+    }
+    // Always clear search when toggling or closing
+    setCountrySearch("");
+    setTimezoneSearch("");
+  };
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (openDropdown === "country") {
+      setTimeout(() => countrySearchRef.current?.focus(), 100);
+    } else if (openDropdown === "timezone") {
+      setTimeout(() => timezoneSearchRef.current?.focus(), 100);
+    }
+  }, [openDropdown]);
+
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        (countryRef.current && !countryRef.current.contains(event.target as Node)) &&
+        (timezoneRef.current && !timezoneRef.current.contains(event.target as Node)) &&
+        (timeFormatRef.current && !timeFormatRef.current.contains(event.target as Node))
+      ) {
+        if (openDropdown) toggleDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]); // Add openDropdown to dependencies to ensure toggleDropdown has correct state
 
   const handleTimezoneChange = async (newTimezone: string) => {
     setTimezone(newTimezone);
+    toggleDropdown(null);
     setIsUpdatingTimezone(true);
     const result = await updateTenantTimezone(newTimezone);
     setIsUpdatingTimezone(false);
@@ -89,6 +139,7 @@ export function SettingsClient({
     if (!selectedCountry) return;
 
     setCountry(newCountryCode);
+    setOpenDropdown(null);
     setIsUpdatingCountry(true);
     
     const result = await updateTenantCountry(
@@ -106,6 +157,30 @@ export function SettingsClient({
       setCountry(tenant?.country || "US");
     }
   };
+
+  const handleTimeFormatChange = async (newFormat: string) => {
+    setTimeFormat(newFormat);
+    setOpenDropdown(null);
+    setIsUpdatingTimeFormat(true);
+    const result = await updateTenantTimeFormat(newFormat);
+    setIsUpdatingTimeFormat(false);
+    
+    if (result.success) {
+      toast.success("Time format updated successfully");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update time format");
+      setTimeFormat(tenant?.timeFormat || "12h");
+    }
+  };
+
+  const filteredCountries = COUNTRIES.filter(c => 
+    c.name.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
+  const filteredTimezones = timezones.filter(tz => 
+    tz.label.toLowerCase().includes(timezoneSearch.toLowerCase())
+  );
 
   const tabs: Tab[] = [
     { 
@@ -156,7 +231,7 @@ export function SettingsClient({
                       type="text"
                       disabled
                       value={tenant?.name}
-                      className="block w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
+                      className="block w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -165,81 +240,215 @@ export function SettingsClient({
                       type="text"
                       disabled
                       value={labels.businessTypeName}
-                      className="block w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
+                      className="block w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
                     />
                   </div>
                 </div>
 
                 {userRole === "ADMIN" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Country</label>
-                      <div className="relative group">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
-                          {isUpdatingCountry ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                          ) : (
-                            <Globe className="h-4 w-4" />
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Country</label>
+                        <div className="relative group" ref={countryRef}>
+                          <button
+                            type="button"
+                            onClick={() => toggleDropdown("country")}
+                            disabled={isUpdatingCountry}
+                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                              openDropdown === "country" 
+                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
+                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isUpdatingCountry ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                              ) : (
+                                <Globe className="h-4 w-4 text-slate-400" />
+                              )}
+                              <span>{COUNTRIES.find(c => c.code === country)?.name || "Select Country"}</span>
+                            </div>
+                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "country" ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {openDropdown === "country" && (
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
+                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-200 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                                <div className="relative group">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                  <input 
+                                    ref={countrySearchRef}
+                                    type="text"
+                                    placeholder="Search country..."
+                                    value={countrySearch}
+                                    onChange={(e) => setCountrySearch(e.target.value)}
+                                    autoComplete="off"
+                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                                  />
+                                </div>
+                              </div>
+                              <div className="overflow-y-auto flex-1 custom-scrollbar">
+                                {filteredCountries.length === 0 ? (
+                                  <div className="px-5 py-8 text-center">
+                                    <p className="text-xs font-bold text-slate-400 italic">No countries found</p>
+                                  </div>
+                                ) : (
+                                  filteredCountries.map((c) => (
+                                    <button
+                                      key={c.code}
+                                      type="button"
+                                      onClick={() => handleCountryChange(c.code)}
+                                      className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                        country === c.code ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                      }`}
+                                    >
+                                      {c.name}
+                                      {country === c.code && <Check className="h-4 w-4" />}
+                                    </button>
+                                  ))
+                                )}
+                              </div>
+                            </div>
                           )}
                         </div>
-                        <select
-                          value={country}
-                          onChange={(e) => handleCountryChange(e.target.value)}
-                          disabled={isUpdatingCountry}
-                          className="block w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-12 pr-10 py-4 text-sm text-slate-900 dark:text-white font-bold appearance-none transition-all hover:bg-slate-50 dark:hover:bg-slate-800 focus:border-indigo-500/40 focus:ring-4 focus:ring-indigo-500/5 focus:outline-none disabled:bg-slate-50 dark:disabled:bg-slate-950/40 disabled:border-slate-200 dark:disabled:border-slate-800 shadow-sm"
-                        >
-                          {COUNTRIES.map((c) => (
-                            <option key={c.code} value={c.code}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <Check className={`h-4 w-4 text-emerald-500 transition-all ${isUpdatingCountry ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`} />
-                        </div>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                          <Globe className="h-3 w-3" /> Syncs your currency and primary timezone automatically.
+                        </p>
                       </div>
-                      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
-                        <Globe className="h-3 w-3" /> Syncs your currency and primary timezone automatically.
-                      </p>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Timezone</label>
+                        <div className="relative group" ref={timezoneRef}>
+                          <button
+                            type="button"
+                            onClick={() => toggleDropdown("timezone")}
+                            disabled={isUpdatingTimezone || isUpdatingCountry}
+                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                              openDropdown === "timezone" 
+                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
+                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isUpdatingTimezone ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                              ) : (
+                                <Clock className="h-4 w-4 text-slate-400" />
+                              )}
+                              <span className="truncate max-w-[200px] md:max-w-[250px]">{timezones.find(tz => tz.value === timezone)?.label || "Select Timezone"}</span>
+                            </div>
+                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "timezone" ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {openDropdown === "timezone" && (
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
+                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-200 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                                <div className="relative group">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                                  <input 
+                                    ref={timezoneSearchRef}
+                                    type="text"
+                                    placeholder="Search timezone..."
+                                    value={timezoneSearch}
+                                    onChange={(e) => setTimezoneSearch(e.target.value)}
+                                    autoComplete="off"
+                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                                  />
+                                </div>
+                              </div>
+                              <div className="overflow-y-auto flex-1 custom-scrollbar">
+                                {filteredTimezones.length === 0 ? (
+                                  <div className="px-5 py-8 text-center">
+                                    <p className="text-xs font-bold text-slate-400 italic">No timezones found</p>
+                                  </div>
+                                ) : (
+                                  filteredTimezones.map((tz) => (
+                                    <button
+                                      key={tz.value}
+                                      type="button"
+                                      onClick={() => handleTimezoneChange(tz.value)}
+                                      className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                        timezone === tz.value ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                      }`}
+                                    >
+                                      <span className="truncate">{tz.label}</span>
+                                      {timezone === tz.value && <Check className="h-4 w-4" />}
+                                    </button>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" /> Controls the "Current Time" line on your calendar.
+                        </p>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Timezone</label>
-                      <div className="relative group">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
-                          {isUpdatingTimezone ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                          ) : (
-                            <Clock className="h-4 w-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Time Format</label>
+                        <div className="relative group" ref={timeFormatRef}>
+                          <button
+                            type="button"
+                            onClick={() => toggleDropdown("format")}
+                            disabled={isUpdatingTimeFormat}
+                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                              openDropdown === "format" 
+                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
+                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isUpdatingTimeFormat ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                              ) : (
+                                <Clock className="h-4 w-4 text-slate-400" />
+                              )}
+                              <span>{timeFormat === "12h" ? "12-hour (e.g. 2:00 PM)" : "24-hour (e.g. 14:00)"}</span>
+                            </div>
+                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "format" ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {openDropdown === "format" && (
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
+                              <button
+                                type="button"
+                                onClick={() => handleTimeFormatChange("12h")}
+                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                  timeFormat === "12h" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <span>12-hour (e.g. 2:00 PM)</span>
+                                {timeFormat === "12h" && <Check className="h-4 w-4" />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleTimeFormatChange("24h")}
+                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                  timeFormat === "24h" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <span>24-hour (e.g. 14:00)</span>
+                                {timeFormat === "24h" && <Check className="h-4 w-4" />}
+                              </button>
+                            </div>
                           )}
                         </div>
-                        <select
-                          value={timezone}
-                          onChange={(e) => handleTimezoneChange(e.target.value)}
-                          disabled={isUpdatingTimezone || isUpdatingCountry}
-                          className="block w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-12 pr-10 py-4 text-sm text-slate-900 dark:text-white font-bold appearance-none transition-all hover:bg-slate-50 dark:hover:bg-slate-800 focus:border-indigo-500/40 focus:ring-4 focus:ring-indigo-500/5 focus:outline-none disabled:bg-slate-50/50 dark:disabled:bg-slate-900/50 disabled:border-slate-300 dark:disabled:border-slate-700 shadow-sm"
-                        >
-                          {timezones.map((tz) => (
-                            <option key={tz.value} value={tz.value}>
-                              {tz.label}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <Check className={`h-4 w-4 text-emerald-500 transition-all ${isUpdatingTimezone ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`} />
-                        </div>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" /> Changes how time is displayed across your dashboard and booking page.
+                        </p>
                       </div>
-                      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
-                        <Clock className="h-3 w-3" /> Controls the "Current Time" line on your calendar.
-                      </p>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest ml-1 mb-2">Public URL Slug</label>
-                  <div className="flex rounded-2xl shadow-sm overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950/60 px-5 text-slate-500 dark:text-slate-500 text-xs font-bold border-r border-slate-200 dark:border-slate-800">
+                  <div className="flex rounded-2xl shadow-sm overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950/60 px-5 text-slate-500 dark:text-slate-500 text-xs font-bold border-r-2 border-slate-200 dark:border-slate-800">
                       {process.env.NEXT_PUBLIC_APP_URL || 'fluxbooking.com'}/b/
                     </span>
                     <input
@@ -290,8 +499,8 @@ export function SettingsClient({
       case "security":
         return (
           <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border-2 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-8 border-b-2 border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
                 <Shield className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-medium text-slate-900 dark:text-white">Account Security</h3>
@@ -305,7 +514,7 @@ export function SettingsClient({
                     type="text"
                     disabled
                     value={sessionUser?.email || ""}
-                    className="block w-full rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black shadow-sm cursor-not-allowed"
+                    className="block w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black shadow-sm cursor-not-allowed"
                   />
                 </div>
                 <button className="text-sm font-black text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2 group transition-all">

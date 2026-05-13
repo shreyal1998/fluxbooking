@@ -7,10 +7,12 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export function LeaveRequestsManager({ initialRequests }: { initialRequests: any[] }) {
+export function LeaveRequestsManager({ initialRequests, timeFormat = "12h" }: { initialRequests: any[], timeFormat?: string }) {
   const router = useRouter();
   const [requests, setRequests] = useState(initialRequests);
   const [processing, setProcessing] = useState<string | null>(null);
+
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
 
   // Sync state when props change (after router.refresh())
   useEffect(() => {
@@ -32,7 +34,7 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
 
   if (requests.length === 0) {
     return (
-      <div className="bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-100 dark:border-slate-700 p-12 rounded-[2rem] text-center transition-colors">
+      <div className="bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-700 p-12 rounded-[2rem] text-center transition-colors">
         <Clock className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
         <p className="text-slate-500 dark:text-slate-400 font-bold">No pending leave requests</p>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">New requests from your team will appear here.</p>
@@ -43,7 +45,7 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
   return (
     <div className="flex flex-col gap-4 transition-colors">
       {requests.map((request) => (
-        <div key={request.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-soft group hover:shadow-xl hover:shadow-indigo-500/5 transition-all">
+        <div key={request.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-soft group hover:shadow-xl hover:shadow-indigo-500/5 transition-all">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
@@ -90,7 +92,7 @@ export function LeaveRequestsManager({ initialRequests }: { initialRequests: any
             <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
               <Clock className="h-4 w-4" />
               <p className="text-xs font-bold">
-                {format(new Date(request.startTime), "h:mm a")} - {format(new Date(request.endTime), "h:mm a")}
+                {format(new Date(request.startTime), timeDisplayFormat)} - {format(new Date(request.endTime), timeDisplayFormat)}
               </p>
             </div>
             {request.reason && (

@@ -42,6 +42,7 @@ enum CustomerStatus {
 
 enum SubscriptionPlan {
   FREE
+  STARTER
   PRO
   TEAM
 }
@@ -73,6 +74,7 @@ model Tenant {
   trialEndsAt         DateTime?
   subscriptionEndsAt  DateTime?
   timezone            String               @default("UTC")
+  timeFormat          String               @default("12h") // '12h' or '24h'
 
   // Notifications & Credits
   emailNotificationsEnabled Boolean @default(true)

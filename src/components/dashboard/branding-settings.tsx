@@ -89,14 +89,14 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
           <button
             onClick={() => setSelectedColor(initialColor)}
             disabled={loading || selectedColor === initialColor}
-            className="flex-1 py-4 rounded-2xl font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent disabled:border-slate-300 dark:disabled:border-slate-700 disabled:bg-slate-50/50 dark:disabled:bg-slate-900/50"
+            className="flex-1 py-4 rounded-2xl font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent disabled:border-slate-200 dark:disabled:border-slate-700 disabled:bg-slate-50/50 dark:disabled:bg-slate-900/50"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={loading || selectedColor === initialColor}
-            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:border-slate-300 dark:disabled:border-slate-700 flex items-center justify-center gap-2"
+            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:border-slate-200 dark:disabled:border-slate-700 flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Branding Changes"}
           </button>

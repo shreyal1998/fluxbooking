@@ -113,7 +113,7 @@ export function AvailabilityEditor({
                         type="time"
                         value={schedule.start}
                         onChange={(e) => handleTimeChange(day, 'start', e.target.value)}
-                        className="pl-8 pr-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        className="pl-8 pr-2 py-1.5 text-sm border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 shadow-sm transition-all hover:border-slate-400 dark:hover:border-slate-600"
                       />
                     </div>
                     <span className="text-slate-400 dark:text-slate-600 font-bold">to</span>
@@ -123,7 +123,7 @@ export function AvailabilityEditor({
                         type="time"
                         value={schedule.end}
                         onChange={(e) => handleTimeChange(day, 'end', e.target.value)}
-                        className="pl-8 pr-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        className="pl-8 pr-2 py-1.5 text-sm border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 shadow-sm transition-all hover:border-slate-400 dark:hover:border-slate-600"
                       />
                     </div>
                   </div>
@@ -145,7 +145,7 @@ export function AvailabilityEditor({
         <button
           onClick={handleSave}
           disabled={loading}
-          className="ml-auto flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 border border-transparent disabled:border-slate-200 dark:disabled:border-slate-800 shadow-lg shadow-indigo-200 dark:shadow-none"
+          className="ml-auto flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 border border-transparent disabled:border-slate-200 dark:disabled:border-slate-800 shadow-xl shadow-indigo-100 dark:shadow-none"
         >
           {loading ? (
             <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

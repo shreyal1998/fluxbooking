@@ -51,9 +51,11 @@ export function AddStaffForm({
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenDropdown(false);
+        setCountrySearch("");
       }
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+        setUserSearch("");
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -179,8 +181,8 @@ export function AddStaffForm({
             required
             onChange={() => clearFieldError("name")}
             placeholder={labels.staffPlaceholder}
-            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
+              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
             }`}
           />
           <InputError message={fieldErrors.name} />
@@ -195,8 +197,8 @@ export function AddStaffForm({
             <button
               type="button"
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-slate-50 dark:bg-slate-800 ${
-                userDropdownOpen ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus:border-indigo-600"
+              className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-slate-50 dark:bg-slate-800 shadow-sm ${
+                userDropdownOpen ? "border-indigo-600 shadow-lg shadow-indigo-500/10" : "border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 focus:border-indigo-600"
               }`}
             >
               <span className={!selectedUserId ? "text-slate-400 dark:text-slate-500 font-medium" : "text-slate-900 dark:text-white font-bold"}>
@@ -208,8 +210,8 @@ export function AddStaffForm({
             </button>
 
             {userDropdownOpen && (
-              <div className="absolute z-[120] left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col animate-in fade-in zoom-in duration-200">
-                <div className="px-3 pb-2 border-b border-slate-100 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-900">
+              <div className="absolute z-[120] left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-2 max-h-60 flex flex-col animate-in fade-in zoom-in duration-200">
+                <div className="px-3 pb-2 border-b-2 border-slate-200 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-900">
                   <div className="relative group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                     <input 
@@ -218,7 +220,7 @@ export function AddStaffForm({
                       placeholder="Search users..."
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-500/5 dark:text-white transition-all focus:bg-white dark:focus:bg-slate-800 shadow-sm"
+                      className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-500/5 dark:text-white transition-all focus:bg-white dark:focus:bg-slate-800 shadow-sm"
                     />
                   </div>
                 </div>
@@ -271,7 +273,7 @@ export function AddStaffForm({
 
         {showPasswordField && (
           <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border border-indigo-100 dark:border-indigo-900/30">
+             <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/30">
                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Login Credentials</p>
                <div className="space-y-3">
                   <div>
@@ -280,8 +282,8 @@ export function AddStaffForm({
                       type="email"
                       onChange={() => clearFieldError("email")}
                       placeholder="Email *"
-                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 ${
-                        fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
+                      className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 shadow-sm ${
+                        fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
                       }`}
                     />
                     <InputError message={fieldErrors.email} />
@@ -292,7 +294,7 @@ export function AddStaffForm({
                           <button
                             type="button"
                             onClick={() => setOpenDropdown(!openDropdown)}
-                            className="h-10 px-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center gap-2 text-xs font-black text-slate-500 hover:border-indigo-500 transition-all cursor-pointer"
+                            className="h-10 px-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl flex items-center gap-2 text-xs font-black text-slate-500 hover:border-slate-400 dark:hover:border-slate-600 transition-all cursor-pointer shadow-sm"
                           >
                             <span>+{selectedCountry.phoneCode}</span>
                             <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${openDropdown ? 'rotate-180' : ''}`} />
@@ -300,8 +302,8 @@ export function AddStaffForm({
                           <input type="hidden" name="staffCountryCode" value={selectedCountry.code} />
 
                           {openDropdown && (
-                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 max-h-60 flex flex-col">
-                              <div className="px-3 pb-2 border-b border-slate-100 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-900">
+                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-2 max-h-60 flex flex-col">
+                              <div className="px-3 pb-2 border-b-2 border-slate-200 dark:border-slate-700 mb-1 sticky top-0 bg-white dark:bg-slate-900">
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
                                   <input 
@@ -310,7 +312,7 @@ export function AddStaffForm({
                                     placeholder="Search..."
                                     value={countrySearch}
                                     onChange={(e) => setCountrySearch(e.target.value)}
-                                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20 dark:text-white"
+                                    className="w-full pl-7 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20 dark:text-white shadow-sm"
                                   />
                                 </div>
                               </div>
@@ -334,7 +336,7 @@ export function AddStaffForm({
                         name="phone"
                         type="tel"
                         placeholder="Phone (Optional)"
-                        className="flex-1 h-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:border-indigo-500"
+                        className="flex-1 h-10 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all focus:border-indigo-500 shadow-sm hover:border-slate-400 dark:hover:border-slate-600"
                        />
                     </div>
                   </div>
@@ -344,8 +346,8 @@ export function AddStaffForm({
                         type="password"
                         onChange={() => clearFieldError("password")}
                         placeholder="Password *"
-                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 ${
-                          fieldErrors.password ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
+                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm ${
+                          fieldErrors.password ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
                         }`}
                       />
                       <InputError message={fieldErrors.password} />
@@ -356,8 +358,8 @@ export function AddStaffForm({
                         type="password"
                         onChange={() => clearFieldError("confirmPassword")}
                         placeholder="Confirm Password *"
-                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 ${
-                          fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent focus:border-indigo-600"
+                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white bg-white dark:bg-slate-900 text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm ${
+                          fieldErrors.confirmPassword ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
                         }`}
                       />
                       <InputError message={fieldErrors.confirmPassword} />
@@ -379,10 +381,10 @@ export function AddStaffForm({
                 key={service.id}
                 type="button"
                 onClick={() => toggleService(service.id)}
-                className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left shadow-sm ${
                   selectedServices.includes(service.id)
                     ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20"
-                    : "border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
+                    : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-slate-400"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -394,7 +396,7 @@ export function AddStaffForm({
             ))}
           </div>
           {services.length === 0 && (
-            <p className="text-[10px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-100 dark:border-slate-700">
+            <p className="text-[10px] text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 shadow-sm">
               No {labels.serviceLower}s created yet.
             </p>
           )}
@@ -406,7 +408,7 @@ export function AddStaffForm({
             name="bio"
             rows={2}
             placeholder={`Describe this ${labels.staffLower}'s expertise...`}
-            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
+            className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600 shadow-sm resize-none"
           />
         </div>
 

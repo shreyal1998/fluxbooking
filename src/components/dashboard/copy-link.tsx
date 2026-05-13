@@ -22,14 +22,14 @@ export function CopyLink({ slug }: { slug: string }) {
 
   if (!hasMounted) {
     return (
-      <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 animate-pulse">
+      <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 animate-pulse">
         <div className="h-4 bg-slate-200 rounded w-full"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
       <code className="text-xs font-mono text-indigo-600 flex-1 break-all">
         {origin}/b/{slug}
       </code>

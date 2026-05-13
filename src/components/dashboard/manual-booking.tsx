@@ -48,6 +48,7 @@ interface ManualBookingProps {
   inline?: boolean;
   businessType?: any;
   currency?: string;
+  timeFormat?: string;
 }
 
 export function ManualBooking({ 
@@ -59,7 +60,8 @@ export function ManualBooking({
   onClose,
   inline = false,
   businessType,
-  currency = "USD"
+  currency = "USD",
+  timeFormat = "12h"
 }: ManualBookingProps) {
   const router = useRouter();
   const labels = getLabels(businessType);
@@ -68,6 +70,8 @@ export function ManualBooking({
   const [loading, setLoading] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<any[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
   
   // Customer Search State
   const [customerSearch, setCustomerSearch] = useState("");
@@ -239,9 +243,9 @@ export function ManualBooking({
   const nextSevenDays = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
 
   const content = (
-    <div className={`relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-[2.5rem] ${inline ? '' : 'shadow-2xl border border-slate-100 dark:border-slate-700'} overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh] transition-colors`}>
+    <div className={`relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-[2.5rem] ${inline ? '' : 'shadow-2xl border border-slate-200 dark:border-slate-700'} overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh] transition-colors`}>
         {!inline && (
-            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
+            <div className="px-8 py-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
                 <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
                         {mode === 'edit' ? <Pencil className="h-5 w-5" /> : <CalendarIcon className="h-5 w-5" />}
@@ -284,7 +288,7 @@ export function ManualBooking({
                             fetchSlots(selectedDate, service.id);
                         }
                     }}
-                    className="group flex items-center justify-between p-5 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100 dark:hover:border-indigo-900 hover:bg-white dark:hover:bg-slate-800 transition-all text-left"
+                    className="group flex items-center justify-between p-5 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-white dark:hover:bg-slate-800 transition-all text-left shadow-sm"
                     >
                     <div className="flex items-center gap-4">
                         <div className="w-2 h-10 rounded-full" style={{ backgroundColor: service.color }}></div>
@@ -318,10 +322,10 @@ export function ManualBooking({
                         <button
                             key={date.toString()}
                             onClick={() => handleDateChange(date)}
-                            className={`flex flex-col items-center min-w-[70px] p-4 rounded-2xl border-2 transition-all ${
+                            className={`flex flex-col items-center min-w-[70px] p-4 rounded-2xl border-2 transition-all shadow-sm ${
                             isSelected 
                                 ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none" 
-                                : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-indigo-100"
+                                : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
                             }`}
                         >
                             <span className="text-[10px] font-black uppercase tracking-tighter mb-1 opacity-70">{format(date, "EEE")}</span>
@@ -365,14 +369,14 @@ export function ManualBooking({
                                                     setSelectedSlot(slot);
                                                     setStep(3);
                                                 }}
-                                                className={`p-3 rounded-xl border-2 transition-all text-left ${
+                                                className={`p-3 rounded-xl border-2 transition-all text-left shadow-sm ${
                                                 isSelected
                                                     ? "bg-indigo-600 border-indigo-600 text-white shadow-lg"
-                                                    : "border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-100 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800"
+                                                    : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-slate-400 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800"
                                                 }`}
                                             >
                                                 <span className="block text-xs font-black">
-                                                {format(parse(slot.time, "HH:mm", new Date()), "h:mm a")}
+                                                {format(parse(slot.time, "HH:mm", new Date()), timeDisplayFormat)}
                                                 </span>
                                                 <span className={`block text-[8px] uppercase tracking-tighter mt-0.5 ${isSelected ? 'text-indigo-100' : 'opacity-60'}`}>{slot.staffName.split(' ')[0]}</span>
                                             </button>
@@ -392,7 +396,7 @@ export function ManualBooking({
 
             {step === 3 && (
             <div className="space-y-8">
-                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between">
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between shadow-sm">
                     <div className="flex flex-wrap gap-6">
                         <div>
                             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">{labels.service}</p>
@@ -400,7 +404,7 @@ export function ManualBooking({
                         </div>
                         <div>
                             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Time</p>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">{format(selectedDate, "MMM d")} at {selectedSlot?.time}</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{format(selectedDate, "MMM d")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</p>
                         </div>
                     </div>
                     <button onClick={() => setStep(1)} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all">
@@ -419,17 +423,17 @@ export function ManualBooking({
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
                         placeholder={`Start typing ${labels.customerLower} name or email...`}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl py-4 pl-12 pr-4 text-sm dark:text-white outline-none focus:bg-white dark:focus:bg-slate-800 transition-all focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
+                        className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl py-4 pl-12 pr-4 text-sm dark:text-white outline-none focus:bg-white dark:focus:bg-slate-800 transition-all focus:ring-4 focus:ring-indigo-500/5 shadow-sm hover:border-slate-400 dark:hover:border-slate-600"
                         />
                     </div>
                     
                     {searchResults?.length > 0 && (
-                        <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+                        <div className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xl">
                         {searchResults?.map((customer) => (
                             <button
                             key={customer.id}
                             onClick={() => handleSelectCustomer(customer)}
-                            className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b last:border-0 border-slate-100 dark:border-slate-700 transition-colors flex items-center gap-3"
+                            className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700 border-b-2 last:border-0 border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-3"
                             >
                             <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
                                 {customer.name.substring(0, 2).toUpperCase()}
@@ -445,7 +449,7 @@ export function ManualBooking({
 
                     <button 
                         onClick={() => setIsAddingNewCustomer(true)}
-                        className="w-full py-4 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
+                        className="w-full py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-400 hover:border-slate-400 hover:text-indigo-600 transition-all flex items-center justify-center gap-2 shadow-sm"
                     >
                         <UserPlus className="h-4 w-4" /> Add New {labels.customer} Instead
                     </button>
@@ -461,8 +465,8 @@ export function ManualBooking({
                         name="name" 
                         placeholder="Full Name *" 
                         required 
-                        className={`w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none border-2 transition-all ${
-                            fieldErrors.customerName ? "border-rose-100 bg-rose-50" : "border-transparent focus:border-indigo-600"
+                        className={`w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none border-2 transition-all shadow-sm ${
+                            fieldErrors.customerName ? "border-rose-100 bg-rose-50" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
                         }`} 
                         />
                         <InputError message={fieldErrors.customerName} />
@@ -473,19 +477,19 @@ export function ManualBooking({
                         type="email" 
                         placeholder="Email Address *" 
                         required 
-                        className={`w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none border-2 transition-all ${
-                            fieldErrors.customerEmail ? "border-rose-100 bg-rose-50" : "border-transparent focus:border-indigo-600"
+                        className={`w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none border-2 transition-all shadow-sm ${
+                            fieldErrors.customerEmail ? "border-rose-100 bg-rose-50" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
                         }`} 
                         />
                         <InputError message={fieldErrors.customerEmail} />
                     </div>
-                    <input name="phone" placeholder="Phone Number (Optional)" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
+                    <input name="phone" placeholder="Phone Number (Optional)" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all shadow-sm hover:border-slate-400 dark:hover:border-slate-600" />
                     <button type="submit" disabled={loading} className="w-full py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all">
                         {loading ? "Creating..." : `Create & Select ${labels.customer}`}
                     </button>
                     </form>
                 ) : (
-                    <div className="p-6 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/20 flex items-center justify-between animate-fade-in">
+                    <div className="p-6 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/30 dark:bg-indigo-950/20 flex items-center justify-between animate-fade-in shadow-sm">
                         <div className="flex items-center gap-4">
                         <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs">
                             {customerInfo.name.substring(0, 2).toUpperCase()}

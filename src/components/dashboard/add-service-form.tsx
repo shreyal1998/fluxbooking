@@ -98,8 +98,8 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
             required
             onChange={() => clearFieldError("name")}
             placeholder={labels.servicePlaceholder}
-            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
+              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
             }`}
           />
           <InputError message={fieldErrors.name} />
@@ -118,8 +118,8 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
                 required
                 onChange={() => clearFieldError("duration")}
                 placeholder="30"
-                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                  fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
+                  fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
                 }`}
               />
             </div>
@@ -135,7 +135,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
                 min="0"
                 defaultValue="0"
                 placeholder="10"
-                className="w-full pl-11 rounded-2xl border-2 border-slate-100 dark:border-slate-700 px-5 py-3 text-sm focus:outline-none transition-all focus:border-indigo-600 dark:text-white bg-transparent"
+                className="w-full pl-11 rounded-2xl border-2 border-slate-200 dark:border-slate-700 px-5 py-3 text-sm focus:outline-none transition-all focus:border-indigo-600 dark:text-white bg-transparent shadow-sm hover:border-slate-400 dark:hover:border-slate-600"
               />
             </div>
           </div>
@@ -154,8 +154,8 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
               required
               onChange={() => clearFieldError("price")}
               placeholder="50.00"
-              className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-700 focus:border-indigo-600"
+              className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
+                fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
               }`}
             />
           </div>

@@ -127,7 +127,7 @@ export function BillingSettings({
                     disabled={isCurrent || !!loading}
                     className={`w-full py-3 rounded-xl text-xs font-black transition-all ${
                       isCurrent 
-                      ? "bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 cursor-default border border-slate-300 dark:border-slate-700" 
+                      ? "bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 cursor-default border border-slate-200 dark:border-slate-700" 
                       : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10"
                     }`}
                   >

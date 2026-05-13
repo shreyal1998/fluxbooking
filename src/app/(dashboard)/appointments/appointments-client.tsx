@@ -79,7 +79,7 @@ export function AppointmentsClient({
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">("week");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
-  const [staffFilter, setStaffFilter] = useState<string>("all");
+  const [currentStaffFilter, setCurrentStaffFilter] = useState<string>("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
 
@@ -187,9 +187,9 @@ export function AppointmentsClient({
 
   // Filtered Bookings for List View
   const listFilteredBookings = useMemo(() => {
-    if (userRole !== "ADMIN" || staffFilter === "all") return initialBookings;
-    return initialBookings.filter((b) => b.staffId === staffFilter);
-  }, [initialBookings, staffFilter, userRole]);
+    if (userRole !== "ADMIN" || currentStaffFilter === "all") return initialBookings;
+    return initialBookings.filter((b) => b.staffId === currentStaffFilter);
+  }, [initialBookings, currentStaffFilter, userRole]);
 
   // Pagination Calculations for List View
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -210,9 +210,9 @@ export function AppointmentsClient({
     let filteredBookings = initialBookings;
     let filteredBlocked = initialBlockedSlots;
 
-    if (userRole === "ADMIN" && staffFilter !== "all") {
-      filteredBookings = initialBookings.filter((b) => b.staffId === staffFilter);
-      filteredBlocked = initialBlockedSlots.filter((s) => s.staffId === staffFilter);
+    if (userRole === "ADMIN" && currentStaffFilter !== "all") {
+      filteredBookings = initialBookings.filter((b) => b.staffId === currentStaffFilter);
+      filteredBlocked = initialBlockedSlots.filter((s) => s.staffId === currentStaffFilter);
     }
 
     return [
@@ -236,7 +236,7 @@ export function AppointmentsClient({
         leaveType: (s as any).type // Some slots might be from leave requests
       })) || [])
     ];
-  }, [initialBookings, initialBlockedSlots, staffFilter, userRole]);
+  }, [initialBookings, initialBlockedSlots, currentStaffFilter, userRole]);
 
   const getStatusStyle = (status: BookingStatus) => {
     switch (status) {
@@ -244,27 +244,31 @@ export function AppointmentsClient({
       case "CONFIRMED": return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900/50";
       case "COMPLETED": return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-900/50";
       case "CANCELLED": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900/50";
-      default: return "bg-slate-100 text-slate-700 border-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+      default: return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
     }
   };
 
-  const selectedStaffName = staffFilter === "all" ? "All Staff Members" : staff.find((s) => s.id === staffFilter)?.name;
+  const selectedStaffName = currentStaffFilter === "all" ? "All Staff Members" : staff.find((s) => s.id === currentStaffFilter)?.name;
+
+  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "h:mm a";
+  const listTimeFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
 
   return (
     <div className="flex-1 flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Booking Calendar</h2>
+          <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Booking Calendar</h2>
         </div>
         
         <div className="flex items-center gap-3">
           <ManualBooking 
-            tenantId={tenantId} 
+            tenantId={tenant?.id || ""} 
             services={services} 
             staff={staff} 
             businessType={tenant?.businessType}
-            currency={tenant?.currency || "USD"}
+            currency={tenant?.currency}
+            timeFormat={tenant?.timeFormat || "12h"}
           />
           
           {userRole === "ADMIN" && (
@@ -291,37 +295,37 @@ export function AppointmentsClient({
               </button>
 
               {isStaffFilterOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 mb-1">
-                    <p className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 mb-1">
+                    <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
                     <button
-                      onClick={() => { setStaffFilter("all"); setCurrentPage(1); setIsStaffFilterOpen(false); }}
-                      className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      onClick={() => { setCurrentStaffFilter("all"); setCurrentPage(1); setIsStaffFilterOpen(false); }}
+                      className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
                           <Users className="h-4 w-4" />
                         </div>
-                        <span className={`text-xs font-medium ${staffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>All Staff Members</span>
+                        <span className={`text-xs font-medium ${currentStaffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>All Staff Members</span>
                       </div>
-                      {staffFilter === "all" && <Check className="h-4 w-4 text-indigo-600" />}
+                      {currentStaffFilter === "all" && <Check className="h-4 w-4 text-indigo-600" />}
                     </button>
 
                     {staff.map((s) => (
                       <button
                         key={s.id}
-                        onClick={() => { setStaffFilter(s.id); setCurrentPage(1); setIsStaffFilterOpen(false); }}
-                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        onClick={() => { setCurrentStaffFilter(s.id); setCurrentPage(1); setIsStaffFilterOpen(false); }}
+                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: s.color }}>
                             {s.name.substring(0, 2).toUpperCase()}
                           </div>
-                          <span className={`text-xs font-medium ${staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>{s.name}</span>
+                          <span className={`text-xs font-medium ${currentStaffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>{s.name}</span>
                         </div>
-                        {staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />}
+                        {currentStaffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />}
                       </button>
                     ))}
                   </div>
@@ -339,15 +343,15 @@ export function AppointmentsClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
                     <Clock className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Business Hours</h3>
-                    <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Master availability for your venue.</p>
+                    <h3 className="text-xl font-black text-black dark:text-white">Business Hours</h3>
+                    <p className="text-xs text-black dark:text-white font-normal opacity-60">Master availability for your venue.</p>
                   </div>
                 </div>
                 <button 
@@ -375,13 +379,13 @@ export function AppointmentsClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                {actionType === null ? (
                  <div className="p-10 space-y-8 text-center">
                     <div className="space-y-2">
-                       <h3 className="text-2xl font-black text-slate-900 dark:text-white">Schedule Action</h3>
+                       <h3 className="text-2xl font-black text-black dark:text-white">Schedule Action</h3>
                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                          {format(selectedSlotInfo.date, "EEEE, MMMM do")} at {format(selectedSlotInfo.date, "h:mm a")}
+                          {format(selectedSlotInfo.date, "EEEE, MMMM do")} at {format(selectedSlotInfo.date, timeDisplayFormat)}
                        </p>
                     </div>
 
@@ -389,24 +393,24 @@ export function AppointmentsClient({
                        <Tooltip content={`Schedule a new ${labels.appointment}`} position="top">
                          <button 
                           onClick={() => setActionType("book")}
-                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
                          >
                             <div className="h-16 w-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                <labels.serviceIcon className="h-8 w-8" />
                             </div>
-                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Add</span>
+                            <span className="font-black text-black dark:text-white uppercase tracking-widest text-xs">Add</span>
                          </button>
                        </Tooltip>
 
                        <Tooltip content="Block specific time on calendar" position="top">
                          <button 
                           onClick={() => setActionType("block")}
-                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
                          >
                             <div className="h-16 w-16 rounded-3xl bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                <Ban className="h-8 w-8" />
                             </div>
-                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-widest text-xs">Block Time</span>
+                            <span className="font-black text-black dark:text-white uppercase tracking-widest text-xs">Block Time</span>
                          </button>
                        </Tooltip>
                     </div>
@@ -439,7 +443,7 @@ export function AppointmentsClient({
                ) : (
                  <div className="p-10 space-y-6">
                     <div className="flex items-center justify-between mb-2">
-                       <h3 className="text-xl font-black text-slate-900 dark:text-white">Quick Block</h3>
+                       <h3 className="text-xl font-black text-black dark:text-white">Quick Block</h3>
                        <button onClick={() => setActionType(null)} className="text-xs font-bold text-indigo-600">Back</button>
                     </div>
                     <QuickBlockForm 
@@ -451,6 +455,7 @@ export function AppointmentsClient({
                       }}
                       onSuccess={() => setSelectedSlotInfo(null)}
                       inline={true}
+                      timeFormat={tenant?.timeFormat || "12h"}
                     />
                  </div>
                )}
@@ -473,20 +478,20 @@ export function AppointmentsClient({
               <Tooltip content="Jump to Today" position="bottom">
                 <button 
                   onClick={() => setCurrentDate(new Date())} 
-                  className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors border-x border-slate-200 dark:border-slate-700"
+                  className="px-4 py-1.5 text-[10px] font-normal uppercase tracking-widest text-black dark:text-white transition-colors border-x border-slate-200 dark:border-slate-700"
                 >
                   Today
                 </button>
               </Tooltip>
               <Tooltip content="Next Period" position="bottom">
                 <button onClick={nextDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                  <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                  <ChevronRight className="h-4 w-4 text-black dark:text-white" />
                 </button>
               </Tooltip>
             </div>
             
             {viewMode !== "list" && (
-              <h3 className="text-base font-black text-slate-900 dark:text-white whitespace-nowrap px-2 tracking-tight">
+              <h3 className="text-base font-normal text-black dark:text-white whitespace-nowrap px-2 tracking-tight">
                 {getHeaderText()}
               </h3>
             )}
@@ -500,10 +505,10 @@ export function AppointmentsClient({
                   <button
                     key={mins}
                     onClick={() => setSlotDuration(mins)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all ${
                       slotDuration === mins
                         ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none"
-                        : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        : "text-black dark:text-white"
                     }`}
                   >
                     {mins}m
@@ -518,10 +523,10 @@ export function AppointmentsClient({
                 <button 
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  className={`px-5 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all ${
                     viewMode === mode 
                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
-                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      : "text-black dark:text-white"
                   }`}
                 >
                   {mode}
@@ -540,7 +545,7 @@ export function AppointmentsClient({
                   <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-6">
                     <CalendarIcon className="h-10 w-10 text-slate-200 dark:text-slate-700" />
                   </div>
-                  <p className="text-slate-900 dark:text-white font-bold text-lg">No {labels.appointmentLower}s found</p>
+                  <p className="text-black dark:text-white font-bold text-lg">No {labels.appointmentLower}s found</p>
                   <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mt-2 font-medium">Try adjusting your filters or schedule a new {labels.appointmentLower}.</p>
                 </div>
               ) : (
@@ -549,31 +554,31 @@ export function AppointmentsClient({
                     <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                       <thead>
                         <tr className="bg-slate-50/50 dark:bg-slate-900/50">
-                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Date & Time</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Customer</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{labels.staff}</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                          <th className="px-10 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Actions</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Date & Time</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Customer</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.staff}</th>
+                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Status</th>
+                          <th className="px-10 py-5 text-right text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {currentListItems.map((booking) => (
                           <tr key={booking.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group">
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="text-sm font-black text-slate-900 dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5 mt-1">
-                                <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {format(new Date(booking.startTime), "hh:mm a")}
+                              <div className="text-sm font-normal text-black dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
+                              <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
+                                <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {format(new Date(booking.startTime), listTimeFormat)}
                               </div>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="text-sm font-black text-slate-900 dark:text-white">{booking.customerName}</div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5 mt-1">
+                              <div className="text-sm font-normal text-black dark:text-white">{booking.customerName}</div>
+                              <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
                                 <Mail className="h-3.5 w-3.5 text-indigo-500/50" /> {booking.customerEmail}
                               </div>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="inline-flex items-center px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                              <div className="inline-flex items-center px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-normal uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
                                 <div className="w-1.5 h-1.5 rounded-full mr-2" style={{ backgroundColor: booking.service.color }}></div>
                                 {booking.service.name}
                               </div>
@@ -581,16 +586,16 @@ export function AppointmentsClient({
                             <td className="px-10 py-6 whitespace-nowrap">
                               <div className="flex items-center gap-3">
                                 <div 
-                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[10px] font-black text-white"
+                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[10px] font-normal text-white"
                                   style={{ backgroundColor: booking.staff.color }}
                                 >
                                   {booking.staff.name.substring(0, 2).toUpperCase()}
                                 </div>
-                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-tight">{booking.staff.name}</span>
+                                <span className="text-[11px] font-normal text-black dark:text-white uppercase tracking-tight">{booking.staff.name}</span>
                               </div>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider border ${getStatusStyle(booking.status)}`}>
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-normal tracking-wider border ${getStatusStyle(booking.status)}`}>
                                 {booking.status}
                               </span>
                             </td>
@@ -628,29 +633,29 @@ export function AppointmentsClient({
 
                   {/* Integrated Pagination Footer */}
                   {listFilteredBookings.length > itemsPerPage && (
-                    <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="text-slate-900 dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
+                    <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                      <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
+                        Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="text-black dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
                       </p>
                       
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => paginate(currentPage - 1)}
                           disabled={currentPage === 1}
-                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </button>
 
                         <div className="flex items-center gap-2 px-4">
-                          <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-tighter">PAGE {currentPage}</span>
-                          <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+                          <span className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tighter">PAGE {currentPage}</span>
+                          <span className="text-[10px] font-normal text-slate-400">/ {totalPages}</span>
                         </div>
 
                         <button
                           onClick={() => paginate(currentPage + 1)}
                           disabled={currentPage === totalPages}
-                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </button>
@@ -667,6 +672,7 @@ export function AppointmentsClient({
               staffList={staff as any} 
               businessHours={tenant?.businessHoursJson as any}
               timezone={tenant?.timezone || "UTC"}
+              timeFormat={tenant?.timeFormat || "12h"}
               onSlotClick={handleSlotClick}
               currentDate={currentDate}
               view={viewMode as any}
@@ -674,6 +680,7 @@ export function AppointmentsClient({
               onDateChange={setCurrentDate}
               onViewChange={setViewMode as any}
               onSlotDurationChange={setSlotDuration}
+              staffFilter={currentStaffFilter}
             />
           )}
         </div>

@@ -216,7 +216,11 @@ export async function createBooking(formData: FormData) {
   const service = await prisma.service.findUnique({ where: { id: serviceId } });
   if (!service) return { error: "Service not found" };
 
-  const startTime = parse(`${dateStr} ${timeStr}`, "yyyy-MM-dd HH:mm", new Date());
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  const businessTimezone = tenant?.timezone || "UTC";
+
+  // Parse start time in the business timezone context
+  const startTime = new Date(new Date(`${dateStr}T${timeStr}:00`).toLocaleString("en-US", { timeZone: businessTimezone }));
   const endTime = addMinutes(startTime, service.durationMinutes);
   const buffer = service.bufferTime || 0;
   const endTimeWithBuffer = addMinutes(endTime, buffer);

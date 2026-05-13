@@ -62,7 +62,7 @@ export default function ServicesDocs() {
         </div>
       </section>
 
-      <div className="pt-12 border-t border-slate-100 flex justify-between">
+      <div className="pt-12 border-t border-slate-200 flex justify-between">
         <Link href="/docs/staff" className="text-sm font-black text-slate-400 hover:text-slate-600">← Staff Management</Link>
         <Link href="/docs/bookings" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Calendar & Bookings →</Link>
       </div>

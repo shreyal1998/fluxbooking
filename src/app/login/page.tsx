@@ -73,7 +73,7 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
       <ThemeCleaner />
-      <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100">
+      <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-200">
         <div className="flex flex-col items-center">
           <Link href="/" className="mb-6 outline-none">
             <Logo size="xl" />
@@ -113,7 +113,7 @@ function LoginForm() {
                 required
                 onChange={() => clearFieldError("email")}
                 className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
-                  fieldErrors.email ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                  fieldErrors.email ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-200 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                 }`}
                 placeholder="john@example.com"
               />
@@ -131,7 +131,7 @@ function LoginForm() {
                   required
                   onChange={() => clearFieldError("password")}
                   className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
-                    fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                    fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-200 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                   }`}
                   placeholder="••••••••"
                 />

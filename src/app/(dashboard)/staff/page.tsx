@@ -90,6 +90,7 @@ export default async function StaffPage() {
       businessType={tenant?.businessType}
       userRole={userRole}
       plan={tenant?.plan || "FREE"}
+      timeFormat={tenant?.timeFormat || "12h"}
     />
   );
 }

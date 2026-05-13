@@ -59,7 +59,7 @@ export default function BusinessProfileDocs() {
         </div>
       </section>
 
-      <div className="pt-12 border-t border-slate-100 flex justify-between">
+      <div className="pt-12 border-t border-slate-200 flex justify-between">
         <Link href="/docs/quick-start" className="text-sm font-black text-slate-400 hover:text-slate-600">← Quick Start</Link>
         <Link href="/docs/branding" className="text-sm font-black text-indigo-600 hover:text-indigo-700 font-black">Branding →</Link>
       </div>

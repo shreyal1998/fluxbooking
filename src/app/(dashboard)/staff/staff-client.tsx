@@ -39,6 +39,7 @@ interface StaffClientProps {
   businessType: any;
   userRole: string;
   plan: string;
+  timeFormat?: string;
 }
 
 export function StaffClient({ 
@@ -49,7 +50,8 @@ export function StaffClient({
   currentLimit, 
   businessType,
   userRole,
-  plan
+  plan,
+  timeFormat = "12h"
 }: StaffClientProps) {
   const [staff, setStaff] = useState(initialStaff);
   const [users, setUsers] = useState(initialUsers);
@@ -115,7 +117,7 @@ export function StaffClient({
           <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden h-full">
             
             {/* Unified Card Header */}
-            <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="px-10 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.staff}s</h2>
                 <div className="flex items-center gap-2 mt-1">
@@ -219,7 +221,7 @@ export function StaffClient({
                                   </span>
                                 ))}
                                 {member.services?.length > 2 && (
-                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-700">+{member.services.length - 2}</span>
+                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">+{member.services.length - 2}</span>
                                 )}
                               </div>
                             </td>
@@ -242,7 +244,7 @@ export function StaffClient({
                                           setEditingStaff(member);
                                           setActiveTab("profile");
                                         }}
-                                        className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
+                                        className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-200 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
                                       >
                                         <Settings2 className="h-4.5 w-4.5" />
                                       </button>
@@ -272,7 +274,7 @@ export function StaffClient({
 
             {/* Pagination Footer - Integrated inside the main card */}
             {filteredStaff.length > itemsPerPage && (
-              <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredStaff.length)}</span> of <span className="text-slate-900 dark:text-white">{filteredStaff.length}</span> {labels.staffLower}s
                 </p>
@@ -323,7 +325,7 @@ export function StaffClient({
 
           {/* Leave Requests Section */}
           <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
                <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-600 border border-rose-100 dark:border-rose-900/50">
                     <Calendar className="h-5 w-5" />
@@ -335,7 +337,7 @@ export function StaffClient({
                </div>
             </div>
             <div className="p-8 overflow-y-auto max-h-[400px]">
-              <LeaveRequestsManager initialRequests={pendingRequests} />
+              <LeaveRequestsManager initialRequests={pendingRequests} timeFormat={timeFormat} />
             </div>
           </div>
 
@@ -348,11 +350,11 @@ export function StaffClient({
               <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Team Overview</h3>
             </div>
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-700">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active {labels.staff}s</span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">{staff.length}</span>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-700">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total {labels.service}s</span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">{initialServices.length}</span>
               </div>
@@ -368,8 +370,8 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
-               <div className="p-6 px-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+               <div className="p-6 px-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
                   <h3 className="text-base font-black text-slate-900 dark:text-white">Add New {labels.staff}</h3>
                   <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
                     <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -395,8 +397,8 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-100 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
                 <div className="flex items-center gap-5">
                   <div 
                     className="h-14 w-14 rounded-2xl flex items-center justify-center border-2 shadow-sm"
@@ -415,7 +417,7 @@ export function StaffClient({
               </div>
 
               {/* Enhanced Tab Navigation */}
-              <div className="flex border-b border-slate-100 dark:border-slate-700 px-8 bg-white dark:bg-slate-800">
+              <div className="flex border-b border-slate-200 dark:border-slate-700 px-8 bg-white dark:bg-slate-800">
                 <button
                   onClick={() => setActiveTab("profile")}
                   className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-2.5 ${
@@ -468,7 +470,7 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-900/50">
                   <AlertCircle className="h-8 w-8 text-rose-600" />

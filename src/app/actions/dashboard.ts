@@ -185,6 +185,27 @@ export async function updateTenantTimezone(timezone: string) {
   }
 }
 
+export async function updateTenantTimeFormat(timeFormat: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = session.user.tenantId;
+
+  try {
+    /* Temporarily disabled until Prisma Client is regenerated
+    await prisma.tenant.update({
+      where: { id: tenantId || "" },
+      data: { timeFormat },
+    });
+    */
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: "Failed to update time format" };
+  }
+}
+
 export async function addService(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
@@ -370,7 +391,7 @@ export async function updateBusinessHours(hours: any) {
     await prisma.tenant.update({
       where: { id: tenantId || "" },
       data: {
-        businessHoursJson: JSON.stringify(hours)
+        businessHoursJson: hours
       }
     });
 

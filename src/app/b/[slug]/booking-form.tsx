@@ -57,7 +57,8 @@ export function BookingForm({
   primaryColor = "#6366f1",
   businessType,
   timezone = "UTC",
-  currency = "USD"
+  currency = "USD",
+  timeFormat = "12h"
 }: { 
   tenantId: string; 
   services: Service[]; 
@@ -66,11 +67,14 @@ export function BookingForm({
   businessType?: BusinessType;
   timezone?: string;
   currency?: string;
+  timeFormat?: string;
 }) {
   const labels = getLabels(businessType);
   const searchParams = useSearchParams();
   const rescheduleId = searchParams.get("reschedule");
   const isRescheduling = !!rescheduleId;
+
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
 
   // Calculate "today" based on the business timezone
   const getTodayAtVenue = () => {
@@ -208,14 +212,14 @@ export function BookingForm({
           <h3 className="text-3xl font-black text-slate-900">{isRescheduling ? "Update Successful!" : `${labels.appointment} Confirmed!`}</h3>
           <p className="text-slate-500 font-medium">We&apos;ve sent a confirmation email with all the details.</p>
         </div>
-        <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 text-left max-w-sm mx-auto">
+        <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200 text-left max-w-sm mx-auto">
            <div className="flex justify-between mb-2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{labels.service}</span>
               <span className="text-sm font-bold text-slate-900">{selectedService?.name}</span>
            </div>
            <div className="flex justify-between mb-2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Time</span>
-              <span className="text-sm font-bold text-slate-900">{format(selectedDate, "MMM d")} at {selectedSlot?.time}</span>
+              <span className="text-sm font-bold text-slate-900">{format(selectedDate, "MMM d")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</span>
            </div>
            <div className="flex justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{labels.staff}</span>
@@ -244,7 +248,7 @@ export function BookingForm({
       )}
 
       {/* Step Indicator */}
-      <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-slate-100">
+      <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-slate-200">
         <div className="flex items-center gap-4">
            {[1, 2, 3].map(i => (
              <div key={i} className="flex items-center gap-2">
@@ -287,7 +291,7 @@ export function BookingForm({
                   className={`group flex items-center justify-between p-6 rounded-3xl border-2 text-left transition-all ${
                     selectedService?.id === service.id
                       ? "bg-opacity-10"
-                      : "border-slate-100 bg-slate-50/50 hover:border-slate-100 hover:bg-slate-50"
+                      : "border-slate-200 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50"
                   }`}
                   style={{ 
                     borderColor: selectedService?.id === service.id ? primaryColor : undefined,
@@ -366,7 +370,7 @@ export function BookingForm({
                     className={`flex-shrink-0 flex flex-col items-center justify-center w-20 h-24 rounded-2xl border-2 transition-all ${
                       isSelected
                         ? "shadow-lg shadow-indigo-100/50"
-                        : "border-slate-100 bg-slate-50/50 hover:border-slate-100"
+                        : "border-slate-200 bg-slate-50/50 hover:border-slate-200"
                     }`}
                     style={{ 
                       borderColor: isSelected ? primaryColor : undefined,
@@ -417,14 +421,14 @@ export function BookingForm({
                             className={`p-4 rounded-2xl border-2 font-black text-sm transition-all ${
                               selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId
                                 ? "text-white shadow-lg"
-                                : "border-slate-100 bg-slate-50 hover:border-slate-100 text-slate-700"
+                                : "border-slate-200 bg-slate-50 hover:border-slate-200 text-slate-700"
                             }`}
                             style={{ 
                               backgroundColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined,
                               borderColor: (selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId) ? primaryColor : undefined
                             }}
                           >
-                            {slot.time}
+                            {format(parse(slot.time, "HH:mm", new Date()), timeDisplayFormat)}
                             <div className="text-[8px] opacity-60 font-medium mt-1">{slot.staffName.split(' ')[0]}</div>
                           </button>
                         ))}
@@ -434,7 +438,7 @@ export function BookingForm({
                 })}
               </div>
             ) : (
-              <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-100">
+              <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
                 <p className="text-slate-500 font-medium">No slots available for this day. Try another date or {labels.staffLower} member!</p>
               </div>
             )}
@@ -471,7 +475,7 @@ export function BookingForm({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-500" style={{ color: `${primaryColor}cc` }}>New Date & Time</p>
-                    <p className="font-bold text-slate-900">{format(selectedDate, "EEEE, MMMM d")} at {selectedSlot?.time}</p>
+                    <p className="font-bold text-slate-900">{format(selectedDate, "EEEE, MMMM d")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</p>
                   </div>
                </div>
             </div>
@@ -489,7 +493,7 @@ export function BookingForm({
                       required
                       onChange={() => clearFieldError("customerName")}
                       className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                        fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                        fieldErrors.customerName ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-200 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                       }`}
                       placeholder="Enter your full name"
                     />
@@ -505,7 +509,7 @@ export function BookingForm({
                       required
                       onChange={() => clearFieldError("customerEmail")}
                       className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
-                        fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-100 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                        fieldErrors.customerEmail ? "border-rose-100 bg-rose-50 focus:border-rose-500" : "border-slate-200 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
                       }`}
                       placeholder="name@example.com"
                     />

@@ -174,7 +174,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
         </div>
 
         {userRole === "ADMIN" && (
-          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
                     <button
                         key={s}
