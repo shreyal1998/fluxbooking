@@ -43,7 +43,8 @@ export async function getAvailableSlots(
       plan: true,
       planStatus: true,
       businessHoursJson: true,
-      timezone: true
+      timezone: true,
+      timeFormat: true
     }
   });
 
@@ -265,7 +266,7 @@ export async function createBooking(formData: FormData) {
         status: "PENDING",
       },
       include: {
-        tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true } },
+        tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true } },
         service: { select: { name: true } },
       }
     });
@@ -382,7 +383,7 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
     const updatedBooking = await prisma.booking.findUnique({
        where: { id: bookingId },
        include: { 
-         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true } }, 
+         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true } }, 
          service: { select: { name: true } } 
        }
     });

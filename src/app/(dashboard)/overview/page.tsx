@@ -33,7 +33,8 @@ export default async function DashboardPage() {
       timezone: true,
       currency: true,
       country: true,
-      businessHoursJson: true
+      businessHoursJson: true,
+      timeFormat: true
     }
   });
   const labels = getLabels(tenant?.businessType);

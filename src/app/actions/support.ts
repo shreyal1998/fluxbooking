@@ -13,7 +13,7 @@ export async function sendSupportRequest(formData: FormData) {
     if (tenantId) {
       const tenant = await prisma.tenant.findUnique({ 
         where: { id: tenantId },
-        select: { plan: true }
+        select: { plan: true, timeFormat: true }
       });
       if (tenant?.plan === "PRO") isPriority = true;
     }

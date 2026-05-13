@@ -50,7 +50,7 @@ export default async function MySchedulePage() {
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { businessType: true }
+      select: { businessType: true, timeFormat: true }
     })  ]);
 
   if (!staffProfile) {

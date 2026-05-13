@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   const tenantId = (session.user as any).tenantId;
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    select: { planStatus: true, trialEndsAt: true, businessType: true, name: true }
+    select: { planStatus: true, trialEndsAt: true, businessType: true, name: true, timeFormat: true }
   });
 
   return (

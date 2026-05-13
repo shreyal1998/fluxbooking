@@ -18,7 +18,7 @@ export default async function CustomersPage() {
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { businessType: true }
+      select: { businessType: true, timeFormat: true }
     })
   ]);
 

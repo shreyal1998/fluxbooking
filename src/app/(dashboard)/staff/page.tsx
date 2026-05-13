@@ -46,7 +46,7 @@ export default async function StaffPage() {
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { plan: true, planStatus: true, businessType: true }
+      select: { plan: true, planStatus: true, businessType: true, timeFormat: true }
     }),
     prisma.service.findMany({
       where: { tenantId },

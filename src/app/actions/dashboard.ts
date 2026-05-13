@@ -192,12 +192,10 @@ export async function updateTenantTimeFormat(timeFormat: string) {
   const tenantId = session.user.tenantId;
 
   try {
-    /* Temporarily disabled until Prisma Client is regenerated
     await prisma.tenant.update({
       where: { id: tenantId || "" },
       data: { timeFormat },
     });
-    */
 
     revalidatePath("/", "layout");
     return { success: true };
@@ -546,7 +544,7 @@ export async function searchGlobal(query: string) {
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId || "" },
-      select: { businessType: true }
+      select: { businessType: true, timeFormat: true }
     });
     const labels = getLabels(tenant?.businessType);
 

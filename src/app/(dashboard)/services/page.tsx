@@ -21,7 +21,8 @@ export default async function ServicesPage() {
       select: { 
         businessType: true,
         currency: true,
-        country: true
+        country: true,
+        timeFormat: true
       }
     })
   ]);
