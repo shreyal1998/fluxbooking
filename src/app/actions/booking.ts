@@ -28,7 +28,8 @@ export async function getAvailableSlots(
   serviceId: string, 
   dateStr: string,
   staffId?: string,
-  excludeBookingId?: string
+  excludeBookingId?: string,
+  allowPast: boolean = false
 ) {
   const service = await prisma.service.findUnique({
     where: { id: serviceId }
@@ -148,7 +149,7 @@ export async function getAvailableSlots(
         const slotDateTimeStr = `${dateStr} ${format(currentSlot, "HH:mm")}`;
         const slotDateTime = parse(slotDateTimeStr, "yyyy-MM-dd HH:mm", targetDate);
         
-        if (slotDateTime > nowAtVenue) {
+        if (allowPast || slotDateTime > nowAtVenue) {
           allAvailableSlots.push({
             time: format(currentSlot, "HH:mm"),
             staffId: staff.id,
@@ -225,6 +226,14 @@ export async function createBooking(formData: FormData) {
   const endTime = addMinutes(startTime, service.durationMinutes);
   const buffer = service.bufferTime || 0;
   const endTimeWithBuffer = addMinutes(endTime, buffer);
+
+  // Check if booking is in the past
+  const nowAtVenue = new Date(new Date().toLocaleString("en-US", { timeZone: businessTimezone }));
+  if (startTime < nowAtVenue) {
+    if (!session || (session.user.role !== "ADMIN" && session.user.role !== "STAFF")) {
+      return { error: "Cannot book appointments in the past." };
+    }
+  }
 
   try {
     const conflict = await prisma.booking.findFirst({

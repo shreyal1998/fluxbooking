@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, addDays, isSameDay, parse } from "date-fns";
+import { format, addDays, isSameDay, parse, startOfDay, isBefore } from "date-fns";
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -94,7 +94,8 @@ export function ManualBooking({
       serviceId, 
       format(date, "yyyy-MM-dd"), 
       staffId,
-      initialData?.id
+      initialData?.id,
+      true // allowPast: Admins/Staff should always see all slots in manual mode
     );
     if (Array.isArray(result)) {
       setAvailableSlots(result);
@@ -240,7 +241,11 @@ export function ManualBooking({
     }
   };
 
-  const nextSevenDays = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
+  const dates = Array.from({ length: 14 }, (_, i) => {
+    const today = startOfDay(new Date());
+    const baseDate = isBefore(selectedDate, today) ? startOfDay(selectedDate) : today;
+    return addDays(baseDate, i);
+  });
 
   const content = (
     <div className={`relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-[2.5rem] ${inline ? '' : 'shadow-2xl border border-slate-200 dark:border-slate-700'} overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh] transition-colors`}>
@@ -316,7 +321,7 @@ export function ManualBooking({
                 <div>
                     <h3 className="text-lg font-black text-slate-900 dark:text-white">Select Date & Time</h3>
                     <div className="flex gap-3 overflow-x-auto py-4 -mx-2 px-2 scrollbar-hide">
-                    {nextSevenDays.map((date) => {
+                    {dates.map((date) => {
                         const isSelected = isSameDay(date, selectedDate);
                         return (
                         <button

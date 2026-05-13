@@ -294,6 +294,10 @@ export function CalendarView({
     );
   };
 
+  const isPast = useCallback((date: Date) => {
+    return now ? isBefore(date, now) : false;
+  }, [now]);
+
   const renderDayView = () => {
     const dayEvents = events.filter(e => isSameDay(e.start, currentDate));
     const refDate = startOfDay(currentDate);
@@ -316,6 +320,7 @@ export function CalendarView({
               const totalMinutes = slotIdx * slotDuration;
               const currentSlotTime = parse(`${Math.floor(totalMinutes / 60)}:${totalMinutes % 60}`, "H:m", refDate);
               const isClosed = checkIsClosed(currentSlotTime);
+              const isPastSlot = isPast(currentSlotTime);
 
               return (
                 <div 
@@ -329,12 +334,16 @@ export function CalendarView({
                     <span className="w-[80px] h-full p-2 text-xs flex items-center justify-center border-r border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 z-10 text-black dark:text-white">
                       {format(currentSlotTime, timeDisplayFormat)}
                     </span>
-                    <div className={`flex-1 relative h-full ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900/80 cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-pointer hover:bg-indigo-50/30'}`} style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }}>
+                    <div className={`flex-1 relative h-full ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900/80 cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-pointer hover:bg-indigo-50/30'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`} style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }}>
                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 scale-95 group-hover:scale-100">
                           {isClosed ? (
                             <div className="flex items-center gap-1.5 bg-slate-900 dark:bg-slate-800 px-3 py-1.5 rounded-full shadow-2xl border border-slate-200 dark:border-slate-600 shadow-black/50">
                               <Lock className="h-3.5 w-3.5 text-white" />
                               <span className="text-[10px] font-bold text-white uppercase tracking-tight">Closed</span>
+                            </div>
+                          ) : isPastSlot ? (
+                            <div className="flex items-center gap-1.5 bg-slate-600 px-3 py-1.5 rounded-full shadow-xl border border-slate-500">
+                               <span className="text-[10px] font-bold text-white uppercase tracking-tight">Past: {format(currentSlotTime, timeDisplayFormat)}</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1.5 bg-indigo-600 px-3 py-1.5 rounded-full shadow-xl border border-indigo-500">
@@ -353,8 +362,10 @@ export function CalendarView({
              const top = startTotalMinutes * pixelsPerMinute;
              const height = duration * pixelsPerMinute;
              const styleData = getEventStyle(event);
+             const isPastEvent = isPast(event.end);
+
              return (
-               <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '30px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
+               <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'opacity-60 grayscale-[0.4]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '30px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
                  <h4 className="text-sm font-normal truncate">{event.title}</h4>
                  <p className="text-[10px] opacity-70">{format(event.start, timeDisplayFormat)}</p>
                </div>
@@ -408,6 +419,8 @@ export function CalendarView({
                       const totalMinutes = slotIdx * slotDuration;
                       const currentSlotTime = parse(`${Math.floor(totalMinutes / 60)}:${totalMinutes % 60}`, "H:m", refDate);
                       const isClosed = checkIsClosed(currentSlotTime);
+                      const isPastSlot = isPast(currentSlotTime);
+
                       return (
                         <div 
                           key={slotIdx} 
@@ -417,12 +430,16 @@ export function CalendarView({
                           onDrop={(e) => handleDrop(e, currentSlotTime)}
                           onClick={() => !isClosed && onSlotClick?.(currentSlotTime)}
                         >
-                           <div className={`absolute inset-0 h-full w-full ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-pointer'}`} style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }} />
+                           <div className={`absolute inset-0 h-full w-full ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`} style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }} />
                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 scale-95 group-hover:scale-100">
                               {isClosed ? (
                                 <div className="flex items-center gap-1.5 bg-slate-900 dark:bg-slate-800 px-2 py-1 rounded-full shadow-2xl border border-slate-200 dark:border-slate-600 shadow-black/50">
                                   <Lock className="h-2.5 w-2.5 text-white" />
                                   <span className="text-[9px] font-bold text-white uppercase tracking-tight">Closed</span>
+                                </div>
+                              ) : isPastSlot ? (
+                                <div className="flex items-center gap-1.5 bg-slate-600 px-2 py-1 rounded-full shadow-xl border border-slate-500">
+                                   <span className="text-[9px] font-bold text-white uppercase tracking-tight">Past</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1.5 bg-indigo-600 px-2 py-1 rounded-full shadow-xl border border-indigo-500">
@@ -446,8 +463,10 @@ export function CalendarView({
                       const top = startTotalMinutes * pixelsPerMinute;
                       const height = duration * pixelsPerMinute;
                       const styleData = getEventStyle(event);
+                      const isPastEvent = isPast(event.end);
+
                       return (
-                        <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '25px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
+                        <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'opacity-60 grayscale-[0.4]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '25px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
                           <p className="text-[9px] leading-tight font-medium truncate">{event.title}</p>
                         </div>
                       );
@@ -506,6 +525,7 @@ export function CalendarView({
                       const totalMinutes = slotIdx * slotDuration;
                       const currentSlotTime = parse(`${Math.floor(totalMinutes / 60)}:${totalMinutes % 60}`, "H:m", refDate);
                       const isClosed = checkIsClosed(currentSlotTime, staff.id);
+                      const isPastSlot = isPast(currentSlotTime);
 
                       return (
                         <div 
@@ -516,12 +536,16 @@ export function CalendarView({
                           onDrop={(e) => handleDrop(e, currentSlotTime, staff.id)}
                           onClick={() => !isClosed && onSlotClick?.(currentSlotTime, staff.id)}
                         >
-                           <div className={`absolute inset-0 h-full w-full ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-pointer'}`} style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }} />
+                           <div className={`absolute inset-0 h-full w-full ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`} style={{ backgroundPositionY: isClosed ? `-${slotIdx * slotHeight}px` : undefined }} />
                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 scale-95 group-hover:scale-100">
                               {isClosed ? (
                                 <div className="flex items-center gap-1 bg-slate-900 dark:bg-slate-800 px-2 py-1 rounded-full shadow-xl border border-slate-200 dark:border-slate-600 shadow-black/50">
                                   <Lock className="h-2.5 w-2.5 text-white" />
                                   <span className="text-[8px] font-bold text-white">Closed</span>
+                                </div>
+                              ) : isPastSlot ? (
+                                <div className="flex items-center gap-1 bg-slate-600 px-2 py-1 rounded-full shadow-xl border border-slate-500">
+                                   <span className="text-[8px] font-bold text-white">Past</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1 bg-indigo-600 px-2 py-1 rounded-full shadow-xl border border-indigo-500">
@@ -549,8 +573,10 @@ export function CalendarView({
                       const top = startTotalMinutes * pixelsPerMinute;
                       const height = duration * pixelsPerMinute;
                       const styleData = getEventStyle(event);
+                      const isPastEvent = isPast(event.end);
+
                       return (
-                        <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
+                        <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] cursor-move transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'opacity-60 grayscale-[0.4]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
                           <p className="text-[9px] leading-tight font-medium truncate">{event.title}</p>
                         </div>
                       );
