@@ -341,7 +341,7 @@ export function CalendarView({
                             return (
                               <div 
                                 key={subIdx}
-                                className={`flex-1 relative group/sub transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900/80 cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-pointer hover:bg-indigo-50/30'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
+                                className={`flex-1 relative group/sub transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900/80 cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
                                 style={{ backgroundPositionY: isClosed ? `-${(slotIdx * slotHeight) + (subIdx * (slotHeight / (slotDuration / 15)))}px` : undefined }}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => handleDrop(e, subTime)}
@@ -354,10 +354,11 @@ export function CalendarView({
                                         <span className="text-[10px] font-bold text-white uppercase tracking-tight">Closed</span>
                                       </div>
                                     ) : isPastSlot ? (
-                                      <div className="flex items-center gap-1.5 bg-slate-600 px-3 py-1 rounded-full shadow-xl border border-slate-500">
-                                         <span className="text-[10px] font-bold text-white uppercase tracking-tight">Past: {format(subTime, timeDisplayFormat)}</span>
+                                      <div className="flex items-center gap-1.5 bg-slate-700 dark:bg-slate-800 px-3 py-1 rounded-full shadow-xl border border-slate-600 dark:border-slate-700">
+                                         <span className="text-[10px] font-bold text-white uppercase tracking-tight"><span className="opacity-70">Past:</span> {format(subTime, timeDisplayFormat)}</span>
                                       </div>
                                     ) : (
+
                                       <div className="flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full shadow-xl border border-indigo-500">
                                         <span className="text-[10px] font-bold text-white uppercase tracking-tight">{format(subTime, timeDisplayFormat)}</span>
                                       </div>
@@ -449,7 +450,7 @@ export function CalendarView({
                              return (
                                 <div 
                                   key={subIdx}
-                                  className={`flex-1 relative group/sub transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
+                                  className={`flex-1 relative group/sub transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
                                   style={{ backgroundPositionY: isClosed ? `-${(slotIdx * slotHeight) + (subIdx * (slotHeight / (slotDuration / 15)))}px` : undefined }}
                                   onDragOver={handleDragOver}
                                   onDrop={(e) => handleDrop(e, subTime)}
@@ -462,10 +463,11 @@ export function CalendarView({
                                           <span className="text-[9px] font-bold text-white uppercase tracking-tight">Closed</span>
                                         </div>
                                       ) : isPastSlot ? (
-                                        <div className="flex items-center gap-1.5 bg-slate-600 px-3 py-1 rounded-full shadow-xl border border-slate-500">
-                                           <span className="text-[10px] font-bold text-white uppercase tracking-tight">Past: {format(subTime, timeDisplayFormat)}</span>
+                                        <div className="flex items-center gap-1.5 bg-slate-700 dark:bg-slate-800 px-3 py-1 rounded-full shadow-xl border border-slate-600 dark:border-slate-700">
+                                           <span className="text-[10px] font-bold text-white uppercase tracking-tight"><span className="opacity-70">Past:</span> {format(subTime, timeDisplayFormat)}</span>
                                         </div>
                                       ) : (
+
                                         <div className="flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full shadow-xl border border-indigo-500">
                                           <span className="text-[10px] font-bold text-white uppercase tracking-tight">{format(subTime, timeDisplayFormat)}</span>
                                         </div>
@@ -565,7 +567,7 @@ export function CalendarView({
                              return (
                                 <div 
                                   key={subIdx}
-                                  className={`flex-1 relative group/sub transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
+                                  className={`flex-1 relative group/sub transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
                                   style={{ backgroundPositionY: isClosed ? `-${(slotIdx * slotHeight) + (subIdx * (slotHeight / (slotDuration / 15)))}px` : undefined }}
                                   onDragOver={handleDragOver}
                                   onDrop={(e) => handleDrop(e, subTime, staff.id)}
@@ -578,10 +580,11 @@ export function CalendarView({
                                           <span className="text-[8px] font-bold text-white">Closed</span>
                                         </div>
                                       ) : isPastSlot ? (
-                                        <div className="flex items-center gap-1.5 bg-slate-600 px-3 py-1 rounded-full shadow-xl border border-slate-500">
-                                           <span className="text-[10px] font-bold text-white uppercase tracking-tight">Past: {format(subTime, timeDisplayFormat)}</span>
+                                        <div className="flex items-center gap-1.5 bg-slate-700 dark:bg-slate-800 px-3 py-1 rounded-full shadow-xl border border-slate-600 dark:border-slate-700">
+                                           <span className="text-[10px] font-bold text-white uppercase tracking-tight"><span className="opacity-70">Past:</span> {format(subTime, timeDisplayFormat)}</span>
                                         </div>
                                       ) : (
+
                                         <div className="flex items-center gap-1.5 bg-indigo-600 px-3 py-1 rounded-full shadow-xl border border-indigo-500">
                                           <span className="text-[10px] font-bold text-white uppercase tracking-tight">{format(subTime, timeDisplayFormat)}</span>
                                         </div>
