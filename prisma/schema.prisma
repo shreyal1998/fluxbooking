@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum BusinessType {
@@ -61,33 +61,33 @@ model Tenant {
   currency          String       @default("USD") // Currency Code (e.g., USD, INR, GBP)
   logoUrl           String?
   primaryColor      String       @default("#6366f1")
-  businessHoursJson Json?        // Global opening/closing hours
+  businessHoursJson Json? // Global opening/closing hours
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
   // Subscription & Billing
-  plan                SubscriptionPlan     @default(FREE)
-  planInterval        SubscriptionInterval @default(MONTH)
-  planStatus          String?              @default("TRIALING") // ACTIVE, TRIALING, PAST_DUE, CANCELED
-  lemonSqueezyCustomerId    String?        @unique
-  lemonSqueezySubscriptionId String?       @unique
-  trialEndsAt         DateTime?
-  subscriptionEndsAt  DateTime?
-  timezone            String               @default("UTC")
-  timeFormat          String               @default("12h") // '12h' or '24h'
+  plan                       SubscriptionPlan     @default(FREE)
+  planInterval               SubscriptionInterval @default(MONTH)
+  planStatus                 String?              @default("TRIALING") // ACTIVE, TRIALING, PAST_DUE, CANCELED
+  lemonSqueezyCustomerId     String?              @unique
+  lemonSqueezySubscriptionId String?              @unique
+  trialEndsAt                DateTime?
+  subscriptionEndsAt         DateTime?
+  timezone                   String               @default("UTC")
+  timeFormat                 String               @default("12h") // '12h' or '24h'
 
   // Notifications & Credits
   emailNotificationsEnabled Boolean @default(true)
 
-  users         User[]
-  services      Service[]
-  staff         Staff[]
-  bookings      Booking[]
-  blockedSlots  BlockedSlot[]
+  users                 User[]
+  services              Service[]
+  staff                 Staff[]
+  bookings              Booking[]
+  blockedSlots          BlockedSlot[]
   availabilityOverrides AvailabilityOverride[]
-  leaveRequests LeaveRequest[]
-  customers     Customer[]
-  locations     Location[]
+  leaveRequests         LeaveRequest[]
+  customers             Customer[]
+  locations             Location[]
 }
 
 model AvailabilityOverride {
@@ -100,23 +100,23 @@ model AvailabilityOverride {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@index([staffId, startTime])
 }
 
 model Location {
-  id          String   @id @default(cuid())
-  tenantId    String
-  name        String
-  address     String?
-  phone       String?
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  address   String?
+  phone     String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }
@@ -161,10 +161,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  accounts      Account[]
-  sessions      Session[]
-  staffProfile  Staff?
+  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts     Account[]
+  sessions     Session[]
+  staffProfile Staff?
 }
 
 model VerificationToken {
@@ -187,9 +187,9 @@ model Service {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings        Booking[]
-  staff           Staff[]  @relation("StaffServices")
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+  staff    Staff[]   @relation("StaffServices")
 }
 
 model Staff {
@@ -199,16 +199,17 @@ model Staff {
   name             String
   bio              String?
   color            String   @default("#6366f1") // Calendar display color
-  availabilityJson Json     // Weekly schedule
+  availabilityJson Json // Weekly schedule
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  bookings         Booking[]
-  blockedSlots     BlockedSlot[]
-  leaveRequests    LeaveRequest[]
-  services         Service[] @relation("StaffServices")
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                  User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bookings              Booking[]
+  blockedSlots          BlockedSlot[]
+  leaveRequests         LeaveRequest[]
+  availabilityOverrides AvailabilityOverride[]
+  services              Service[]              @relation("StaffServices")
 }
 
 model Customer {
@@ -222,8 +223,8 @@ model Customer {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings  Booking[]
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings Booking[]
 
   @@unique([tenantId, email])
 }
@@ -233,19 +234,19 @@ model Booking {
   tenantId      String
   serviceId     String
   staffId       String
-  customerId    String?       // Optional link to Customer
-  customerName  String        // Snapshot of name
-  customerEmail String        // Snapshot of email
+  customerId    String? // Optional link to Customer
+  customerName  String // Snapshot of name
+  customerEmail String // Snapshot of email
   startTime     DateTime
   endTime       DateTime
   status        BookingStatus @default(PENDING)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  staff         Staff         @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  service  Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff    Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, startTime])
 }
@@ -260,8 +261,8 @@ model BlockedSlot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@index([staffId, startTime])
 }
@@ -270,7 +271,7 @@ model LeaveRequest {
   id        String      @id @default(cuid())
   tenantId  String
   staffId   String
-  type      String      // SICK, PERSONAL, VACATION
+  type      String // SICK, PERSONAL, VACATION
   reason    String?
   startTime DateTime
   endTime   DateTime
@@ -278,10 +279,8 @@ model LeaveRequest {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  staff     Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff  Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
 }
-
-
