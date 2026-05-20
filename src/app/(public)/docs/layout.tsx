@@ -64,7 +64,7 @@ export default function DocsLayout({
   return (
     <div className="max-w-7xl w-full mx-auto flex flex-col md:flex-row relative">
       {/* Mobile Toggle (Sticky below main header) */}
-      <div className="md:hidden sticky top-20 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-3 flex items-center justify-between">
+      <div className="md:hidden sticky top-20 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
           <span>Docs</span>
           <ChevronRight className="h-3 w-3" />
@@ -81,7 +81,7 @@ export default function DocsLayout({
       {/* Docs Sidebar */}
       <aside className={`
         fixed inset-0 top-[121px] md:top-0 z-40 bg-white md:bg-transparent md:sticky md:z-auto md:w-72 
-        border-r border-slate-200 transition-transform duration-300 ease-in-out
+        border-r border-slate-100 transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="h-full overflow-y-auto p-8 md:p-6 lg:p-12 md:pl-0">

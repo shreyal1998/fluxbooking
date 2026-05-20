@@ -14,7 +14,8 @@ import {
   ChevronRight,
   X,
   Ban,
-  Check
+  Check,
+  Calendar
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
@@ -38,6 +39,7 @@ import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Booking, Service, Staff, Tenant, UserRole, BlockedSlot, BookingStatus } from "@prisma/client";
+import { getInTimezone, formatInTimezone } from "@/lib/timezone-utils";
 
 type BookingWithRelations = Booking & {
   service: Service;
@@ -58,6 +60,7 @@ type SerializedBooking = Omit<Booking, "service"> & {
 interface AppointmentsClientProps {
   bookings: SerializedBooking[];
   blockedSlots: BlockedSlotWithRelations[];
+  availabilityOverrides: any[];
   services: SerializedService[];
   staff: Staff[];
   tenantId: string;
@@ -68,6 +71,7 @@ interface AppointmentsClientProps {
 export function AppointmentsClient({ 
   bookings: initialBookings, 
   blockedSlots: initialBlockedSlots, 
+  availabilityOverrides,
   services, 
   staff, 
   tenantId,
@@ -209,18 +213,20 @@ export function AppointmentsClient({
   const filteredEvents = useMemo(() => {
     let filteredBookings = initialBookings;
     let filteredBlocked = initialBlockedSlots;
+    let filteredOverrides = availabilityOverrides;
 
     if (userRole === "ADMIN" && currentStaffFilter !== "all") {
       filteredBookings = initialBookings.filter((b) => b.staffId === currentStaffFilter);
       filteredBlocked = initialBlockedSlots.filter((s) => s.staffId === currentStaffFilter);
+      filteredOverrides = availabilityOverrides.filter((o) => o.staffId === currentStaffFilter);
     }
 
     return [
       ...(filteredBookings?.map((b) => ({
         id: b.id,
         title: `${b.customerName} - ${b.service.name}`,
-        start: new Date(b.startTime),
-        end: new Date(b.endTime),
+        start: getInTimezone(new Date(b.startTime), tenant?.timezone || "UTC"),
+        end: getInTimezone(new Date(b.endTime), tenant?.timezone || "UTC"),
         type: "booking" as const,
         resourceName: b.staff.name,
         status: b.status,
@@ -229,14 +235,23 @@ export function AppointmentsClient({
       ...(filteredBlocked?.map((s) => ({
         id: s.id,
         title: s.reason || "Blocked",
-        start: new Date(s.startTime),
-        end: new Date(s.endTime),
+        start: getInTimezone(new Date(s.startTime), tenant?.timezone || "UTC"),
+        end: getInTimezone(new Date(s.endTime), tenant?.timezone || "UTC"),
         type: "blocked" as const,
         resourceName: s.staff.name,
-        leaveType: (s as any).type // Some slots might be from leave requests
+        leaveType: (s as any).type
+      })) || []),
+      ...(filteredOverrides?.map((o) => ({
+        id: o.id,
+        title: "One-off Shift",
+        start: getInTimezone(new Date(o.startTime), tenant?.timezone || "UTC"),
+        end: getInTimezone(new Date(o.endTime), tenant?.timezone || "UTC"),
+        type: "availability-override" as const,
+        resourceName: o.staff.name,
+        color: "#6366f1"
       })) || [])
     ];
-  }, [initialBookings, initialBlockedSlots, currentStaffFilter, userRole]);
+  }, [initialBookings, initialBlockedSlots, availabilityOverrides, currentStaffFilter, userRole, tenant?.timezone]);
 
   const getStatusStyle = (status: BookingStatus) => {
     switch (status) {
@@ -244,7 +259,7 @@ export function AppointmentsClient({
       case "CONFIRMED": return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900/50";
       case "COMPLETED": return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-900/50";
       case "CANCELLED": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900/50";
-      default: return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+      default: return "bg-slate-100 text-slate-700 border-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-800";
     }
   };
 
@@ -269,43 +284,34 @@ export function AppointmentsClient({
             businessType={tenant?.businessType}
             currency={tenant?.currency}
             timeFormat={tenant?.timeFormat || "12h"}
+            timezone={tenant?.timezone || "UTC"}
           />
-          
-          {userRole === "ADMIN" && (
-            <button 
-              onClick={() => setShowHoursModal(true)}
-              className="flex items-center gap-2 bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium text-xs hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm"
-            >
-              <Clock className="h-4 w-4" />
-              Manage Hours
-            </button>
-          )}
 
           {userRole === "ADMIN" && (
             <div className="relative" ref={staffDropdownRef}>
               <button 
                 onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-                className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-2xl border-2 border-transparent focus:border-indigo-600 hover:border-indigo-100 dark:hover:border-indigo-900/30 transition-all group shadow-sm min-w-[180px]"
+                className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px]"
               >
                 <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
-                <span className="text-xs font-medium text-slate-900 dark:text-slate-100 flex-1 text-left">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex-1 text-left">
                   {selectedStaffName}
                 </span>
                 <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
               </button>
 
               {isStaffFilterOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 mb-1">
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
                     <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
                     <button
                       onClick={() => { setCurrentStaffFilter("all"); setCurrentPage(1); setIsStaffFilterOpen(false); }}
-                      className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-500">
                           <Users className="h-4 w-4" />
                         </div>
                         <span className={`text-xs font-medium ${currentStaffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>All Staff Members</span>
@@ -317,7 +323,7 @@ export function AppointmentsClient({
                       <button
                         key={s.id}
                         onClick={() => { setCurrentStaffFilter(s.id); setCurrentPage(1); setIsStaffFilterOpen(false); }}
-                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: s.color }}>
@@ -343,8 +349,8 @@ export function AppointmentsClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/50">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
                     <Clock className="h-5 w-5" />
@@ -379,7 +385,7 @@ export function AppointmentsClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                {actionType === null ? (
                  <div className="p-10 space-y-8 text-center">
                     <div className="space-y-2">
@@ -393,7 +399,7 @@ export function AppointmentsClient({
                        <Tooltip content={`Schedule a new ${labels.appointment}`} position="top">
                          <button 
                           onClick={() => setActionType("book")}
-                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
                          >
                             <div className="h-16 w-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                <labels.serviceIcon className="h-8 w-8" />
@@ -405,7 +411,7 @@ export function AppointmentsClient({
                        <Tooltip content="Block specific time on calendar" position="top">
                          <button 
                           onClick={() => setActionType("block")}
-                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
                          >
                             <div className="h-16 w-16 rounded-3xl bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                <Ban className="h-8 w-8" />
@@ -438,6 +444,7 @@ export function AppointmentsClient({
                       inline={true}
                       businessType={tenant?.businessType}
                       currency={tenant?.currency || "USD"}
+                      timezone={tenant?.timezone || "UTC"}
                     />
                  </div>
                ) : (
@@ -467,25 +474,31 @@ export function AppointmentsClient({
       {/* Toolbar & Content Card */}
       <div className="flex-1 flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex items-center bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-1">
+            <div className="flex items-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 p-1.5 shadow-sm">
               <Tooltip content="Previous Period" position="bottom">
-                <button onClick={prevDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                  <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                <button 
+                  onClick={prevDate} 
+                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
               </Tooltip>
               <Tooltip content="Jump to Today" position="bottom">
                 <button 
                   onClick={() => setCurrentDate(new Date())} 
-                  className="px-4 py-1.5 text-[10px] font-normal uppercase tracking-widest text-black dark:text-white transition-colors border-x border-slate-200 dark:border-slate-700"
+                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
                 >
                   Today
                 </button>
               </Tooltip>
               <Tooltip content="Next Period" position="bottom">
-                <button onClick={nextDate} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all active:scale-95 group border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                  <ChevronRight className="h-4 w-4 text-black dark:text-white" />
+                <button 
+                  onClick={nextDate} 
+                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </Tooltip>
             </div>
@@ -500,7 +513,7 @@ export function AppointmentsClient({
           <div className="flex flex-wrap items-center gap-3">
             {/* Granularity Selector */}
             {viewMode !== "month" && viewMode !== "list" && (
-              <div className="flex items-center bg-white dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 {([15, 30, 60] as const).map((mins) => (
                   <button
                     key={mins}
@@ -518,7 +531,7 @@ export function AppointmentsClient({
             )}
 
             {/* View Switcher */}
-            <div className="bg-white dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
+            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center">
               {(["month", "week", "day", "team", "list"] as const).map((mode) => (
                 <button 
                   key={mode}
@@ -537,12 +550,12 @@ export function AppointmentsClient({
         </div>
 
         {/* Main Content Card */}
-        <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+        <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
           {viewMode === "list" ? (
             <div className="flex-1 flex flex-col overflow-hidden" id="bookings-table-top">
               {listFilteredBookings.length === 0 ? (
                 <div className="flex-1 p-24 flex flex-col items-center justify-center text-center">
-                  <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-6">
+                  <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-center mb-6">
                     <CalendarIcon className="h-10 w-10 text-slate-200 dark:text-slate-700" />
                   </div>
                   <p className="text-black dark:text-white font-bold text-lg">No {labels.appointmentLower}s found</p>
@@ -553,7 +566,7 @@ export function AppointmentsClient({
                   <div className="flex-1 overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                       <thead>
-                        <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                        <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
                           <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Date & Time</th>
                           <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Customer</th>
                           <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
@@ -564,11 +577,11 @@ export function AppointmentsClient({
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {currentListItems.map((booking) => (
-                          <tr key={booking.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group">
+                          <tr key={booking.id} className="hover:bg-indigo-50/50 dark:hover:bg-slate-800/30 transition-all group">
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="text-sm font-normal text-black dark:text-white">{format(new Date(booking.startTime), "MMM d, yyyy")}</div>
+                              <div className="text-sm font-normal text-black dark:text-white">{formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", "MMM d, yyyy")}</div>
                               <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
-                                <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {format(new Date(booking.startTime), listTimeFormat)}
+                                <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", listTimeFormat)}
                               </div>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap">
@@ -633,7 +646,7 @@ export function AppointmentsClient({
 
                   {/* Integrated Pagination Footer */}
                   {listFilteredBookings.length > itemsPerPage && (
-                    <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div className="px-10 py-8 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                       <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
                         Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="text-black dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
                       </p>
@@ -642,7 +655,7 @@ export function AppointmentsClient({
                         <button
                           onClick={() => paginate(currentPage - 1)}
                           disabled={currentPage === 1}
-                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </button>
@@ -655,7 +668,7 @@ export function AppointmentsClient({
                         <button
                           onClick={() => paginate(currentPage + 1)}
                           disabled={currentPage === totalPages}
-                          className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </button>

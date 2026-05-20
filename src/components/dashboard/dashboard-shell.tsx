@@ -15,7 +15,8 @@ import {
   UserCircle,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  CalendarCheck
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -48,6 +49,7 @@ export function DashboardShell({
     const items = [
       { name: "Overview", href: "/overview", icon: LayoutDashboard },
       { name: "Booking Calendar", href: `/${labels.appointmentSlug}`, icon: Calendar },
+      { name: "Schedule Calendar", href: "/schedule", icon: CalendarCheck },
       { name: labels.service + "s", href: `/${labels.serviceSlug}`, icon: labels.serviceIcon },
       { name: labels.staff + "s", href: `/${labels.staffSlug}`, icon: labels.staffIcon },
       { name: labels.customer + "s", href: `/${labels.customerSlug}`, icon: labels.customerIcon },
@@ -118,7 +120,7 @@ export function DashboardShell({
   }, []);
 
   const getPageBackground = (path: string) => {
-    return "bg-slate-50 dark:bg-slate-950";
+    return "bg-indigo-50/40 dark:bg-slate-950";
   };
 
   const bgClass = getPageBackground(pathname);
@@ -132,7 +134,7 @@ export function DashboardShell({
 
   return (
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
-      <aside className="hidden lg:flex flex-col w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-200 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
+      <aside className="hidden lg:flex flex-col w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
         <div className="h-16 lg:h-20 px-8 flex items-center">
           <Link href="/overview" className="relative -top-0.5">
             <Logo size="xl" textClassName="dark:text-white" />
@@ -179,7 +181,7 @@ export function DashboardShell({
         </nav>
 
         <div className="mt-auto">
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
             <button
               onClick={() => setShowLogoutConfirm(true)}
               className="flex items-center gap-4 w-full px-4 py-1.5 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
@@ -196,10 +198,10 @@ export function DashboardShell({
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col relative">
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 lg:px-10 z-50 sticky top-0 transition-all duration-500">
+        <header className="h-16 lg:h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 flex items-center justify-between px-6 lg:px-10 z-50 sticky top-0 transition-all duration-500">
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            className="lg:hidden p-2 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="lg:hidden p-2 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -214,7 +216,7 @@ export function DashboardShell({
               placeholder="Search appointments, customers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
+              className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
              />
 
              {/* Search Results Dropdown */}
@@ -277,7 +279,7 @@ export function DashboardShell({
             <Tooltip content="Notifications" position="bottom">
               <button className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-white transition-all relative shadow-sm">
                 <Bell className="h-4.5 w-4.5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-rose-500 border-2 border-white dark:border-slate-700 rounded-full"></span>
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
               </button>
             </Tooltip>
             
@@ -287,7 +289,7 @@ export function DashboardShell({
                 <p className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{user?.role || "Member"}</p>
               </div>
               <Tooltip content="Your Profile" position="bottom">
-                <div className="h-9 w-9 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-medium text-xs border-2 border-white dark:border-slate-700 select-none hover:scale-105 transition-transform cursor-pointer shrink-0">
+                <div className="h-9 w-9 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-medium text-xs border-2 border-white dark:border-slate-800 select-none hover:scale-105 transition-transform cursor-pointer shrink-0">
                   {user?.name?.substring(0, 2).toUpperCase() || "US"}
                 </div>
               </Tooltip>
@@ -309,11 +311,11 @@ export function DashboardShell({
               onClick={() => setIsMobileMenuOpen(false)} 
             />
             <aside className="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-slate-900 shadow-2xl animate-in slide-in-from-left duration-300 flex flex-col">
-              <div className="h-20 px-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+              <div className="h-20 px-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
                 <Logo size="xl" textClassName="text-slate-900 dark:text-white" />
                 <div className="flex items-center gap-2">
                   <CompactThemeToggle />
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
                     <X className="h-6 w-6 text-slate-900 dark:text-white" />
                   </button>
                 </div>
@@ -352,7 +354,7 @@ export function DashboardShell({
                 })}
               </nav>
               <div className="mt-auto">
-                 <div className="p-8 border-t border-slate-100 dark:border-slate-700">
+                 <div className="p-8 border-t border-slate-100 dark:border-slate-800">
                     <button onClick={() => {
                       setIsMobileMenuOpen(false);
                       setShowLogoutConfirm(true);

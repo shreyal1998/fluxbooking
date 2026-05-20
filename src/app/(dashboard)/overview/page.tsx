@@ -128,7 +128,7 @@ export default async function DashboardPage() {
             Here's what's happening at <span className="text-indigo-600 dark:text-indigo-400 font-bold decoration-indigo-500/30 underline-offset-4 decoration-2">{tenant?.name}</span> today.
           </p>
         </div>
-        <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm self-start md:self-auto transition-all hover:border-indigo-100 dark:hover:border-indigo-900">
+        <div className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm self-start md:self-auto transition-all hover:border-indigo-100 dark:hover:border-indigo-900">
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
           <span className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest">Live Insights</span>
         </div>
@@ -137,21 +137,21 @@ export default async function DashboardPage() {
       <div className="flex-1 space-y-10 pb-8">
         {userRole === "STAFF" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-500">
-             <Link href={`/${labels.appointmentSlug}`} className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
+             <Link href={`/${labels.appointmentSlug}`} className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
                 <div className="h-12 w-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
                    <CalendarIcon className="h-6 w-6" />
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white">Today's Schedule</h4>
                 <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">View and manage your upcoming bookings.</p>
              </Link>
-             <Link href="/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-900 transition-all">
+             <Link href="/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-900 transition-all">
                 <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
                    <Clock className="h-6 w-6" />
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white">My Availability</h4>
                 <p className="text-xs font-normal text-slate-500 dark:text-slate-400 mt-1">Update your working hours and blocks.</p>
              </Link>
-             <Link href="/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-rose-200 dark:hover:border-rose-900 transition-all">
+             <Link href="/my-schedule" className="group p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:border-rose-200 dark:hover:border-rose-900 transition-all">
                 <div className="h-12 w-12 rounded-2xl bg-rose-50 dark:bg-rose-950/20 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 group-hover:scale-110 transition-transform">
                    <ArrowUpRight className="h-6 w-6" />
                 </div>
@@ -183,9 +183,9 @@ export default async function DashboardPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <div key={stat.name} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm group hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
+            <div key={stat.name} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-indigo-200 dark:hover:border-indigo-900 transition-all">
               <div className="flex items-center justify-between mb-6">
-                <div className={`p-4 rounded-2xl ${stat.bg} dark:bg-slate-800 border border-slate-200 dark:border-slate-700`}>
+                <div className={`p-4 rounded-2xl ${stat.bg} dark:bg-slate-800 border border-slate-100 dark:border-slate-800`}>
                   <stat.icon className={`h-6 w-6 ${stat.color}`} />
                 </div>
                 <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
@@ -202,7 +202,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Main Feed */}
           <div className="lg:col-span-2">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm h-full">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm h-full">
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-100 dark:border-indigo-800">
@@ -220,9 +220,9 @@ export default async function DashboardPage() {
                   </div>
                 ) : (
                   recentBookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-100 dark:hover:border-indigo-900 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all group shadow-sm">
+                    <div key={booking.id} className="flex items-center justify-between p-4 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-indigo-100 dark:hover:border-indigo-900 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all group shadow-sm">
                       <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-indigo-600 dark:text-white font-medium text-sm group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                        <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-indigo-600 dark:text-white font-medium text-sm group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
                           {booking.customerName.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
                         {booking.status === 'COMPLETED' ? (
                           <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                         ) : (
-                          <div className="h-5 w-5 rounded-full border-2 border-slate-200 dark:border-slate-700" />
+                          <div className="h-5 w-5 rounded-full border-2 border-slate-100 dark:border-slate-800" />
                         )}
                       </div>
                     </div>
@@ -250,7 +250,7 @@ export default async function DashboardPage() {
 
           {/* Right Sidebar */}
           <div className="space-y-10">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
               <div className="flex items-center gap-3 mb-8">
                 <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-100 dark:border-indigo-800">
                   <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
@@ -260,14 +260,14 @@ export default async function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 {userRole === "ADMIN" ? (
                   <>
-                    <Link href={`/${labels.serviceSlug}`} className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
-                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                    <Link href={`/${labels.serviceSlug}`} className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <labels.serviceIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">{labels.service}s</span>
                     </Link>
-                    <Link href="/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
-                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                    <Link href="/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <Clock className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Schedule</span>
@@ -275,14 +275,14 @@ export default async function DashboardPage() {
                   </>
                 ) : (
                   <>
-                    <Link href="/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
-                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                    <Link href="/my-schedule" className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Schedule</span>
                     </Link>
-                    <Link href={`/${labels.appointmentSlug}`} className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
-                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                    <Link href={`/${labels.appointmentSlug}`} className="flex flex-col items-center justify-center p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 transition-all group shadow-sm">
+                      <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm mb-4 group-hover:scale-110 transition-transform">
                         <CalendarIcon className="h-5 w-5 text-slate-400 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                       </div>
                       <span className="text-[10px] font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 uppercase tracking-widest">Bookings</span>

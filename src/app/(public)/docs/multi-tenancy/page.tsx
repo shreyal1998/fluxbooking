@@ -28,7 +28,7 @@ export default function MultiTenancyDocs() {
              { icon: Database, title: "Query Isolation", desc: "Our Prisma-driven backend ensures queries never leak data between tenants." },
              { icon: Globe, title: "Isolated Slugs", desc: "Your business lives on its own isolated path at /b/[your-slug]." }
            ].map((item, i) => (
-             <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-indigo-100/50 space-y-2">
+             <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-indigo-100/50 space-y-2">
                 <item.icon className="h-5 w-5 text-indigo-500" />
                 <h4 className="font-black text-sm text-slate-900">{item.title}</h4>
                 <p className="text-[11px] text-slate-500 font-bold leading-relaxed">{item.desc}</p>
@@ -50,7 +50,7 @@ export default function MultiTenancyDocs() {
             "Automatic tenant validation on every server action",
             "Secure database connections with strict SSL/TLS requirements"
           ].map((t) => (
-            <div key={t} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50/50">
+            <div key={t} className="flex items-center gap-3 p-4 rounded-3xl border border-slate-100 bg-slate-50/50">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               <span className="text-sm font-bold text-slate-700">{t}</span>
             </div>
@@ -70,7 +70,7 @@ export default function MultiTenancyDocs() {
         </div>
       </div>
 
-      <div className="pt-12 border-t border-slate-200 flex justify-between">
+      <div className="pt-12 border-t border-slate-100 flex justify-between">
         <Link href="/docs/bookings" className="text-sm font-black text-slate-400 hover:text-slate-600">â† Calendar & Bookings</Link>
         <Link href="/docs" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Back to Intro â†’</Link>
       </div>

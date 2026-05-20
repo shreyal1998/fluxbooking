@@ -94,7 +94,7 @@ export default async function MySchedulePage() {
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 px-6 py-3 bg-white/70 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-md">
+          <div className="flex items-center gap-3 px-6 py-3 bg-white/70 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm backdrop-blur-md">
             <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             <span className="text-[10px] font-medium text-slate-900 dark:text-white uppercase tracking-widest">{totalHours} Weekly Hours</span>
           </div>
@@ -121,7 +121,7 @@ export default async function MySchedulePage() {
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-indigo-600 border border-slate-200 dark:border-slate-700">
+                            <div className="h-14 w-14 rounded-2xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-indigo-600 border border-slate-100 dark:border-slate-800">
                                 <User className="h-7 w-7" />
                             </div>
                             <div>
@@ -129,7 +129,7 @@ export default async function MySchedulePage() {
                                 <p className="text-sm font-medium text-slate-900 dark:text-white opacity-60">{nextAppointment.service.name} • {format(new Date(nextAppointment.startTime), timeDisplayFormat)}</p>
                             </div>
                         </div>
-                        <Link href={`/${labels.appointmentSlug}`} className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all">
+                        <Link href={`/${labels.appointmentSlug}`} className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-all">
                             Booking Calendar
                             <ChevronRight className="h-4 w-4" />
                         </Link>
@@ -139,8 +139,8 @@ export default async function MySchedulePage() {
           )}
 
           {/* Availability Section */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-soft overflow-hidden">
-            <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-indigo-50/50 dark:bg-slate-900/50">
               <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
                 <Clock className="h-5 w-5" />
               </div>
@@ -158,8 +158,8 @@ export default async function MySchedulePage() {
           </div>
 
           {/* Quick Block Section */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-soft overflow-hidden">
-            <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-indigo-50/50 dark:bg-slate-900/50">
               <div className="h-10 w-10 rounded-2xl bg-slate-900 dark:bg-slate-800 flex items-center justify-center text-white">
                 <Ban className="h-5 w-5" />
               </div>
@@ -180,7 +180,7 @@ export default async function MySchedulePage() {
 
         <div className="lg:col-span-1 space-y-10">
           {/* Leave Request Form */}
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-soft">
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft">
             <div className="flex items-center gap-3 mb-6">
               <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
                 <Calendar className="h-5 w-5" />
@@ -192,8 +192,8 @@ export default async function MySchedulePage() {
           </div>
 
           {/* Leave History */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-soft overflow-hidden">
-            <div className="p-8 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-indigo-50/50 dark:bg-slate-900/50">
               <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                 <History className="h-4 w-4 text-slate-400" />
                 Recent History
@@ -205,7 +205,7 @@ export default async function MySchedulePage() {
               ) : (
                 <div className="space-y-4">
                   {staffProfile.leaveRequests.map((request) => (
-                    <div key={request.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-950/30">
+                    <div key={request.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-950/30">
                         <div className="flex items-center justify-between mb-2">
                             <p className="text-xs font-medium text-slate-900 dark:text-white">{request.type}</p>
                             <span className={`px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider border ${

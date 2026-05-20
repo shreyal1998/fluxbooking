@@ -12,7 +12,7 @@ export function LoadingSpinner() {
         
         {/* The Spinner */}
         <div className="relative h-14 w-14">
-          <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-800"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-800"></div>
           <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin shadow-[0_0_20px_rgba(79,70,229,0.4)]"></div>
         </div>
       </div>

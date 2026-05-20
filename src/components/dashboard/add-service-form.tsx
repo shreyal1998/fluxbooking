@@ -98,8 +98,10 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
             required
             onChange={() => clearFieldError("name")}
             placeholder={labels.servicePlaceholder}
-            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
-              fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
+            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+              fieldErrors.name 
+                ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
             }`}
           />
           <InputError message={fieldErrors.name} />
@@ -118,8 +120,10 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
                 required
                 onChange={() => clearFieldError("duration")}
                 placeholder="30"
-                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
-                  fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
+                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                  fieldErrors.duration 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                 }`}
               />
             </div>
@@ -135,7 +139,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
                 min="0"
                 defaultValue="0"
                 placeholder="10"
-                className="w-full pl-11 rounded-2xl border-2 border-slate-200 dark:border-slate-700 px-5 py-3 text-sm focus:outline-none transition-all focus:border-indigo-600 dark:text-white bg-transparent shadow-sm hover:border-slate-400 dark:hover:border-slate-600"
+                className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
               />
             </div>
           </div>
@@ -154,8 +158,10 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
               required
               onChange={() => clearFieldError("price")}
               placeholder="50.00"
-              className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent shadow-sm ${
-                fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600 hover:border-slate-400 dark:hover:border-slate-600"
+              className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                fieldErrors.price 
+                  ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                  : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
               }`}
             />
           </div>
@@ -187,7 +193,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-200 dark:disabled:border-slate-800 transition-all active:scale-[0.98]"
+          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-indigo-100/50 dark:disabled:border-slate-800 transition-all active:scale-[0.98]"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>

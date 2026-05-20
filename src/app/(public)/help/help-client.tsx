@@ -114,7 +114,7 @@ export default function HelpClient() {
   if (submitted) {
     return (
       <div className="py-32 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl shadow-slate-200 border border-slate-200">
+        <div className="max-w-md w-full bg-white rounded-[3rem] p-12 text-center shadow-2xl shadow-slate-200 border border-slate-100">
           <div className="h-20 w-20 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8">
             <CheckCircle2 className="h-10 w-10" />
           </div>
@@ -159,7 +159,7 @@ export default function HelpClient() {
                { icon: LifeBuoy, title: "Expert Support", desc: "Talk to real developers" },
                { icon: MessageSquare, title: "Multi-Channel", desc: "Email and Chat Support" }
              ].map((item, i) => (
-               <div key={i} className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2 text-left">
+               <div key={i} className="p-6 rounded-3xl bg-white border border-slate-100 shadow-sm space-y-2 text-left">
                   <item.icon className="h-5 w-5 text-indigo-500" />
                   <h4 className="font-bold text-sm text-slate-900">{item.title}</h4>
                   <p className="text-sm text-slate-500 font-normal leading-relaxed">{item.desc}</p>
@@ -168,7 +168,7 @@ export default function HelpClient() {
           </div>
         </div>
 
-        <div className="bg-white rounded-[3rem] p-10 lg:p-12 shadow-2xl shadow-indigo-500/5 border border-slate-200 relative overflow-hidden">
+        <div className="bg-white rounded-[3rem] p-10 lg:p-12 shadow-2xl shadow-indigo-500/5 border border-slate-100 relative overflow-hidden">
           <div className="absolute top-0 right-0 h-32 w-32 bg-indigo-50 rounded-bl-[5rem] -mr-16 -mt-16"></div>
           
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10" noValidate>
@@ -227,7 +227,7 @@ export default function HelpClient() {
                 <InputError message={fieldErrors.reason} />
 
                 {isDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
+                  <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
                     <div className="max-h-64 overflow-y-auto">
                       {REASONS.map((reason) => (
                         <button

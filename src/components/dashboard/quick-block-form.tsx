@@ -118,7 +118,7 @@ export function QuickBlockForm({
   return (
     <div className="space-y-8">
       {/* Block Form */}
-      <form onSubmit={handleSubmit} className={`${inline ? '' : 'bg-slate-50 dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-700'} space-y-4`} noValidate>
+      <form onSubmit={handleSubmit} className={`${inline ? '' : 'bg-indigo-50/30 dark:bg-slate-900/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800'} space-y-4`} noValidate>
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Block Reason</label>
@@ -126,7 +126,7 @@ export function QuickBlockForm({
               name="reason"
               type="text"
               placeholder="e.g., Lunch Break, Errand"
-              className="w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:border-indigo-600 transition-all dark:text-white"
+              className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-4 py-3 text-sm focus:outline-none focus:border-indigo-600 transition-all dark:text-white hover:border-indigo-200"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -140,8 +140,8 @@ export function QuickBlockForm({
                   required
                   defaultValue={initialData?.startTime ? formatForInput(new Date(initialData.startTime)) : ""}
                   onChange={() => clearFieldError("startTime")}
-                  className={`w-full rounded-2xl border-2 bg-white dark:bg-slate-900 px-4 py-3 text-xs focus:outline-none transition-all dark:text-white ${
-                    fieldErrors.startTime ? "border-rose-100 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+                  className={`w-full rounded-2xl border-2 bg-indigo-50/30 dark:bg-slate-900 px-4 py-3 text-xs focus:outline-none transition-all dark:text-white ${
+                    fieldErrors.startTime ? "border-rose-100 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-800 hover:border-indigo-200 focus:border-indigo-600"
                   }`}
                 />
                 <InputError message={fieldErrors.startTime} />
@@ -156,8 +156,8 @@ export function QuickBlockForm({
                   required
                   defaultValue={initialData?.startTime ? formatForInput(addHours(new Date(initialData.startTime), 1)) : ""}
                   onChange={() => clearFieldError("endTime")}
-                  className={`w-full rounded-2xl border-2 bg-white dark:bg-slate-900 px-4 py-3 text-xs focus:outline-none transition-all dark:text-white ${
-                    fieldErrors.endTime ? "border-rose-100 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+                  className={`w-full rounded-2xl border-2 bg-indigo-50/30 dark:bg-slate-900 px-4 py-3 text-xs focus:outline-none transition-all dark:text-white ${
+                    fieldErrors.endTime ? "border-rose-100 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-800 hover:border-indigo-200 focus:border-indigo-600"
                   }`}
                 />
                 <InputError message={fieldErrors.endTime} />
@@ -183,13 +183,13 @@ export function QuickBlockForm({
             </h4>
             
             {existingBlocks.length === 0 ? (
-            <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+            <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-100 dark:border-slate-800">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">No active blocks for today or future.</p>
             </div>
             ) : (
             <div className="grid gap-3">
                 {existingBlocks.map((block) => (
-                <div key={block.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl group hover:border-indigo-100 transition-all shadow-sm">
+                <div key={block.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl group hover:border-indigo-100 transition-all shadow-sm">
                     <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center text-rose-600">
                         <Ban className="h-5 w-5" />

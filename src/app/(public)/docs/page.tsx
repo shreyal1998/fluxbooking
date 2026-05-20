@@ -69,31 +69,31 @@ export default function DocsPage() {
             "Secure payments via Lemon Squeezy",
             "Full control over branding and colors"
           ].map((item) => (
-            <div key={item} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50/50">
+            <div key={item} className="flex items-center gap-3 p-4 rounded-3xl border border-slate-100 bg-slate-50/50">
               <CheckCircle2 className="h-5 w-5 text-indigo-500" />
               <span className="text-sm font-bold text-slate-700">{item}</span>
             </div>
           ))}
-        </div>
-      </div>
+          </div>
+          </div>
 
-      {/* Call to Action */}
-      <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white flex flex-col items-center text-center space-y-6">
-        <h3 className="text-2xl font-black tracking-tight">Ready to start your journey?</h3>
-        <p className="text-slate-400 text-sm max-w-sm font-medium">
+          {/* Call to Action */}
+          <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white flex flex-col items-center text-center space-y-6">
+          <h3 className="text-2xl font-black tracking-tight">Ready to start your journey?</h3>
+          <p className="text-slate-400 text-sm max-w-sm font-medium">
           Join 500+ businesses already scaling their operations with FluxBooking.
-        </p>
-        <Link 
+          </p>
+          <Link 
           href="/register" 
           className="h-14 px-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center font-black transition-all hover:bg-indigo-700 hover:scale-[1.05] active:scale-95 shadow-xl shadow-indigo-500/20"
-        >
+          >
           Get Started for Free
-        </Link>
-      </div>
+          </Link>
+          </div>
 
-      <div className="pt-12 border-t border-slate-200 flex justify-end">
-        <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start â†’</Link>
-      </div>
+          <div className="pt-12 border-t border-slate-100 flex justify-end">
+          <Link href="/docs/quick-start" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Quick Start →</Link>
+          </div>
     </div>
   );
 }

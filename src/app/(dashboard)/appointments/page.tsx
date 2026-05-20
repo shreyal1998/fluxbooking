@@ -15,16 +15,18 @@ export default async function AppointmentsPage() {
   // Filter logic for staff: only see their own appointments
   const bookingQuery: any = { tenantId };
   const blockedQuery: any = { tenantId };
+  const overrideQuery: any = { tenantId };
 
   if (userRole === "STAFF") {
     const staffProfile = await prisma.staff.findUnique({ where: { userId } });
     if (staffProfile) {
       bookingQuery.staffId = staffProfile.id;
       blockedQuery.staffId = staffProfile.id;
+      overrideQuery.staffId = staffProfile.id;
     }
   }
 
-  const [bookings, blockedSlots, services, staffRaw, tenant] = await Promise.all([
+  const [bookings, blockedSlots, availabilityOverrides, services, staffRaw, tenant] = await Promise.all([
     prisma.booking.findMany({
       where: bookingQuery,
       include: {
@@ -35,6 +37,13 @@ export default async function AppointmentsPage() {
     }),
     prisma.blockedSlot.findMany({
       where: blockedQuery,
+      include: {
+        staff: true,
+      },
+      orderBy: { startTime: "desc" },
+    }),
+    prisma.availabilityOverride.findMany({
+      where: overrideQuery,
       include: {
         staff: true,
       },
@@ -76,6 +85,7 @@ export default async function AppointmentsPage() {
     <AppointmentsClient 
       bookings={serializedBookings as any}
       blockedSlots={blockedSlots}
+      availabilityOverrides={availabilityOverrides}
       services={services.map(s => ({ ...s, price: s.price.toString() }))}
       staff={staff}
       tenantId={tenantId}

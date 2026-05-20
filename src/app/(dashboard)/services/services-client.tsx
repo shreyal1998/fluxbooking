@@ -137,10 +137,10 @@ export function ServicesClient({
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in">
-      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
         
         {/* Unified Dashboard Header */}
-        <div className="px-10 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.service}s</h2>
           </div>
@@ -153,7 +153,7 @@ export function ServicesClient({
                 placeholder={`Search ${labels.serviceLower}s...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
+                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
               />
             </div>
             {userRole === "ADMIN" && (
@@ -175,7 +175,7 @@ export function ServicesClient({
 
         <div className="flex-1 p-10 pt-8" id="services-table">
           {filteredServices.length === 0 ? (
-            <div className="bg-slate-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
+            <div className="bg-indigo-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
               <labels.serviceIcon className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
               <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">
                 {search ? `No ${labels.serviceLower}s found matching "${search}"` : `No ${labels.serviceLower}s added yet. Create your first ${labels.serviceLower} to start taking bookings.`}
@@ -193,11 +193,11 @@ export function ServicesClient({
               )}
             </div>
           ) : (
-            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
                <div className="overflow-x-auto">
                  <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                    <thead>
-                     <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                     <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.service} Name</th>
                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Duration & Buffer</th>
                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Price</th>
@@ -247,7 +247,7 @@ export function ServicesClient({
                                       setFieldErrors({});
                                       setEditingService(service);
                                     }}
-                                    className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-200 dark:border-slate-600 shadow-sm"
+                                    className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm"
                                   >
                                     <Pencil className="h-4 w-4" />
                                   </button>
@@ -266,7 +266,7 @@ export function ServicesClient({
 
         {/* Pagination Footer - At bottom of main card */}
         {services.length > itemsPerPage && (
-          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, services.length)}</span> of <span className="text-slate-900 dark:text-white">{services.length}</span> {labels.serviceLower}s
             </p>
@@ -276,7 +276,7 @@ export function ServicesClient({
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -291,7 +291,7 @@ export function ServicesClient({
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -308,8 +308,8 @@ export function ServicesClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-5 px-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">Add New {labels.service}</h3>
                 <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                   <X className="h-4 w-4 text-slate-400" />
@@ -330,7 +330,7 @@ export function ServicesClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-900/50">
                   <AlertCircle className="h-8 w-8 text-rose-600" />
@@ -379,8 +379,8 @@ export function ServicesClient({
              <div 
                className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
              />
-             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
-                <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
+                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit {labels.service}</h3>
                    <button onClick={closeEditModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
@@ -401,7 +401,7 @@ export function ServicesClient({
                         onChange={() => clearFieldError("name")}
                         placeholder={labels.servicePlaceholder}
                         className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                          fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+                          fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
                         }`}
                       />
                       <InputError message={fieldErrors.name} />
@@ -422,7 +422,7 @@ export function ServicesClient({
                             onChange={() => clearFieldError("duration")}
                             placeholder="30"
                             className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                              fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+                              fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
                             }`}
                           />
                         </div>
@@ -437,7 +437,7 @@ export function ServicesClient({
                             type="number"
                             defaultValue={editingService.bufferTime}
                             placeholder="10"
-                            className="w-full pl-11 rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                            className="w-full pl-11 rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
                           />
                         </div>
                       </div>
@@ -458,7 +458,7 @@ export function ServicesClient({
                           onChange={() => clearFieldError("price")}
                           placeholder="50.00"
                           className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                            fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+                            fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
                           }`}
                         />
                       </div>

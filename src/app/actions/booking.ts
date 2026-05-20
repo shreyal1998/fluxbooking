@@ -22,6 +22,7 @@ import {
   sendBookingRescheduledEmail, 
   sendBookingCancelledEmail 
 } from "@/lib/mail";
+import { getInTimezone, parseInTimezone } from "@/lib/timezone-utils";
 
 export async function getAvailableSlots(
   tenantId: string, 
@@ -50,7 +51,7 @@ export async function getAvailableSlots(
   });
 
   const businessTimezone = tenant?.timezone || "UTC";
-  const nowAtVenue = new Date(new Date().toLocaleString("en-US", { timeZone: businessTimezone }));
+  const nowAtVenue = getInTimezone(new Date(), businessTimezone);
 
   const targetDate = new Date(dateStr);
   const dayName = format(targetDate, "EEEE").toLowerCase();
@@ -84,12 +85,14 @@ export async function getAvailableSlots(
   const allAvailableSlots: { time: string; staffId: string; staffName: string }[] = [];
 
   for (const staff of staffMembers) {
-    const availability = typeof staff.availabilityJson === 'string' 
+    const staffAvailability = typeof staff.availabilityJson === 'string' 
       ? JSON.parse(staff.availabilityJson) 
       : staff.availabilityJson as any;
-    const daySchedule = availability[dayName];
+    
+    const staffDayVal = staffAvailability?.[dayName] || staffAvailability?.[dayName.charAt(0).toUpperCase() + dayName.slice(1)];
+    const staffShifts = Array.isArray(staffDayVal) ? staffDayVal : (staffDayVal ? [staffDayVal] : []);
 
-    if (!daySchedule || (businessHours && !businessDaySchedule)) continue;
+    if (staffShifts.length === 0 || (businessHours && !businessDaySchedule)) continue;
 
     const bookings = await prisma.booking.findMany({
       where: {
@@ -112,24 +115,77 @@ export async function getAvailableSlots(
       }
     });
 
-    const workStart = parse(daySchedule.start, "HH:mm", targetDate);
-    const workEnd = parse(daySchedule.end, "HH:mm", targetDate);
-    const bizStart = businessDaySchedule ? parse(businessDaySchedule.start, "HH:mm", targetDate) : null;
-    const bizEnd = businessDaySchedule ? parse(businessDaySchedule.end, "HH:mm", targetDate) : null;
+    const overrides = await prisma.availabilityOverride.findMany({
+      where: {
+        staffId: staff.id,
+        startTime: { lte: endOfDay(targetDate) },
+        endTime: { gte: startOfDay(targetDate) }
+      }
+    });
 
-    let currentSlot = workStart;
+    const bizDayVal = businessDaySchedule;
+    const bizShifts = Array.isArray(bizDayVal) ? bizDayVal : (bizDayVal ? [bizDayVal] : []);
+
+    const potentialStartTimes = new Set<number>();
     const duration = service.durationMinutes;
     const buffer = service.bufferTime || 0;
     const totalDuration = duration + buffer;
 
-    while (isBefore(addMinutes(currentSlot, duration), workEnd) || isEqual(addMinutes(currentSlot, duration), workEnd)) {
+    // Generate potential slots from all staff shifts
+    for (const shift of staffShifts) {
+      if (!shift.start || !shift.end) continue;
+      let tempSlot = parseInTimezone(dateStr, shift.start, businessTimezone);
+      const shiftEnd = parseInTimezone(dateStr, shift.end, businessTimezone);
+
+      while (isBefore(addMinutes(tempSlot, duration), shiftEnd) || isEqual(addMinutes(tempSlot, duration), shiftEnd)) {
+        potentialStartTimes.add(tempSlot.getTime());
+        tempSlot = addMinutes(tempSlot, 30); // Step by 30 mins
+      }
+    }
+
+    // Add override slots (one-off shifts)
+    for (const override of overrides) {
+      let overrideSlot = new Date(override.startTime);
+      const overrideEnd = new Date(override.endTime);
+      while (isBefore(addMinutes(overrideSlot, duration), overrideEnd) || isEqual(addMinutes(overrideSlot, duration), overrideEnd)) {
+        potentialStartTimes.add(overrideSlot.getTime());
+        overrideSlot = addMinutes(overrideSlot, 30);
+      }
+    }
+
+    const sortedStartTimes = Array.from(potentialStartTimes).sort();
+
+    for (const startTimeMs of sortedStartTimes) {
+      const currentSlot = new Date(startTimeMs);
       const slotEnd = addMinutes(currentSlot, duration);
       const slotEndWithBuffer = addMinutes(currentSlot, totalDuration);
       
-      const isWithinBusinessHours = !businessDaySchedule || (
-        (isBefore(bizStart!, currentSlot) || isEqual(bizStart!, currentSlot)) &&
-        (isAfter(bizEnd!, slotEnd) || isEqual(bizEnd!, slotEnd))
-      );
+      const isBlocked = blocked.some(block => {
+        const bStart = new Date(block.startTime);
+        const bEnd = new Date(block.endTime);
+        return isBefore(currentSlot, bEnd) && isAfter(slotEnd, bStart);
+      });
+
+      const isExplicitlyAvailable = overrides.some(override => {
+        const oStart = new Date(override.startTime);
+        const oEnd = new Date(override.endTime);
+        return (isBefore(oStart, currentSlot) || isEqual(oStart, currentSlot)) && 
+               (isAfter(oEnd, slotEnd) || isEqual(oEnd, slotEnd));
+      });
+
+      const isWithinStaffHours = staffShifts.some(shift => {
+        const sStart = parse(shift.start, "HH:mm", targetDate);
+        const sEnd = parse(shift.end, "HH:mm", targetDate);
+        return (isBefore(sStart, currentSlot) || isEqual(sStart, currentSlot)) &&
+               (isAfter(sEnd, slotEnd) || isEqual(sEnd, slotEnd));
+      });
+
+      const isWithinBusinessHours = isExplicitlyAvailable || bizShifts.length === 0 || bizShifts.some(shift => {
+        const bStart = parse(shift.start, "HH:mm", targetDate);
+        const bEnd = parse(shift.end, "HH:mm", targetDate);
+        return (isBefore(bStart, currentSlot) || isEqual(bStart, currentSlot)) &&
+               (isAfter(bEnd, slotEnd) || isEqual(bEnd, slotEnd));
+      });
 
       const hasConflict = bookings.some(booking => {
         const bStart = new Date(booking.startTime);
@@ -138,13 +194,7 @@ export async function getAvailableSlots(
         return isBefore(currentSlot, bEndWithBuffer) && isAfter(slotEndWithBuffer, bStart);
       });
 
-      const isBlocked = blocked.some(block => {
-        const bStart = new Date(block.startTime);
-        const bEnd = new Date(block.endTime);
-        return isBefore(currentSlot, bEnd) && isAfter(slotEnd, bStart);
-      });
-
-      if (!hasConflict && !isBlocked && isWithinBusinessHours) {
+      if (!hasConflict && !isBlocked && isWithinBusinessHours && (isWithinStaffHours || isExplicitlyAvailable)) {
         // Only show slots that are in the future relative to the venue's current time
         const slotDateTimeStr = `${dateStr} ${format(currentSlot, "HH:mm")}`;
         const slotDateTime = parse(slotDateTimeStr, "yyyy-MM-dd HH:mm", targetDate);
@@ -157,7 +207,6 @@ export async function getAvailableSlots(
           });
         }
       }
-      currentSlot = addMinutes(currentSlot, 30);
     }
   }
 
@@ -221,14 +270,14 @@ export async function createBooking(formData: FormData) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   const businessTimezone = tenant?.timezone || "UTC";
 
-  // Parse start time in the business timezone context
-  const startTime = new Date(new Date(`${dateStr}T${timeStr}:00`).toLocaleString("en-US", { timeZone: businessTimezone }));
+  // Parse requested time specifically in the business timezone
+  const startTime = parseInTimezone(dateStr, timeStr, businessTimezone);
   const endTime = addMinutes(startTime, service.durationMinutes);
   const buffer = service.bufferTime || 0;
   const endTimeWithBuffer = addMinutes(endTime, buffer);
 
-  // Check if booking is in the past
-  const nowAtVenue = new Date(new Date().toLocaleString("en-US", { timeZone: businessTimezone }));
+  // Check if booking is in the past relative to the venue
+  const nowAtVenue = getInTimezone(new Date(), businessTimezone);
   if (startTime < nowAtVenue) {
     if (!session || (session.user.role !== "ADMIN" && session.user.role !== "STAFF")) {
       return { error: "Cannot book appointments in the past." };
@@ -289,6 +338,7 @@ export async function createBooking(formData: FormData) {
         businessName: booking.tenant.name,
         businessSlug: booking.tenant.slug,
         bookingId: booking.id,
+        timezone: businessTimezone
       });
     }
     
@@ -330,7 +380,10 @@ export async function updateBooking(bookingId: string, formData: FormData) {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service) return { error: "Service not found" };
 
-    const startTime = parse(`${dateStr} ${timeStr}`, "yyyy-MM-dd HH:mm", new Date());
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId || "" } });
+    const businessTimezone = tenant?.timezone || "UTC";
+
+    const startTime = parseInTimezone(dateStr, timeStr, businessTimezone);
     const endTime = addMinutes(startTime, service.durationMinutes);
 
     await prisma.booking.update({
@@ -392,7 +445,7 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
     const updatedBooking = await prisma.booking.findUnique({
        where: { id: bookingId },
        include: { 
-         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true } }, 
+         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true, timezone: true } }, 
          service: { select: { name: true } } 
        }
     });
@@ -406,6 +459,7 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
         businessName: updatedBooking.tenant.name,
         businessSlug: updatedBooking.tenant.slug,
         bookingId: updatedBooking.id,
+        timezone: updatedBooking.tenant.timezone || "UTC"
       });
     }
 
@@ -425,7 +479,8 @@ export async function rescheduleBookingByCustomer(bookingId: string, newDateStr:
 
     if (!booking) return { error: "Booking not found" };
 
-    const newStartTime = parse(`${newDateStr} ${newTimeStr}`, "yyyy-MM-dd HH:mm", new Date());
+    const businessTimezone = booking.tenant.timezone || "UTC";
+    const newStartTime = parseInTimezone(newDateStr, newTimeStr, businessTimezone);
     const duration = booking.service.durationMinutes;
     const newEndTime = addMinutes(newStartTime, duration);
     const buffer = booking.service.bufferTime || 0;
@@ -459,6 +514,7 @@ export async function rescheduleBookingByCustomer(bookingId: string, newDateStr:
         businessName: booking.tenant.name,
         businessSlug: booking.tenant.slug,
         bookingId: booking.id,
+        timezone: businessTimezone
       });
     }
 
@@ -482,8 +538,11 @@ export async function getSuggestedSlots(tenantId: string, serviceId: string, sta
       if (Array.isArray(slots)) {
         for (const slot of slots) {
           if (suggestions.length < 3) {
-            const slotTime = parse(`${dateStr} ${slot.time}`, "yyyy-MM-dd HH:mm", new Date());
-            if (slotTime > new Date()) {
+            const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { timezone: true } });
+            const businessTimezone = tenant?.timezone || "UTC";
+            const slotTime = parseInTimezone(dateStr, slot.time, businessTimezone);
+            const nowAtVenue = getInTimezone(new Date(), businessTimezone);
+            if (slotTime > nowAtVenue) {
               suggestions.push({ date: dateStr, time: slot.time, staffName: slot.staffName });
             }
           }
@@ -514,6 +573,7 @@ export async function cancelBookingByCustomer(bookingId: string) {
         serviceName: booking.service.name,
         startTime: booking.startTime,
         businessName: booking.tenant.name,
+        timezone: booking.tenant.timezone || "UTC"
       });
     }
 
@@ -554,6 +614,7 @@ export async function deleteBooking(bookingId: string) {
         serviceName: booking.service.name,
         startTime: booking.startTime,
         businessName: booking.tenant.name,
+        timezone: booking.tenant.timezone || "UTC"
       });
     }
 

@@ -37,7 +37,7 @@ export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
   return (
     <Link 
       href="/settings/billing"
-      className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-2xl bg-white/50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-800 transition-all hover:scale-[1.02] active:scale-95 group shadow-sm"
+      className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-2xl bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 transition-all hover:scale-[1.02] active:scale-95 group shadow-sm"
     >
       {/* Circular Progress SVG */}
       <div className="relative h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center shrink-0">

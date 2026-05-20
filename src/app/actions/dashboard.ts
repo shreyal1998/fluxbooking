@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcrypt";
 import { sendStaffWelcomeEmail } from "@/lib/mail";
 import { getLabels } from "@/lib/labels";
+import { parseInTimezone } from "@/lib/timezone-utils";
 
 export async function addStaff(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -336,10 +337,20 @@ export async function addBlockedSlot(formData: FormData) {
   const tenantId = session.user.tenantId;
   const staffId = formData.get("staffId") as string;
   const reason = formData.get("reason") as string;
-  const startTime = new Date(formData.get("startTime") as string);
-  const endTime = new Date(formData.get("endTime") as string);
+  const startTimeStr = formData.get("startTime") as string;
+  const endTimeStr = formData.get("endTime") as string;
 
   try {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId || "" } });
+    const businessTimezone = tenant?.timezone || "UTC";
+
+    // datetime-local input returns "YYYY-MM-DDTHH:mm"
+    const [startDateStr, startTimeVal] = startTimeStr.split('T');
+    const [endDateStr, endTimeVal] = endTimeStr.split('T');
+
+    const startTime = parseInTimezone(startDateStr, startTimeVal, businessTimezone);
+    const endTime = parseInTimezone(endDateStr, endTimeVal, businessTimezone);
+
     await prisma.blockedSlot.create({
       data: {
         tenantId: tenantId || "",
@@ -408,12 +419,21 @@ export async function submitLeaveRequest(formData: FormData) {
   const tenantId = session.user.tenantId;
   const userId = session.user.id;
 
-  const startTime = new Date(formData.get("startTime") as string);
-  const endTime = new Date(formData.get("endTime") as string);
+  const startTimeStr = formData.get("startTime") as string;
+  const endTimeStr = formData.get("endTime") as string;
   const reason = formData.get("reason") as string;
   const type = formData.get("type") as string || "PERSONAL";
 
   try {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId || "" } });
+    const businessTimezone = tenant?.timezone || "UTC";
+
+    const [startDateStr, startTimeVal] = startTimeStr.split('T');
+    const [endDateStr, endTimeVal] = endTimeStr.split('T');
+
+    const startTime = parseInTimezone(startDateStr, startTimeVal, businessTimezone);
+    const endTime = parseInTimezone(endDateStr, endTimeVal, businessTimezone);
+
     const staff = await prisma.staff.findUnique({
       where: { userId }
     });

@@ -24,10 +24,10 @@ export default function BusinessProfileDocs() {
         <p className="text-slate-600 font-medium leading-relaxed">
           The slug is your unique identifier in the FluxBooking ecosystem. It determines your public booking page URL.
         </p>
-        <div className="p-6 bg-slate-950 rounded-2xl font-mono text-sm text-indigo-300 border border-slate-800 shadow-xl">
+        <div className="p-6 bg-slate-950 rounded-3xl font-mono text-sm text-indigo-300 border border-slate-800 shadow-xl">
           fluxbooking.com/b/<span className="text-white">your-business-name</span>
         </div>
-        <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3 italic text-sm text-amber-700 font-medium">
+        <div className="p-4 bg-amber-50 border border-amber-100 rounded-3xl flex gap-3 italic text-sm text-amber-700 font-medium">
           <Info className="h-5 w-5 flex-shrink-0" />
           Note: Slugs must be unique across the platform. Once set, they can only be changed by contacting support.
         </div>
@@ -59,7 +59,7 @@ export default function BusinessProfileDocs() {
         </div>
       </section>
 
-      <div className="pt-12 border-t border-slate-200 flex justify-between">
+      <div className="pt-12 border-t border-slate-100 flex justify-between">
         <Link href="/docs/quick-start" className="text-sm font-black text-slate-400 hover:text-slate-600">← Quick Start</Link>
         <Link href="/docs/branding" className="text-sm font-black text-indigo-600 hover:text-indigo-700 font-black">Branding →</Link>
       </div>

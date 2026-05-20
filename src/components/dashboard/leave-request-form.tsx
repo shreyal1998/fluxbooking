@@ -79,7 +79,7 @@ export function LeaveRequestForm() {
           <select 
             name="type" 
             required
-            className="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full rounded-xl border-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 text-sm focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="SICK">Sick Leave</option>
             <option value="EMERGENCY">Emergency / Urgent Personal</option>
@@ -93,7 +93,7 @@ export function LeaveRequestForm() {
             name="reason" 
             type="text" 
             placeholder="e.g., Family event"
-            className="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full rounded-xl border-slate-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 text-sm focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
       </div>
@@ -109,7 +109,7 @@ export function LeaveRequestForm() {
             required
             onChange={() => clearFieldError("startTime")}
             className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all ${
-              fieldErrors.startTime ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-indigo-500"
+              fieldErrors.startTime ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 focus:border-indigo-500"
             }`}
           />
           <InputError message={fieldErrors.startTime} />
@@ -124,7 +124,7 @@ export function LeaveRequestForm() {
             required
             onChange={() => clearFieldError("endTime")}
             className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all ${
-              fieldErrors.endTime ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-indigo-500"
+              fieldErrors.endTime ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 focus:border-indigo-500"
             }`}
           />
           <InputError message={fieldErrors.endTime} />

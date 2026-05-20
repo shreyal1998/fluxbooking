@@ -57,7 +57,7 @@ export default function PrivacyPage() {
         </div>
 
         {/* Detailed Sections */}
-        <div className="bg-white rounded-[3rem] p-10 lg:p-16 shadow-2xl shadow-indigo-500/5 border border-slate-200 space-y-16">
+        <div className="bg-white rounded-[3rem] p-10 lg:p-16 shadow-2xl shadow-indigo-500/5 border border-slate-100 space-y-16">
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -68,15 +68,15 @@ export default function PrivacyPage() {
             <div className="space-y-6 text-slate-500 font-normal leading-relaxed">
               <p>To provide our booking services, we collect information across three core categories:</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
                     <p className="font-bold text-slate-900 text-sm mb-2">Business data</p>
                     <p className="text-xs text-slate-500 font-normal">Business name, logo, services, pricing, and staff availability.</p>
                  </div>
-                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
                     <p className="font-bold text-slate-900 text-sm mb-2">Staff data</p>
                     <p className="text-xs text-slate-500 font-normal">Names, bios, and schedules of your team members.</p>
                  </div>
-                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                 <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
                     <p className="font-bold text-slate-900 text-sm mb-2">Customer data</p>
                     <p className="text-xs text-slate-500 font-normal">Names, emails, and phone numbers for appointment management.</p>
                  </div>
@@ -119,22 +119,22 @@ export default function PrivacyPage() {
               We partner with industry leaders to ensure top-tier service:
             </p>
             <ul className="grid grid-cols-1 md:grid-cols-3 gap-4 text-slate-500 font-normal">
-              <li className="p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+              <li className="p-4 rounded-xl border border-slate-100 flex items-center gap-3">
                  <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
                  <span className="text-sm">Lemon Squeezy (Payments)</span>
               </li>
-              <li className="p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+              <li className="p-4 rounded-xl border border-slate-100 flex items-center gap-3">
                  <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
                  <span className="text-sm">Managed PostgreSQL</span>
               </li>
-              <li className="p-4 rounded-xl border border-slate-200 flex items-center gap-3">
+              <li className="p-4 rounded-xl border border-slate-100 flex items-center gap-3">
                  <div className="h-2 w-2 rounded-full bg-violet-500"></div>
                  <span className="text-sm">NextAuth.js (Security)</span>
               </li>
             </ul>
           </section>
 
-          <div className="pt-12 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-sm text-slate-400 font-bold">
               Questions? <a href="mailto:support@fluxbooking.com" className="text-indigo-600 hover:underline transition-all">support@fluxbooking.com</a>
             </p>

@@ -84,9 +84,26 @@ model Tenant {
   staff         Staff[]
   bookings      Booking[]
   blockedSlots  BlockedSlot[]
+  availabilityOverrides AvailabilityOverride[]
   leaveRequests LeaveRequest[]
   customers     Customer[]
   locations     Location[]
+}
+
+model AvailabilityOverride {
+  id        String   @id @default(cuid())
+  tenantId  String
+  staffId   String
+  startTime DateTime
+  endTime   DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([staffId, startTime])
 }
 
 model Location {
@@ -266,3 +283,5 @@ model LeaveRequest {
 
   @@index([tenantId, status])
 }
+
+

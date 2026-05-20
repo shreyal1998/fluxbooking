@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { formatInTimezone } from "./timezone-utils";
 
 /**
  * EMAIL ENGINE (Simulation Mode)
@@ -71,6 +72,7 @@ export async function sendBookingConfirmation({
   businessName,
   businessSlug,
   bookingId,
+  timezone = "UTC",
 }: {
   customerName: string;
   customerEmail: string;
@@ -79,8 +81,9 @@ export async function sendBookingConfirmation({
   businessName: string;
   businessSlug: string;
   bookingId: string;
+  timezone?: string;
 }) {
-  const formattedDate = format(startTime, "PPPP 'at' p");
+  const formattedDate = formatInTimezone(startTime, timezone, "EEEE, MMMM do 'at' h:mm a");
   const manageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/b/${businessSlug}/manage/${bookingId}`;
   
   const html = `
@@ -119,6 +122,7 @@ export async function sendBookingRescheduledEmail({
   businessName,
   businessSlug,
   bookingId,
+  timezone = "UTC",
 }: {
   customerName: string;
   customerEmail: string;
@@ -127,29 +131,30 @@ export async function sendBookingRescheduledEmail({
   businessName: string;
   businessSlug: string;
   bookingId: string;
+  timezone?: string;
 }) {
-  const formattedDate = format(newStartTime, "PPPP 'at' p");
+  const formattedDate = formatInTimezone(newStartTime, timezone, "EEEE, MMMM do 'at' h:mm a");
   const manageUrl = `${process.env.NEXT_PUBLIC_APP_URL}/b/${businessSlug}/manage/${bookingId}`;
 
   const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px;">
-      <h1 style="color: #4f46e5; font-size: 24px; font-weight: 900;">Schedule Updated</h1>
-      <p style="color: #64748b; margin-bottom: 32px;">Hi ${customerName}, your appointment for ${serviceName} has been moved to a new time.</p>
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
+      <h1 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 8px;">Appointment Rescheduled</h1>
+      <p style="color: #64748b; margin-bottom: 32px;">Hi ${customerName}, your appointment at ${businessName} has been moved.</p>
       
-      <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
-        <p style="margin: 0; color: #7c3aed; font-size: 11px; font-weight: 800; text-transform: uppercase;">New Appointment Time</p>
-        <p style="margin: 8px 0 0 0; color: #2e1065; font-size: 18px; font-weight: 800;">${formattedDate}</p>
+      <div style="background-color: #f8fafc; border: 1px solid #f1f5f9; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
+        <p style="margin: 0; color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;">New Time</p>
+        <p style="margin: 4px 0 0 0; color: #0f172a; font-size: 16px; font-weight: 700;">${formattedDate}</p>
       </div>
 
-      <div style="text-align: center;">
-        <a href="${manageUrl}" style="color: #4f46e5; font-weight: 800; font-size: 13px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em;">View or Change again →</a>
+      <div style="text-align: center; margin-bottom: 32px;">
+        <a href="${manageUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 14px; text-decoration: none; font-weight: 800; font-size: 14px;">Manage Appointment</a>
       </div>
 
       ${NO_REPLY_FOOTER}
     </div>
   `;
 
-  return sendEmail({ to: customerEmail, subject: `Updated: ${serviceName} at ${businessName}`, html });
+  return sendEmail({ to: customerEmail, subject: `Rescheduled: ${serviceName} at ${businessName}`, html });
 }
 
 /**
@@ -161,19 +166,21 @@ export async function sendBookingCancelledEmail({
   serviceName,
   startTime,
   businessName,
+  timezone = "UTC"
 }: {
   customerName: string;
   customerEmail: string;
   serviceName: string;
   startTime: Date;
   businessName: string;
+  timezone?: string;
 }) {
-  const formattedDate = format(startTime, "PPPP 'at' p");
+  const formattedDate = formatInTimezone(startTime, timezone, "EEEE, MMMM do 'at' h:mm a");
   const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px;">
-      <h1 style="color: #ef4444; font-size: 24px; font-weight: 900;">Appointment Cancelled</h1>
-      <p style="color: #64748b; margin-bottom: 32px;">Hi ${customerName}, your appointment for ${serviceName} on ${formattedDate} has been cancelled.</p>
-      <p style="color: #94a3b8; font-size: 12px; text-align: center; line-height: 1.6;">If this was a mistake, please visit our booking page to schedule a new time.</p>
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
+      <h1 style="color: #ef4444; font-size: 24px; font-weight: 900; margin-bottom: 8px;">Appointment Cancelled</h1>
+      <p style="color: #64748b; margin-bottom: 32px;">Hi ${customerName}, your appointment for ${serviceName} at ${businessName} on ${formattedDate} has been cancelled.</p>
+      <p style="color: #94a3b8; font-size: 13px; text-align: center; line-height: 1.6;">If this was a mistake, please visit our booking page to schedule a new time.</p>
       ${NO_REPLY_FOOTER}
     </div>
   `;

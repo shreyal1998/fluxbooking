@@ -71,9 +71,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
+    <div className="flex min-h-screen items-center justify-center bg-indigo-50/40 px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
       <ThemeCleaner />
-      <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-200">
+      <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(99,102,241,0.12)] border border-slate-100">
         <div className="flex flex-col items-center">
           <Link href="/" className="mb-6 outline-none">
             <Logo size="xl" />
@@ -112,8 +112,10 @@ function LoginForm() {
                 type="email"
                 required
                 onChange={() => clearFieldError("email")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium ${
-                  fieldErrors.email ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-200 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm ${
+                  fieldErrors.email 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
+                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
                 }`}
                 placeholder="john@example.com"
               />
@@ -124,17 +126,19 @@ function LoginForm() {
                 Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  onChange={() => clearFieldError("password")}
-                  className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium pr-10 ${
-                    fieldErrors.password ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" : "border-slate-200 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10"
-                  }`}
-                  placeholder="••••••••"
-                />
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    onChange={() => clearFieldError("password")}
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm pr-10 ${
+                      fieldErrors.password 
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
+                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                    }`}
+                    placeholder="••••••••"
+                  />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"

@@ -120,10 +120,10 @@ export function CustomersClient({
   return (
     <div className="flex-1 flex flex-col animate-fade-in p-4 md:p-6 lg:p-8">
       
-      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
         
         {/* Unified Dashboard Header */}
-        <div className="px-10 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.customer}s</h2>
             <div className="flex items-center gap-2 mt-1">
@@ -140,19 +140,19 @@ export function CustomersClient({
                 placeholder={`Search ${labels.customerLower}s...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
+                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
               />
             </div>
 
             {userRole === "ADMIN" && (
-              <div className="hidden sm:flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="hidden sm:flex bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s)}
                     className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                       statusFilter === s 
-                      ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm" 
+                      ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-white shadow-sm" 
                       : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     }`}
                   >
@@ -176,16 +176,16 @@ export function CustomersClient({
 
         <div className="flex-1 p-10 pt-8" id="customers-table">
           {filteredCustomers.length === 0 ? (
-            <div className="bg-slate-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+            <div className="bg-indigo-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center">
               <UserCircle className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
               <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No {labels.customerLower}s found matching your criteria.</p>
             </div>
           ) : (
-            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                   <thead>
-                    <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                    <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
                       <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.customer}</th>
                       <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Contact Details</th>
                       {userRole === "ADMIN" && (
@@ -196,7 +196,7 @@ export function CustomersClient({
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {currentItems.map((customer) => (
-                      <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                      <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
                         <td className="px-8 py-5 whitespace-nowrap">
                           <div className="flex items-center gap-4">
                             <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs transition-colors ${
@@ -268,7 +268,7 @@ export function CustomersClient({
                             <Tooltip content={`Edit ${labels.customer}`} position="bottom">
                               <button 
                                 onClick={() => setEditingCustomer(customer)}
-                                className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-200 dark:border-slate-600 shadow-sm"
+                                className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-100 dark:border-slate-800 shadow-sm"
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
@@ -286,7 +286,7 @@ export function CustomersClient({
 
         {/* Pagination Footer */}
         {filteredCustomers.length > itemsPerPage && (
-          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredCustomers.length)}</span> of <span className="text-slate-900 dark:text-white">{filteredCustomers.length}</span> {labels.customerLower}s
             </p>
@@ -296,7 +296,7 @@ export function CustomersClient({
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -311,7 +311,7 @@ export function CustomersClient({
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -328,8 +328,8 @@ export function CustomersClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
-               <div className="p-5 px-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+               <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
                   <h3 className="text-base font-black text-slate-900 dark:text-white">Add {labels.customer}</h3>
                   <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
                     <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -354,8 +354,8 @@ export function CustomersClient({
              <div 
                className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
              />
-             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
-                <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-900/50">
                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{labels.customer} Profile</h3>
                    <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
@@ -370,7 +370,7 @@ export function CustomersClient({
                                   name="status" 
                                   defaultValue={editingCustomer.status} 
                                   disabled={userRole !== "ADMIN" && editingCustomer.status === "INACTIVE"}
-                                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50"
+                                  className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50"
                               >
                                   <option value="ACTIVE">ACTIVE</option>
                                   <option value="INACTIVE">INACTIVE</option>
@@ -383,7 +383,7 @@ export function CustomersClient({
                                 defaultValue={editingCustomer.name} 
                                 required 
                                 placeholder={labels.customerPlaceholder}
-                                className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-800 dark:text-white px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
+                                className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-900 dark:text-white px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
                               />
                           </div>
                       </div>
@@ -395,16 +395,16 @@ export function CustomersClient({
                           defaultValue={editingCustomer.email} 
                           required 
                           placeholder="customer@example.com"
-                          className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-800 dark:text-white px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
+                          className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-900 dark:text-white px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
-                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-600/20 transition-all" />
+                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-600/20 transition-all" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
-                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} placeholder="Any specific preferences or history..." className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none focus:ring-2 focus:ring-indigo-600/20 transition-all" />
+                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} placeholder="Any specific preferences or history..." className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none focus:ring-2 focus:ring-indigo-600/20 transition-all" />
                       </div>
                    </div>
                    <button 
@@ -426,7 +426,7 @@ export function CustomersClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6 border border-amber-100">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />
@@ -441,7 +441,7 @@ export function CustomersClient({
                   <select 
                     value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20"
                   >
                     <option value="">Select a reason...</option>
                     <option value="Moved away">Moved away</option>
@@ -456,7 +456,7 @@ export function CustomersClient({
                       type="text"
                       placeholder="Please specify..."
                       onChange={(e) => setArchiveReason(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20 animate-in fade-in"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-4 text-sm dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20 animate-in fade-in"
                      />
                   )}
                 </div>

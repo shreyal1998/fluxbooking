@@ -216,8 +216,8 @@ export function SettingsClient({
       case "business":
         return (
           <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
                 <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-medium text-slate-900 dark:text-white">Business Profile</h3>
@@ -231,7 +231,7 @@ export function SettingsClient({
                       type="text"
                       disabled
                       value={tenant?.name}
-                      className="block w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
+                      className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -240,7 +240,7 @@ export function SettingsClient({
                       type="text"
                       disabled
                       value={labels.businessTypeName}
-                      className="block w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
+                      className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-bold shadow-sm cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -258,7 +258,7 @@ export function SettingsClient({
                             className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
                               openDropdown === "country" 
                                 ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-700"
+                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -273,8 +273,8 @@ export function SettingsClient({
                           </button>
 
                           {openDropdown === "country" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
-                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-200 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
+                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-100 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
                                 <div className="relative group">
                                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                                   <input 
@@ -284,7 +284,7 @@ export function SettingsClient({
                                     value={countrySearch}
                                     onChange={(e) => setCountrySearch(e.target.value)}
                                     autoComplete="off"
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
                                   />
                                 </div>
                               </div>
@@ -327,7 +327,7 @@ export function SettingsClient({
                             className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
                               openDropdown === "timezone" 
                                 ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-700"
+                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -342,8 +342,8 @@ export function SettingsClient({
                           </button>
 
                           {openDropdown === "timezone" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
-                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-200 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
+                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-100 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
                                 <div className="relative group">
                                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                                   <input 
@@ -353,7 +353,7 @@ export function SettingsClient({
                                     value={timezoneSearch}
                                     onChange={(e) => setTimezoneSearch(e.target.value)}
                                     autoComplete="off"
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
                                   />
                                 </div>
                               </div>
@@ -398,7 +398,7 @@ export function SettingsClient({
                             className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
                               openDropdown === "format" 
                                 ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-700"
+                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -413,7 +413,7 @@ export function SettingsClient({
                           </button>
 
                           {openDropdown === "format" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
                               <button
                                 type="button"
                                 onClick={() => handleTimeFormatChange("12h")}
@@ -447,8 +447,8 @@ export function SettingsClient({
 
                 <div>
                   <label className="block text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest ml-1 mb-2">Public URL Slug</label>
-                  <div className="flex rounded-2xl shadow-sm overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950/60 px-5 text-slate-500 dark:text-slate-500 text-xs font-bold border-r-2 border-slate-200 dark:border-slate-800">
+                  <div className="flex rounded-2xl shadow-sm overflow-hidden border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50">
+                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950/60 px-5 text-slate-500 dark:text-slate-500 text-xs font-bold border-r-2 border-slate-100 dark:border-slate-800">
                       {process.env.NEXT_PUBLIC_APP_URL || 'fluxbooking.com'}/b/
                     </span>
                     <input
@@ -499,8 +499,8 @@ export function SettingsClient({
       case "security":
         return (
           <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border-2 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="p-8 border-b-2 border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-8 border-b-2 border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
                 <Shield className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <h3 className="font-medium text-slate-900 dark:text-white">Account Security</h3>
@@ -514,7 +514,7 @@ export function SettingsClient({
                     type="text"
                     disabled
                     value={sessionUser?.email || ""}
-                    className="block w-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black shadow-sm cursor-not-allowed"
+                    className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black shadow-sm cursor-not-allowed"
                   />
                 </div>
                 <button className="text-sm font-black text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2 group transition-all">
@@ -553,7 +553,7 @@ export function SettingsClient({
 
       {/* Tabs Navigation */}
       <div className="flex-shrink-0 mb-10 px-4">
-        <div className="flex flex-wrap items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm self-start inline-flex">
+        <div className="flex flex-wrap items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm self-start inline-flex">
           {tabs.map((tab) => (
             <button
               key={tab.id}

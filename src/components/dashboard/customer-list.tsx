@@ -169,12 +169,12 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
             placeholder={`Search ${labels.customerLower}s...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all outline-none focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-indigo-100/50 dark:border-slate-800 rounded-2xl text-sm dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all outline-none focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
             />
         </div>
 
         {userRole === "ADMIN" && (
-          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-indigo-100/50 dark:border-slate-800 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
                     <button
                         key={s}
@@ -192,7 +192,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-soft overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-indigo-100/50 dark:border-slate-800 shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
@@ -298,7 +298,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
 
         {/* Pagination Footer */}
         {filteredCustomers.length > itemsPerPage && (
-          <div className="px-8 py-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-8 py-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-indigo-100/50 dark:border-slate-800 flex items-center justify-between">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredCustomers.length)}</span> of <span className="text-slate-900 dark:text-white">{filteredCustomers.length}</span> {labels.customerLower}s
             </p>
@@ -308,7 +308,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -323,7 +323,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -339,8 +339,8 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
-                <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
+                <div className="p-8 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between">
                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{labels.customer} Profile</h3>
                    <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                      <X className="h-5 w-5 text-slate-400" />
@@ -355,7 +355,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                                   name="status" 
                                   defaultValue={editingCustomer.status} 
                                   disabled={userRole !== "ADMIN" && editingCustomer.status === "INACTIVE"}
-                                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50"
+                                  className="w-full bg-indigo-50/30 dark:bg-slate-800 border-indigo-100/50 dark:border-slate-800 border-2 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50 transition-all hover:border-indigo-200"
                               >
                                   <option value="ACTIVE">ACTIVE</option>
                                   <option value="INACTIVE">INACTIVE</option>
@@ -370,7 +370,9 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                                 onChange={() => clearFieldError("name")}
                                 placeholder={labels.customerPlaceholder}
                                 className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
-                                  fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
+                                  fieldErrors.name 
+                                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                                    : "border-indigo-100/50 bg-indigo-50/30 dark:bg-slate-800 dark:text-white hover:border-indigo-200 focus:border-indigo-600"
                                 }`}
                               />
                               <InputError message={fieldErrors.name} />
@@ -385,18 +387,20 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                           required 
                           onChange={() => clearFieldError("email")}
                           className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
-                            fieldErrors.email ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-transparent bg-slate-50 dark:bg-slate-800 dark:text-white focus:border-indigo-600"
+                            fieldErrors.email 
+                              ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                              : "border-indigo-100/50 bg-indigo-50/30 dark:bg-slate-800 dark:text-white hover:border-indigo-200 focus:border-indigo-600"
                           }`}
                         />
                         <InputError message={fieldErrors.email} />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Phone Number</label>
-                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
+                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-transparent hover:border-indigo-200 focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Internal Notes</label>
-                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
+                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-transparent hover:border-indigo-200 focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
                       </div>
                    </div>
                    <button 
@@ -418,7 +422,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />

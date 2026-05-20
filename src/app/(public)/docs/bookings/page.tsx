@@ -24,7 +24,7 @@ export default function BookingsDocs() {
         <p className="text-slate-600 font-medium leading-relaxed">
           The dashboard provides a unified view of all staff members. You can toggle between "Daily" and "Weekly" views to get the full picture.
         </p>
-        <div className="p-8 rounded-[2rem] border border-slate-200 bg-white shadow-sm flex flex-col md:flex-row gap-8 items-center">
+        <div className="p-8 rounded-[2rem] border border-slate-100 bg-white shadow-sm flex flex-col md:flex-row gap-8 items-center">
            <div className="h-24 w-24 bg-indigo-100 rounded-3xl flex items-center justify-center text-indigo-600 flex-shrink-0 animate-pulse">
               <Calendar className="h-10 w-10" />
            </div>
@@ -58,7 +58,7 @@ export default function BookingsDocs() {
         </div>
       </div>
 
-      <div className="pt-12 border-t border-slate-200 flex justify-between">
+      <div className="pt-12 border-t border-slate-100 flex justify-between">
         <Link href="/docs/services" className="text-sm font-black text-slate-400 hover:text-slate-600">← Services & Pricing</Link>
         <Link href="/docs/multi-tenancy" className="text-sm font-black text-indigo-600 hover:text-indigo-700">Data Isolation →</Link>
       </div>

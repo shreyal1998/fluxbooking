@@ -24,7 +24,6 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { getLabels } from "@/lib/labels";
 import { AddStaffForm } from "@/components/dashboard/add-staff-form";
 import { EditStaffForm } from "@/components/dashboard/edit-staff-form";
-import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { LeaveRequestsManager } from "@/components/dashboard/leave-requests-manager";
 import { deleteStaff } from "@/app/actions/dashboard";
 import Link from "next/link";
@@ -114,10 +113,10 @@ export function StaffClient({
         
         {/* Main Section - List Wise handled with Pagination */}
         <div className="flex-1 w-full lg:min-w-0" id="staff-table-section">
-          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden h-full">
+          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden h-full">
             
             {/* Unified Card Header */}
-            <div className="px-10 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.staff}s</h2>
                 <div className="flex items-center gap-2 mt-1">
@@ -136,7 +135,7 @@ export function StaffClient({
                     placeholder={`Search ${labels.staffLower}s...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
+                    className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
                   />
                 </div>
                 {userRole === "ADMIN" && (
@@ -167,7 +166,7 @@ export function StaffClient({
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                     <thead>
-                      <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                      <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
                         <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.staff}</th>
                         <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Details</th>
                         <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.service}s</th>
@@ -221,7 +220,7 @@ export function StaffClient({
                                   </span>
                                 ))}
                                 {member.services?.length > 2 && (
-                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">+{member.services.length - 2}</span>
+                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-800">+{member.services.length - 2}</span>
                                 )}
                               </div>
                             </td>
@@ -244,7 +243,7 @@ export function StaffClient({
                                           setEditingStaff(member);
                                           setActiveTab("profile");
                                         }}
-                                        className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-200 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
+                                        className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
                                       >
                                         <Settings2 className="h-4.5 w-4.5" />
                                       </button>
@@ -274,7 +273,7 @@ export function StaffClient({
 
             {/* Pagination Footer - Integrated inside the main card */}
             {filteredStaff.length > itemsPerPage && (
-              <div className="px-10 py-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="px-10 py-8 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredStaff.length)}</span> of <span className="text-slate-900 dark:text-white">{filteredStaff.length}</span> {labels.staffLower}s
                 </p>
@@ -283,7 +282,7 @@ export function StaffClient({
                   <button
                     onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -296,7 +295,7 @@ export function StaffClient({
                   <button
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -324,8 +323,8 @@ export function StaffClient({
           )}
 
           {/* Leave Requests Section */}
-          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-900/50">
                <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-600 border border-rose-100 dark:border-rose-900/50">
                     <Calendar className="h-5 w-5" />
@@ -342,7 +341,7 @@ export function StaffClient({
           </div>
 
           {/* Quick Stats Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-700 p-8 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-100 dark:border-indigo-900/50">
                 <BarChart3 className="h-5 w-5" />
@@ -350,11 +349,11 @@ export function StaffClient({
               <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Team Overview</h3>
             </div>
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-800">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active {labels.staff}s</span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">{staff.length}</span>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-800">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total {labels.service}s</span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">{initialServices.length}</span>
               </div>
@@ -370,8 +369,8 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
-               <div className="p-6 px-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+               <div className="p-6 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
                   <h3 className="text-base font-black text-slate-900 dark:text-white">Add New {labels.staff}</h3>
                   <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
                     <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
@@ -397,8 +396,8 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
                 <div className="flex items-center gap-5">
                   <div 
                     className="h-14 w-14 rounded-2xl flex items-center justify-center border-2 shadow-sm"
@@ -411,52 +410,29 @@ export function StaffClient({
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Configuring {editingStaff.name}</p>
                   </div>
                 </div>
-                <button onClick={() => setEditingStaff(null)} className="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all active:scale-95 shadow-sm border border-slate-200 dark:border-slate-600">
+                <button onClick={() => setEditingStaff(null)} className="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-600">
                   <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
                 </button>
               </div>
 
-              {/* Enhanced Tab Navigation */}
-              <div className="flex border-b border-slate-200 dark:border-slate-700 px-8 bg-white dark:bg-slate-800">
-                <button
-                  onClick={() => setActiveTab("profile")}
-                  className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-2.5 ${
-                    activeTab === "profile" 
-                    ? "border-indigo-600 text-indigo-600" 
-                    : "border-transparent text-slate-400 hover:text-slate-600"
-                  }`}
+              {/* Removed Availability Tab as requested - availability is now managed in Schedule Calendar */}
+              <div className="flex border-b border-slate-100 dark:border-slate-800 px-8 bg-white dark:bg-slate-800">
+                <div
+                  className="px-8 py-5 text-[10px] font-black uppercase tracking-widest border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2.5"
                 >
                   <Settings2 className="h-4 w-4" />
                   Profile
-                </button>
-                <button
-                  onClick={() => setActiveTab("availability")}
-                  className={`px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 flex items-center gap-2.5 ${
-                    activeTab === "availability" 
-                    ? "border-indigo-600 text-indigo-600" 
-                    : "border-transparent text-slate-400 hover:text-slate-600"
-                  }`}
-                >
-                  <Clock className="h-4 w-4" />
-                  Availability
-                </button>
+                </div>
               </div>
 
               <div className="p-8 overflow-y-auto bg-white dark:bg-slate-800 flex-1 scrollbar-hide">
-                {activeTab === "profile" ? (
-                  <EditStaffForm 
-                    staff={editingStaff} 
-                    isAdmin={userRole === "ADMIN"} 
-                    onSuccess={() => setEditingStaff(null)} 
-                    services={initialServices}
-                    businessType={businessType}
-                  />
-                ) : (
-                  <AvailabilityEditor 
-                    staffId={editingStaff.id} 
-                    initialAvailability={editingStaff.availabilityJson} 
-                  />
-                )}
+                <EditStaffForm 
+                  staff={editingStaff} 
+                  isAdmin={userRole === "ADMIN"} 
+                  onSuccess={() => setEditingStaff(null)} 
+                  services={initialServices}
+                  businessType={businessType}
+                />
               </div>
             </div>
           </div>
@@ -470,7 +446,7 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
                 <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-900/50">
                   <AlertCircle className="h-8 w-8 text-rose-600" />

@@ -57,7 +57,7 @@ export default function TermsPage() {
         </div>
 
         {/* Detailed Sections */}
-        <div className="bg-white rounded-[3rem] p-10 lg:p-16 shadow-2xl shadow-indigo-500/5 border border-slate-200 space-y-16">
+        <div className="bg-white rounded-[3rem] p-10 lg:p-16 shadow-2xl shadow-indigo-500/5 border border-slate-100 space-y-16">
           <section className="space-y-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -111,7 +111,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          <div className="pt-12 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-sm text-slate-400 font-bold">
               Questions? <a href="mailto:support@fluxbooking.com" className="text-indigo-600 hover:underline transition-all">support@fluxbooking.com</a>
             </p>

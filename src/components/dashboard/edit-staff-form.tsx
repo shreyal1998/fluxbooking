@@ -133,8 +133,10 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
               defaultValue={staff.name}
               placeholder={labels.staffPlaceholder}
               onChange={() => clearFieldError("name")}
-              className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+              className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                fieldErrors.name 
+                  ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                  : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
               }`}
             />
             <InputError message={fieldErrors.name} />
@@ -149,8 +151,10 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
             defaultValue={staff.bio || ""}
             onChange={() => clearFieldError("bio")}
             placeholder="e.g., Senior Stylist with 10 years experience..."
-            className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.bio ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white resize-none shadow-sm ${
+              fieldErrors.bio 
+                ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
             }`}
           />
           <InputError message={fieldErrors.bio} />
@@ -164,8 +168,10 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
             defaultValue={staff.user?.phone || ""}
             onChange={() => clearFieldError("phone")}
             placeholder="+1 234 567 8900"
-            className={`w-full rounded-xl border-2 px-4 py-2 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-              fieldErrors.phone ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-200 dark:border-slate-700 focus:border-indigo-600"
+            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+              fieldErrors.phone 
+                ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
             }`}
           />
           <InputError message={fieldErrors.phone} />
@@ -215,10 +221,10 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                   key={service.id}
                   type="button"
                   onClick={() => toggleService(service.id)}
-                  className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                  className={`flex items-center justify-between p-3 rounded-2xl border-2 transition-all text-left shadow-sm ${
                     selectedServices?.includes(service.id)
                       ? "border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/20"
-                      : "border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-100"
+                      : "border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-200"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -235,7 +241,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         <button
           type="submit"
           disabled={loading || deleteLoading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-200 dark:disabled:border-slate-800"
+          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-100 dark:disabled:border-slate-800 active:scale-[0.98]"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Profile Changes"}
         </button>

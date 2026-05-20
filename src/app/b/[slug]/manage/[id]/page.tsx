@@ -9,6 +9,8 @@ import { ManageActions } from "./manage-actions";
 import { Logo } from "@/components/logo";
 import { ThemeCleaner } from "@/components/providers/theme-cleaner";
 
+import { formatInTimezone } from "@/lib/timezone-utils";
+
 interface ManageBookingPageProps {
   params: Promise<{
     slug: string;
@@ -92,7 +94,7 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Currently Scheduled For</p>
                   <div className="flex items-center gap-3 text-slate-900 mt-2">
                     <Clock className="h-5 w-5 text-indigo-600" />
-                    <span className="text-xl font-black">{format(new Date(booking.startTime), "PPPP 'at' p")}</span>
+                    <span className="text-xl font-black">{formatInTimezone(new Date(booking.startTime), booking.tenant.timezone || "UTC", "EEEE, MMMM do 'at' h:mm a")}</span>
                   </div>
                 </div>
               </div>

@@ -40,7 +40,7 @@ export function CompactThemeToggle() {
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className={`flex items-center gap-2 p-2.5 px-3 rounded-2xl bg-white/50 dark:bg-slate-800 border-2 transition-all group ${
-            isOpen ? 'border-indigo-600/10 ring-4 ring-indigo-500/5' : 'border-slate-200 dark:border-slate-800'
+            isOpen ? 'border-indigo-600/10 ring-4 ring-indigo-500/5' : 'border-slate-100 dark:border-slate-800'
           } text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white`}
         >
           <CurrentIcon className="h-4.5 w-4.5" />
@@ -49,7 +49,7 @@ export function CompactThemeToggle() {
       </Tooltip>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-200 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-2 border-b border-slate-50 dark:border-slate-800/50 mb-1">
             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Select Theme</p>
           </div>
