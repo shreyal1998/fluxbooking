@@ -12,6 +12,7 @@ interface TrialBadgeProps {
 
 export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [isExpired, setIsExpired] = useState<boolean>(false);
   const TRIAL_DURATION = 14; // Standard 14-day trial
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
       const end = new Date(trialEndsAt);
       const diffDays = differenceInCalendarDays(end, now);
       setDaysRemaining(diffDays > 0 ? diffDays : 0);
+      setIsExpired(end < now);
     }
   }, [trialEndsAt]);
 
@@ -32,7 +34,7 @@ export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
   const percentage = Math.min(100, Math.max(0, (daysRemaining / TRIAL_DURATION) * 100));
   const offset = circumference - (percentage / 100) * circumference;
 
-  const isCritical = daysRemaining <= 3;
+  const isCritical = daysRemaining <= 3 || isExpired;
 
   return (
     <Link 
@@ -79,7 +81,7 @@ export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
           <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-tight ${
             isCritical ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-200"
           }`}>
-            TRIAL DAYS
+            {isExpired ? "EXPIRED" : "TRIAL DAYS"}
           </span>
           <Zap className={`h-2 w-2 sm:h-2.5 sm:w-2.5 ${isCritical ? "text-rose-500 fill-rose-500" : "text-indigo-500 fill-indigo-500"} group-hover:animate-bounce`} />
         </div>

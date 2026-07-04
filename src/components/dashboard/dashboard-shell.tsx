@@ -134,7 +134,7 @@ export function DashboardShell({
 
   return (
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
-      <aside className="hidden lg:flex flex-col w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
+      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
         <div className="h-16 lg:h-20 px-8 flex items-center">
           <Link href="/overview" className="relative -top-0.5">
             <Logo size="xl" textClassName="dark:text-white" />
@@ -158,7 +158,7 @@ export function DashboardShell({
                   <div className="w-8 h-8 flex items-center justify-center shrink-0">
                     <item.icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`} />
                   </div>
-                  <span className={`text-base font-medium tracking-tight`}>{item.name}</span>
+                  <span className="text-base font-medium tracking-tight whitespace-nowrap">{item.name}</span>
                 </div>
                 {isActive && <ChevronRight className="h-4 w-4 text-white/50 relative z-10" />}
               </>
@@ -196,7 +196,7 @@ export function DashboardShell({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative">
+      <main className="flex-1 flex flex-col min-w-0 relative">
         {/* Top Header */}
         <header className="h-16 lg:h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 flex items-center justify-between px-6 lg:px-10 z-50 sticky top-0 transition-all duration-500">
           <button 
@@ -297,7 +297,7 @@ export function DashboardShell({
           </div>
         </header>
         
-        <div className={`flex-1 flex flex-col transition-colors duration-700 ${bgClass}`}>
+        <div className={`flex-1 flex flex-col min-w-0 transition-colors duration-700 ${bgClass}`}>
           {children}
         </div>
       </main>
@@ -333,7 +333,7 @@ export function DashboardShell({
                   const content = (
                     <>
                       <item.icon className="h-6 w-6" />
-                      <span className="text-base font-medium">{item.name}</span>
+                      <span className="text-base font-medium whitespace-nowrap">{item.name}</span>
                     </>
                   );
 

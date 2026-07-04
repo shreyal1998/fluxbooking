@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Loader2, Palette, Trash2, ShieldAlert, Scissors, Check } from "lucide-react";
+import { AlertCircle, Loader2, Palette, Trash2, ShieldAlert, Scissors, Check, Eye, EyeOff } from "lucide-react";
 import { updateStaffProfile, deleteStaff } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -43,6 +43,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>(
     staff.services?.map(s => s.id) || []
   );
@@ -54,6 +56,8 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     setFieldErrors({});
     setGeneralError(null);
     setConfirmDelete(false);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setSelectedServices(staff.services?.map(s => s.id) || []);
   }, [staff.id, staff.services]);
 
@@ -82,9 +86,29 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
 
     const errors: Record<string, string> = {};
-    if (isAdmin && !name) errors.name = `${labels.staff} name is required`;
+    if (isAdmin) {
+      if (!name) errors.name = `${labels.staff} name is required`;
+      if (!email) {
+        errors.email = "Email address is required";
+      } else if (!/\S+@\S+\.\S+/.test(email)) {
+        errors.email = "Please enter a valid email address";
+      }
+
+      const password = formData.get("password") as string;
+      const confirmPassword = formData.get("confirmPassword") as string;
+
+      if (password) {
+        if (password.length < 6) {
+          errors.password = "Password must be at least 6 characters";
+        }
+        if (password !== confirmPassword) {
+          errors.confirmPassword = "Passwords do not match";
+        }
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -104,9 +128,19 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     } else {
       toast.success("Profile updated successfully!");
       router.refresh();
+      
+      // Clear password inputs
+      const form = e.currentTarget;
+      const pwdInput = form.querySelector('input[name="password"]') as HTMLInputElement;
+      const cpwdInput = form.querySelector('input[name="confirmPassword"]') as HTMLInputElement;
+      if (pwdInput) pwdInput.value = "";
+      if (cpwdInput) cpwdInput.value = "";
+
       setLoading(false);
       setFieldErrors({});
       setGeneralError(null);
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       if (onSuccess) onSuccess();
     }
   };
@@ -122,25 +156,107 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {isAdmin && (
-          <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Full Name <span className="text-rose-500">*</span>
-            </label>
-            <input
-              name="name"
-              type="text"
-              required
-              defaultValue={staff.name}
-              placeholder={labels.staffPlaceholder}
-              onChange={() => clearFieldError("name")}
-              className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
-                fieldErrors.name 
-                  ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                  : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-              }`}
-            />
-            <InputError message={fieldErrors.name} />
-          </div>
+          <>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Full Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                name="name"
+                type="text"
+                required
+                defaultValue={staff.name}
+                placeholder={labels.staffPlaceholder}
+                onChange={() => clearFieldError("name")}
+                className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                  fieldErrors.name 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                }`}
+              />
+              <InputError message={fieldErrors.name} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Email Address <span className="text-rose-500">*</span>
+              </label>
+              <input
+                name="email"
+                type="email"
+                required
+                defaultValue={staff.user?.email || ""}
+                placeholder="practitioner@example.com"
+                onChange={() => clearFieldError("email")}
+                className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                  fieldErrors.email 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                }`}
+              />
+              <InputError message={fieldErrors.email} />
+            </div>
+
+            {staff.user && (
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/20 rounded-[1.5rem] border border-slate-100 dark:border-slate-800/80 space-y-4">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Change Password (Optional)
+                </label>
+                
+                <div>
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      onChange={() => clearFieldError("password")}
+                      placeholder="New password"
+                      className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
+                        showPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                      } ${
+                        fieldErrors.password 
+                          ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                          : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-850 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <InputError message={fieldErrors.password} />
+                </div>
+
+                <div>
+                  <div className="relative">
+                    <input
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      onChange={() => clearFieldError("confirmPassword")}
+                      placeholder="Confirm new password"
+                      className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
+                        showConfirmPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                      } ${
+                        fieldErrors.confirmPassword 
+                          ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                          : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-850 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <InputError message={fieldErrors.confirmPassword} />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UserPlus, AlertCircle, Loader2, Search, ChevronDown, Scissors, Check } from "lucide-react";
+import { UserPlus, AlertCircle, Loader2, Search, ChevronDown, Scissors, Check, Eye, EyeOff } from "lucide-react";
 import { addStaff } from "@/app/actions/dashboard";
 import { COUNTRIES } from "@/config/countries";
 import { toast } from "sonner";
@@ -23,7 +23,19 @@ export function AddStaffForm({
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [showPasswordField, setShowPasswordField] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (generalError && errorRef.current) {
+      const timer = setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [generalError]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
   const labels = getLabels(businessType);
@@ -137,7 +149,6 @@ export function AddStaffForm({
 
     if (result?.error) {
       setGeneralError(result.error);
-      toast.error(result.error);
       setLoading(false);
     } else {
       toast.success(`${labels.staff} added successfully!`);
@@ -146,6 +157,8 @@ export function AddStaffForm({
       setFieldErrors({});
       setGeneralError(null);
       setShowPasswordField(true);
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       setSelectedServices([]);
       setLoading(false);
       if (onSuccess) onSuccess();
@@ -164,12 +177,6 @@ export function AddStaffForm({
 
   return (
     <div className="px-8 py-6 transition-colors text-left bg-white dark:bg-slate-900">
-      {generalError && (
-        <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-bold border border-rose-100 dark:border-rose-900/30">
-          {generalError}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
           <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
@@ -347,31 +354,53 @@ export function AddStaffForm({
                     </div>
                   </div>
                     <div>
-                      <input
-                        name="password"
-                        type="password"
-                        onChange={() => clearFieldError("password")}
-                        placeholder="Password *"
-                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm ${
-                          fieldErrors.password 
-                            ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                            : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-                        }`}
-                      />
+                      <div className="relative">
+                        <input
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          onChange={() => clearFieldError("password")}
+                          placeholder="Password *"
+                          className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
+                            showPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                          } ${
+                            fieldErrors.password 
+                              ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                              : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors animate-in fade-in duration-200"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                       <InputError message={fieldErrors.password} />
                     </div>
                     <div>
-                      <input
-                        name="confirmPassword"
-                        type="password"
-                        onChange={() => clearFieldError("confirmPassword")}
-                        placeholder="Confirm Password *"
-                        className={`w-full rounded-xl border-2 px-4 py-2.5 focus:outline-none transition-all dark:text-white text-xl tracking-[0.25em] placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm ${
-                          fieldErrors.confirmPassword 
-                            ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                            : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-                        }`}
-                      />
+                      <div className="relative">
+                        <input
+                          name="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          onChange={() => clearFieldError("confirmPassword")}
+                          placeholder="Confirm Password *"
+                          className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
+                            showConfirmPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                          } ${
+                            fieldErrors.confirmPassword 
+                              ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                              : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors animate-in fade-in duration-200"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                       <InputError message={fieldErrors.confirmPassword} />
                     </div>
                </div>
@@ -434,6 +463,15 @@ export function AddStaffForm({
             </>
           )}
         </button>
+
+        {generalError && (
+          <div 
+            ref={errorRef}
+            className="mt-3 p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-bold border border-rose-100 dark:border-rose-900/30 animate-in fade-in slide-in-from-top-2 duration-200"
+          >
+            {generalError}
+          </div>
+        )}
       </form>
     </div>
   );

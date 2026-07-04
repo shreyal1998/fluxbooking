@@ -91,7 +91,9 @@ function LoginForm() {
 
         {registered && (
           <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl text-sm font-bold border border-emerald-100 text-center animate-fade-in">
-            Registration successful! Please log in.
+            {registered === "password_reset_success" 
+              ? "Password reset successful! Please log in with your new password."
+              : "Registration successful! Please log in."}
           </div>
         )}
 
@@ -148,6 +150,12 @@ function LoginForm() {
                 </button>
               </div>
               <InputError message={fieldErrors.password} />
+
+              <div className="flex justify-end mt-2.5 mr-1 text-xs font-bold">
+                <Link href="/forgot-password" className="text-indigo-600 hover:text-indigo-500 underline-offset-4 hover:underline transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
           </div>
 

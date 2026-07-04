@@ -8,16 +8,8 @@
  * Useful for grid calculations.
  */
 export function getInTimezone(date: Date, timeZone: string): Date {
-  const str = date.toLocaleString("en-US", { timeZone });
-  return new Date(str);
-}
-
-/**
- * Parses a YYYY-MM-DD and HH:mm string as if it were in the target timezone.
- * Returns a UTC Date object.
- */
-export function parseInTimezone(dateStr: string, timeStr: string, timeZone: string): Date {
-  // Use Intl to find the offset for this specific date and timezone
+  if (isNaN(date.getTime())) return date;
+  
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",
@@ -26,24 +18,59 @@ export function parseInTimezone(dateStr: string, timeStr: string, timeZone: stri
     hour: "numeric",
     minute: "numeric",
     second: "numeric",
-    hour12: false,
+    hour12: false
   });
-
-  // Create a base UTC date
-  const parts = formatter.formatToParts(new Date(`${dateStr}T${timeStr}:00Z`));
-  const mapped: any = {};
-  parts.forEach(p => mapped[p.type] = p.value);
-
-  // This is a bit complex without a lib. 
-  // Let's use a simpler approach:
-  // Create a date string that JS can parse, then adjust for the offset.
   
-  const targetDate = new Date(`${dateStr}T${timeStr}:00`);
-  const utcDate = new Date(targetDate.toLocaleString("en-US", { timeZone: "UTC" }));
-  const tzDate = new Date(targetDate.toLocaleString("en-US", { timeZone }));
-  const offset = utcDate.getTime() - tzDate.getTime();
+  const parts = formatter.formatToParts(date);
+  const partMap: any = {};
+  parts.forEach(p => partMap[p.type] = parseInt(p.value, 10));
   
-  return new Date(targetDate.getTime() + offset);
+  return new Date(partMap.year, partMap.month - 1, partMap.day, partMap.hour, partMap.minute, partMap.second);
+}
+
+/**
+ * Parses a YYYY-MM-DD and HH:mm string as if it were in the target timezone.
+ * Returns a UTC Date object.
+ */
+export function parseInTimezone(dateStr: string, timeStr: string, timeZone: string): Date {
+  const utcDate = new Date(`${dateStr}T${timeStr}:00Z`);
+  if (isNaN(utcDate.getTime())) return utcDate;
+  
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false
+  });
+  
+  const parts = formatter.formatToParts(utcDate);
+  const partMap: any = {};
+  parts.forEach(p => partMap[p.type] = parseInt(p.value, 10));
+  
+  const utcFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false
+  });
+  const utcParts = utcFormatter.formatToParts(utcDate);
+  const utcPartMap: any = {};
+  utcParts.forEach(p => utcPartMap[p.type] = parseInt(p.value, 10));
+  
+  const targetTime = Date.UTC(partMap.year, partMap.month - 1, partMap.day, partMap.hour, partMap.minute, partMap.second);
+  const utcTime = Date.UTC(utcPartMap.year, utcPartMap.month - 1, utcPartMap.day, utcPartMap.hour, utcPartMap.minute, utcPartMap.second);
+  
+  const offsetMs = targetTime - utcTime;
+  
+  return new Date(utcDate.getTime() - offsetMs);
 }
 
 /**

@@ -232,3 +232,46 @@ export async function sendStaffWelcomeEmail({
   `;
   return sendEmail({ to: staffEmail, subject: `Invitation: Join ${businessName} on FluxBooking`, html });
 }
+
+/**
+ * Template: Password Reset
+ */
+export async function sendPasswordResetEmail({
+  email,
+  token,
+}: {
+  email: string;
+  token: string;
+}) {
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+  
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
+      <h1 style="color: #0f172a; font-size: 24px; font-weight: 900; margin-bottom: 16px; text-align: center;">Reset your password</h1>
+      <p style="color: #64748b; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+        We received a request to reset the password for your FluxBooking account. Click the button below to choose a new password. This link is valid for 2 hours.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${resetUrl}" style="display: inline-block; background-color: #6366f1; color: #ffffff; padding: 16px 32px; border-radius: 16px; text-decoration: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">
+          Reset Password
+        </a>
+      </div>
+      <p style="color: #94a3b8; font-size: 12px; line-height: 18px; margin-bottom: 24px; text-align: center;">
+        If you didn't request a password reset, you can safely ignore this email. Your password will remain secure.
+      </p>
+      <p style="color: #94a3b8; font-size: 11px; text-align: center; margin-bottom: 8px;">
+        Or copy and paste this URL into your browser:
+      </p>
+      <p style="color: #6366f1; font-size: 11px; word-break: break-all; text-align: center; margin-bottom: 32px;">
+        <a href="${resetUrl}" style="color: #6366f1; text-decoration: underline;">${resetUrl}</a>
+      </p>
+      ${NO_REPLY_FOOTER}
+    </div>
+  `;
+  
+  return sendEmail({
+    to: email,
+    subject: "Reset your FluxBooking Password",
+    html,
+  });
+}

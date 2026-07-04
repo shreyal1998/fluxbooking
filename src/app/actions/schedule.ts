@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { parseInTimezone } from "@/lib/timezone-utils";
 
 export async function toggleSlotStatus({
   staffId,
@@ -13,8 +14,8 @@ export async function toggleSlotStatus({
   reason
 }: {
   staffId: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: Date | string;
+  endTime: Date | string;
   type: 'block' | 'override' | 'remove-block' | 'remove-override';
   reason?: string;
 }) {
@@ -26,6 +27,28 @@ export async function toggleSlotStatus({
   const userId = session.user.id;
 
   try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId || "" }
+    });
+    const tz = tenant?.timezone || "UTC";
+
+    let startUTC: Date;
+    let endUTC: Date;
+
+    if (typeof startTime === 'string') {
+      const parts = startTime.split('T');
+      startUTC = parseInTimezone(parts[0], parts[1].substring(0, 5), tz);
+    } else {
+      startUTC = new Date(startTime);
+    }
+
+    if (typeof endTime === 'string') {
+      const parts = endTime.split('T');
+      endUTC = parseInTimezone(parts[0], parts[1].substring(0, 5), tz);
+    } else {
+      endUTC = new Date(endTime);
+    }
+
     // Security: STAFF can only toggle their own slots
     if (userRole === "STAFF") {
       const staffProfile = await prisma.staff.findUnique({
@@ -41,8 +64,8 @@ export async function toggleSlotStatus({
         data: {
           tenantId: tenantId || "",
           staffId,
-          startTime,
-          endTime,
+          startTime: startUTC,
+          endTime: endUTC,
           reason: reason || "Scheduled Off"
         }
       });
@@ -51,8 +74,8 @@ export async function toggleSlotStatus({
         data: {
           tenantId: tenantId || "",
           staffId,
-          startTime,
-          endTime,
+          startTime: startUTC,
+          endTime: endUTC,
           reason: reason || "One-off Shift"
         }
       });
@@ -60,16 +83,16 @@ export async function toggleSlotStatus({
       await prisma.blockedSlot.deleteMany({
         where: {
           staffId,
-          startTime: { lte: startTime },
-          endTime: { gt: startTime }
+          startTime: { lte: startUTC },
+          endTime: { gt: startUTC }
         }
       });
     } else if (type === 'remove-override') {
       await prisma.availabilityOverride.deleteMany({
         where: {
           staffId,
-          startTime: { lte: startTime },
-          endTime: { gt: startTime }
+          startTime: { lte: startUTC },
+          endTime: { gt: startUTC }
         }
       });
     }

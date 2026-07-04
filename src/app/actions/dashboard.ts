@@ -29,8 +29,14 @@ export async function addStaff(formData: FormData) {
     });
 
     const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
-    const currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
-    if (tenant && tenant.staff.length >= currentLimit && tenant.planStatus !== "TRIALING") {
+    const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
+
+    // Check if trial is active
+    const now = new Date();
+    const isTrialActive = tenant?.planStatus === "TRIALING" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) > now;
+    const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
+
+    if (tenant && tenant.staff.length >= currentLimit) {
       return { error: `Your ${tenant.plan} plan is limited to ${currentLimit} staff member(s). Please upgrade to add more.` };
     }
 
@@ -124,8 +130,64 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
   const bio = formData.get("bio") as string;
   const color = formData.get("color") as string;
   const serviceIds = formData.getAll("services") as string[];
+  const email = formData.get("email") as string;
 
   try {
+    // 1. Get current staff and associated user
+    const currentStaff = await prisma.staff.findUnique({
+      where: { id: staffId },
+      select: { userId: true, tenantId: true }
+    });
+
+    if (!currentStaff) {
+      return { error: "Practitioner not found" };
+    }
+
+    // Check authorization: must be ADMIN or the staff member themselves
+    const isAdmin = (session.user as any).role === "ADMIN";
+    const isOwner = currentStaff.userId === session.user.id;
+    if (!isAdmin && !isOwner) {
+      return { error: "Unauthorized" };
+    }
+
+    // 2. If the user is an ADMIN and wants to change the email or password, validate and update them
+    if (isAdmin && currentStaff.userId) {
+      const userUpdateData: any = {};
+
+      if (email) {
+        // Check if email is already in use by another user
+        const emailConflict = await prisma.user.findFirst({
+          where: {
+            email: { equals: email, mode: 'insensitive' },
+            id: { not: currentStaff.userId }
+          }
+        });
+
+        if (emailConflict) {
+          return { error: "Email address is already in use by another user" };
+        }
+
+        userUpdateData.email = email;
+      }
+
+      const password = formData.get("password") as string;
+      if (password) {
+        if (password.length < 6) {
+          return { error: "Password must be at least 6 characters" };
+        }
+        userUpdateData.password = await bcrypt.hash(password, 10);
+      }
+
+      if (Object.keys(userUpdateData).length > 0) {
+        // Update associated user's details
+        await prisma.user.update({
+          where: { id: currentStaff.userId },
+          data: userUpdateData
+        });
+      }
+    }
+
+    // 3. Update staff profile details
     await prisma.staff.update({
       where: { id: staffId },
       data: {
@@ -139,8 +201,12 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
     });
 
     revalidatePath("/staff");
+    revalidatePath("/practitioners");
+    revalidatePath("/team");
+    revalidatePath("/trainers");
     return { success: true };
-  } catch {
+  } catch (error: any) {
+    console.error("updateStaffProfile error:", error);
     return { error: "Failed to update staff profile" };
   }
 }

@@ -6,6 +6,7 @@ import {
   Plus, 
   X, 
   Settings2, 
+  Pencil,
   Clock, 
   ChevronLeft, 
   ChevronRight,
@@ -87,10 +88,12 @@ export function StaffClient({
   );
 
   // Pagination Calculations
-  const indexOfLastItem = currentPage * itemsPerPage;
+  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / itemsPerPage));
+  const activePage = currentPage > totalPages ? totalPages : currentPage;
+
+  const indexOfLastItem = activePage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / itemsPerPage));
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -107,13 +110,13 @@ export function StaffClient({
   const isLimitExceeded = staff.length > currentLimit;
 
   return (
-    <div className="flex-1 flex flex-col animate-fade-in p-4 md:p-6 lg:p-8">
+    <div className="flex-1 flex flex-col w-full max-w-full min-w-0 animate-fade-in p-4 md:p-6 lg:p-8">
       
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-8 items-start w-full max-w-full min-w-0">
         
         {/* Main Section - List Wise handled with Pagination */}
         <div className="flex-1 w-full lg:min-w-0" id="staff-table-section">
-          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden h-full">
+          <div className="w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden h-full min-h-[600px]">
             
             {/* Unified Card Header */}
             <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -155,7 +158,7 @@ export function StaffClient({
             {/* Table Area */}
             <div className="flex-1 p-0 overflow-hidden">
               {filteredStaff.length === 0 ? (
-                <div className="p-24 flex flex-col items-center justify-center text-center">
+                <div className="flex-1 p-24 flex flex-col items-center justify-center text-center w-full">
                   <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-6">
                     <labels.staffIcon className="h-10 w-10 text-slate-200 dark:text-slate-700" />
                   </div>
@@ -164,13 +167,13 @@ export function StaffClient({
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                  <table className="w-full table-fixed divide-y divide-slate-100 dark:divide-slate-800">
                     <thead>
                       <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
-                        <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.staff}</th>
-                        <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Details</th>
-                        <th className="px-10 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.service}s</th>
-                        <th className="px-10 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                        <th className="w-[30%] px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.staff}</th>
+                        <th className="w-[30%] px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Details</th>
+                        <th className="w-[25%] px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.service}s</th>
+                        <th className="w-[15%] px-6 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -180,8 +183,8 @@ export function StaffClient({
                         
                         return (
                           <tr key={member.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group ${isLocked ? 'opacity-50 grayscale bg-slate-50/30 dark:bg-slate-900/20' : ''}`}>
-                            <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="flex items-center gap-4">
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-4 min-w-0">
                                 <div 
                                   className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-110"
                                   style={{ 
@@ -191,44 +194,48 @@ export function StaffClient({
                                 >
                                   {isLocked ? <Lock className="h-5 w-5 text-slate-400" /> : <labels.staffIcon className="h-6 w-6" style={{ color: member.color }} />}
                                 </div>
-                                <div>
-                                  <p className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                                    {member.name}
-                                    {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded tracking-tighter">Locked</span>}
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 truncate">
+                                    <span className="truncate">{member.name}</span>
+                                    {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded tracking-tighter shrink-0">Locked</span>}
                                   </p>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">{isLocked ? "Limit Reached" : (member.bio || `Active ${labels.staff}`)}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 truncate" title={member.bio || `Active ${labels.staff}`}>
+                                    {isLocked ? "Limit Reached" : (member.bio || `Active ${labels.staff}`)}
+                                  </p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                  <Mail className="h-3.5 w-3.5 text-indigo-500/50" /> {member.user?.email || "No email"}
+                            <td className="px-6 py-5">
+                              <div className="space-y-1.5 min-w-0">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate" title={member.user?.email || "No email"}>
+                                  <Mail className="h-3.5 w-3.5 text-indigo-500/50 shrink-0" />
+                                  <span className="truncate">{member.user?.email || "No email"}</span>
                                 </div>
                                 {member.user?.phone && (
-                                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                    <Phone className="h-3.5 w-3.5 text-indigo-500/50" /> {member.user.phone}
+                                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate" title={member.user.phone}>
+                                    <Phone className="h-3.5 w-3.5 text-indigo-500/50 shrink-0" />
+                                    <span className="truncate">{member.user.phone}</span>
                                   </div>
                                 )}
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                            <td className="px-6 py-5">
+                              <div className="flex flex-wrap gap-1.5 max-w-full">
                                 {member.services?.slice(0, 2).map((service: any) => (
-                                  <span key={service.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
-                                    {service.name}
+                                  <span key={service.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 truncate max-w-full" title={service.name}>
+                                    <span className="truncate">{service.name}</span>
                                   </span>
                                 ))}
                                 {member.services?.length > 2 && (
-                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-800">+{member.services.length - 2}</span>
+                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-800 shrink-0">+{member.services.length - 2}</span>
                                 )}
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap text-right">
+                            <td className="px-6 py-5 whitespace-nowrap text-right">
                               {userRole === "ADMIN" ? (
                                 !isLocked ? (
                                   <div className="flex items-center justify-end gap-2">
-                                    <Tooltip content={`Delete ${labels.staff}`} position="bottom">
+                                    <Tooltip content="Delete" position="bottom">
                                       <button 
                                         onClick={() => setDeletingStaff(member)}
                                         className="p-3 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-2xl transition-all border border-rose-100 shadow-sm hover:shadow-md active:scale-95"
@@ -237,7 +244,7 @@ export function StaffClient({
                                       </button>
                                     </Tooltip>
 
-                                    <Tooltip content={`Manage ${member.name}`} position="bottom">
+                                    <Tooltip content="Edit" position="bottom">
                                       <button 
                                         onClick={() => {
                                           setEditingStaff(member);
@@ -245,7 +252,7 @@ export function StaffClient({
                                         }}
                                         className="p-3 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-2xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm hover:shadow-md active:scale-95"
                                       >
-                                        <Settings2 className="h-4.5 w-4.5" />
+                                        <Pencil className="h-4.5 w-4.5" />
                                       </button>
                                     </Tooltip>
                                   </div>
@@ -258,7 +265,7 @@ export function StaffClient({
                                 )
                               ) : (
                                 <div className="p-3 opacity-0 cursor-default">
-                                  <Settings2 className="h-4.5 w-4.5" />
+                                  <Pencil className="h-4.5 w-4.5" />
                                 </div>
                               )}
                             </td>
@@ -280,21 +287,21 @@ export function StaffClient({
                 
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    onClick={() => paginate(activePage - 1)}
+                    disabled={activePage === 1}
                     className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
 
                   <div className="flex items-center gap-2 px-4">
-                    <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-tighter">PAGE {currentPage}</span>
+                    <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-tighter">PAGE {activePage}</span>
                     <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
                   </div>
 
                   <button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    onClick={() => paginate(activePage + 1)}
+                    disabled={activePage === totalPages}
                     className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -306,7 +313,7 @@ export function StaffClient({
         </div>
 
         {/* Right Section - Sticky Sidebar for Leave Requests & Stats */}
-        <div className="lg:w-96 flex flex-col gap-8 lg:sticky lg:top-8">
+        <div className="lg:w-96 w-full shrink-0 flex flex-col gap-8 lg:sticky lg:top-8">
           
           {/* Plan Limit Card */}
           {isLimitExceeded && (
@@ -323,10 +330,10 @@ export function StaffClient({
           )}
 
           {/* Leave Requests Section */}
-          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-900/50">
+          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-indigo-100/80 dark:border-slate-800 shadow-sm flex flex-col">
+            <div className="p-8 border-b border-indigo-100/80 dark:border-slate-800 flex items-center justify-between rounded-t-[2.35rem]">
                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-600 border border-rose-100 dark:border-rose-900/50">
+                  <div className="h-10 w-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-600 border border-rose-200/50 dark:border-rose-900/50">
                     <Calendar className="h-5 w-5" />
                   </div>
                   <div>
@@ -341,20 +348,25 @@ export function StaffClient({
           </div>
 
           {/* Quick Stats Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-100 dark:border-indigo-900/50">
-                <BarChart3 className="h-5 w-5" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Team Overview</h3>
+          <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-indigo-100/80 dark:border-slate-800 shadow-sm flex flex-col">
+            <div className="p-8 border-b border-indigo-100/80 dark:border-slate-800 flex items-center justify-between rounded-t-[2.35rem]">
+               <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-200/50 dark:border-indigo-900/50">
+                    <BarChart3 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Team Overview</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Stats</p>
+                  </div>
+               </div>
             </div>
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active {labels.staff}s</span>
+            <div className="p-8 space-y-4">
+              <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-slate-800/50 flex items-center justify-between border border-indigo-100/30 dark:border-slate-800/50">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Active {labels.staff}s</span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">{staff.length}</span>
               </div>
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total {labels.service}s</span>
+              <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-slate-800/50 flex items-center justify-between border border-indigo-100/30 dark:border-slate-800/50">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Total {labels.service}s</span>
                 <span className="text-sm font-black text-slate-900 dark:text-white">{initialServices.length}</span>
               </div>
             </div>
@@ -406,23 +418,13 @@ export function StaffClient({
                     <labels.staffIcon className="h-7 w-7" style={{ color: editingStaff.color }} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Manage {labels.staff}</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Edit {labels.staff}</h3>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Configuring {editingStaff.name}</p>
                   </div>
                 </div>
-                <button onClick={() => setEditingStaff(null)} className="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-600">
-                  <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                <button onClick={() => setEditingStaff(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                  <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                 </button>
-              </div>
-
-              {/* Removed Availability Tab as requested - availability is now managed in Schedule Calendar */}
-              <div className="flex border-b border-slate-100 dark:border-slate-800 px-8 bg-white dark:bg-slate-800">
-                <div
-                  className="px-8 py-5 text-[10px] font-black uppercase tracking-widest border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2.5"
-                >
-                  <Settings2 className="h-4 w-4" />
-                  Profile
-                </div>
               </div>
 
               <div className="p-8 overflow-y-auto bg-white dark:bg-slate-800 flex-1 scrollbar-hide">

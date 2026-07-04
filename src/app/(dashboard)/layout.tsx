@@ -12,11 +12,15 @@ export default async function DashboardLayout({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const tenantId = (session.user as any).tenantId;
+  const tenantId = (session?.user as any)?.tenantId;
+  if (!tenantId) redirect("/login");
+
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
     select: { planStatus: true, trialEndsAt: true, businessType: true, name: true, timeFormat: true }
   });
+
+  if (!tenant) redirect("/login");
 
   return (
     <div className="min-h-screen flex flex-col">

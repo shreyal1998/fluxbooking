@@ -52,6 +52,7 @@ interface Event {
   leaveType?: string;
   color?: string;
   resourceName?: string;
+  staffId?: string;
   status?: string;
 }
 
@@ -173,7 +174,7 @@ export function CalendarView({
       const eStartMin = e.start.getHours() * 60 + e.start.getMinutes();
       const eEndMin = e.end.getHours() * 60 + e.end.getMinutes();
       const isTimeMatch = currentMinutes >= eStartMin && currentMinutes < eEndMin;
-      const isStaffMatch = !targetStaffId || e.resourceName === staffList.find(s => s.id === targetStaffId)?.name;
+      const isStaffMatch = !targetStaffId || e.staffId === targetStaffId;
       return isTimeMatch && isStaffMatch;
     });
 
@@ -187,7 +188,7 @@ export function CalendarView({
       const eStartMin = e.start.getHours() * 60 + e.start.getMinutes();
       const eEndMin = e.end.getHours() * 60 + e.end.getMinutes();
       const isTimeMatch = currentMinutes >= eStartMin && currentMinutes < eEndMin;
-      const isStaffMatch = !targetStaffId || e.resourceName === staffList.find(s => s.id === targetStaffId)?.name;
+      const isStaffMatch = !targetStaffId || e.staffId === targetStaffId;
       return isTimeMatch && isStaffMatch;
     });
 
@@ -220,25 +221,24 @@ export function CalendarView({
     if (targetStaffId) {
       const staff = staffList.find(s => s.id === targetStaffId);
       const staffHours = staff ? parseAvailability(staff.availabilityJson) : null;
-      if (staffHours) {
-        const val = staffHours[dayName] || staffHours[dayName.charAt(0).toUpperCase() + dayName.slice(1)];
-        const isStaffDayDefined = staffHours.hasOwnProperty(dayName) || staffHours.hasOwnProperty(dayName.charAt(0).toUpperCase() + dayName.slice(1));
-        
-        if (isStaffDayDefined) {
-          if (!val) return true;
-          const shifts = Array.isArray(val) ? val : [val];
-          if (shifts.length === 0) return true;
+      if (!staffHours) return true;
 
-          const isStaffOpen = shifts.some((shift: any) => {
-            if (!shift.start || !shift.end) return false;
-            const staffStart = timeToMinutes(shift.start);
-            const staffEnd = shift.end === "00:00" ? 1440 : timeToMinutes(shift.end);
-            return currentMinutes >= staffStart && currentMinutes < staffEnd;
-          });
+      const val = staffHours[dayName] || staffHours[dayName.charAt(0).toUpperCase() + dayName.slice(1)];
+      const isStaffDayDefined = staffHours.hasOwnProperty(dayName) || staffHours.hasOwnProperty(dayName.charAt(0).toUpperCase() + dayName.slice(1));
+      
+      if (!isStaffDayDefined || !val) return true;
+      
+      const shifts = Array.isArray(val) ? val : [val];
+      if (shifts.length === 0) return true;
 
-          if (!isStaffOpen) return true;
-        }
-      }
+      const isStaffOpen = shifts.some((shift: any) => {
+        if (!shift.start || !shift.end) return false;
+        const staffStart = timeToMinutes(shift.start);
+        const staffEnd = shift.end === "00:00" ? 1440 : timeToMinutes(shift.end);
+        return currentMinutes >= staffStart && currentMinutes < staffEnd;
+      });
+
+      if (!isStaffOpen) return true;
     }
     return false;
   }, [businessHours, staffFilter, staffList, parseAvailability, events]);
@@ -367,7 +367,11 @@ export function CalendarView({
             return (
               <div
                 key={idx}
-                className={`p-3 border-r border-b border-slate-300 dark:border-slate-600 last:border-r-0 relative transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 ${
+                className={`p-3 relative transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 ${
+                  (idx + 1) % 7 === 0 ? "" : "border-r border-slate-300 dark:border-slate-600"
+                } ${
+                  idx >= calendarDays.length - 7 ? "" : "border-b border-slate-300 dark:border-slate-600"
+                } ${
                   !isSameMonth(day, monthStart) ? "bg-slate-50/30 dark:bg-slate-950/30 opacity-40" : ""      
                 }`}
               >
@@ -435,7 +439,7 @@ export function CalendarView({
                       className="flex border-b border-slate-300 dark:border-slate-600 transition-colors last:border-b-0"
                       style={{ height: `${slotHeight}px` }}
                     >
-                        <span className="w-[80px] h-full p-2 text-xs flex items-center justify-center border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-black dark:text-white font-bold">
+                        <span className="w-[80px] h-full p-2 text-xs flex items-center justify-center border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-black dark:text-white">
                           {format(currentSlotTime, timeDisplayFormat)}
                         </span>
                         <div className="flex-1 h-full flex flex-col">
@@ -444,19 +448,21 @@ export function CalendarView({
                             
                             return Array.from({ length: subSlotsCount }).map((_, subIdx) => {
                               const subSlotTime = addMinutes(currentSlotTime, subIdx * 15);
-                              const isClosed = checkIsClosed(subSlotTime);
-                              const isPastSlot = isPast(subSlotTime, mode === "booking" ? 0 : slotDuration);
-
-                               const existing = mode === "schedule" ? events.find(e => {
+                              const existing = mode === "schedule" ? events.find(e => {
                                  if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
                                  if (!isSameDay(subSlotTime, e.start)) return false;
                                  const subMin = subSlotTime.getHours() * 60 + subSlotTime.getMinutes();
                                  const eStartMin = e.start.getHours() * 60 + e.start.getMinutes();
                                  const eEndMin = e.end.getHours() * 60 + e.end.getMinutes();
                                  const isTimeMatch = subMin >= eStartMin && subMin < eEndMin;
-                                 const isStaffMatch = staffFilter !== "all" ? e.resourceName === staffList.find(s => s.id === staffFilter)?.name : true;
+                                 const isStaffMatch = staffFilter !== "all" ? e.staffId === staffFilter : true;
                                  return isTimeMatch && isStaffMatch;
-                               }) : null;
+                              }) : null;
+
+                               const isClosed = mode === "schedule" && existing
+                                 ? existing.type === 'blocked'
+                                 : checkIsClosed(subSlotTime, staffFilter !== "all" ? staffFilter : undefined);
+                              const isPastSlot = isPast(subSlotTime, mode === "booking" ? 0 : slotDuration);
 
                               return (
                                 <div 
@@ -464,20 +470,20 @@ export function CalendarView({
                                   className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
                                   style={{ backgroundPositionY: isClosed ? `-${(slot.minutes / 15 + subIdx) * (slotHeight / subSlotsCount)}px` : undefined }}
                                   onDragOver={handleDragOver}
-                                  onDrop={(e) => handleDrop(e, subSlotTime)}
+                                  onDrop={(e) => handleDrop(e, subSlotTime, staffFilter !== "all" ? staffFilter : undefined)}
                                   onClick={() => {
                                     if (mode === "schedule") {
                                       if (existing?.type === 'blocked') {
-                                        onScheduleToggle?.(subSlotTime, 'remove-block');
+                                        onScheduleToggle?.(subSlotTime, 'remove-block', staffFilter !== "all" ? staffFilter : undefined);
                                       } else if ((existing?.type as any) === 'availability-override') {
-                                        onScheduleToggle?.(subSlotTime, 'remove-override');
+                                        onScheduleToggle?.(subSlotTime, 'remove-override', staffFilter !== "all" ? staffFilter : undefined);
                                       } else if (isClosed) {
-                                        onScheduleToggle?.(subSlotTime, 'override');
+                                        onScheduleToggle?.(subSlotTime, 'override', staffFilter !== "all" ? staffFilter : undefined);
                                       } else {
-                                        onScheduleToggle?.(subSlotTime, 'block');
+                                        onScheduleToggle?.(subSlotTime, 'block', staffFilter !== "all" ? staffFilter : undefined);
                                       }
                                     } else if (!isClosed && !isPastSlot) {
-                                      onSlotClick?.(subSlotTime);
+                                      onSlotClick?.(subSlotTime, staffFilter !== "all" ? staffFilter : undefined);
                                     }
                                   }}
                                 >
@@ -581,7 +587,7 @@ export function CalendarView({
           <div className="sticky left-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-300 dark:border-slate-600">
              {visibleSlots.map((slot, slotIdx) => {
                return (
-                <div key={slotIdx} className="border-b border-slate-300 dark:border-slate-600 p-2 text-xs flex items-center justify-center text-black dark:text-white" style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className="border-b border-slate-300 dark:border-slate-600 p-2 text-xs flex items-center justify-center text-black dark:text-white last:border-b-0" style={{ height: `${slotHeight}px` }}>
                   {format(slot.time, timeDisplayFormat)}
                 </div>
                );
@@ -600,7 +606,7 @@ export function CalendarView({
                       return (
                         <div 
                           key={slotIdx} 
-                          className="border-b border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900" 
+                          className="border-b border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900 last:border-b-0" 
                           style={{ height: `${slotHeight}px` }} 
                         >
                            {(() => {
@@ -608,14 +614,21 @@ export function CalendarView({
 
                              return Array.from({ length: subSlotsCount }).map((_, subIdx) => {
                                const subSlotTime = addMinutes(currentSlotTime, subIdx * 15);
-                               const isClosed = checkIsClosed(subSlotTime);
-                               const isPastSlot = isPast(subSlotTime, mode === "booking" ? 0 : slotDuration);
+                               const existing = mode === "schedule" ? events.find(e => {
+                                  if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
+                                  if (!isSameDay(subSlotTime, e.start)) return false;
+                                  const subMin = subSlotTime.getHours() * 60 + subSlotTime.getMinutes();
+                                  const eStartMin = e.start.getHours() * 60 + e.start.getMinutes();
+                                  const eEndMin = e.end.getHours() * 60 + e.end.getMinutes();
+                                  const isTimeMatch = subMin >= eStartMin && subMin < eEndMin;
+                                  const isStaffMatch = staffFilter !== "all" ? e.staffId === staffFilter : true;
+                                  return isTimeMatch && isStaffMatch;
+                               }) : null;
 
-                               const existing = mode === "schedule" ? events.find(e => 
-                                 (e.type === 'blocked' || (e.type as any) === 'availability-override') &&
-                                 subSlotTime >= e.start && subSlotTime < e.end &&
-                                 (staffFilter !== "all" ? e.resourceName === staffList.find(s => s.id === staffFilter)?.name : true)
-                               ) : null;
+                               const isClosed = mode === "schedule" && existing
+                                 ? existing.type === 'blocked'
+                                 : checkIsClosed(subSlotTime, staffFilter !== "all" ? staffFilter : undefined);
+                               const isPastSlot = isPast(subSlotTime, mode === "booking" ? 0 : slotDuration);
 
                                return (
                                   <div 
@@ -623,20 +636,20 @@ export function CalendarView({
                                     className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5] opacity-60' : ''}`}
                                     style={{ backgroundPositionY: isClosed ? `-${(slot.minutes / 15 + subIdx) * (slotHeight / subSlotsCount)}px` : undefined }}
                                     onDragOver={handleDragOver}
-                                    onDrop={(e) => handleDrop(e, subSlotTime)}
+                                    onDrop={(e) => handleDrop(e, subSlotTime, staffFilter !== "all" ? staffFilter : undefined)}
                                     onClick={() => {
                                       if (mode === "schedule") {
                                         if (existing?.type === 'blocked') {
-                                          onScheduleToggle?.(subSlotTime, 'remove-block');
+                                          onScheduleToggle?.(subSlotTime, 'remove-block', staffFilter !== "all" ? staffFilter : undefined);
                                         } else if ((existing?.type as any) === 'availability-override') {
-                                          onScheduleToggle?.(subSlotTime, 'remove-override');
+                                          onScheduleToggle?.(subSlotTime, 'remove-override', staffFilter !== "all" ? staffFilter : undefined);
                                         } else if (isClosed) {
-                                          onScheduleToggle?.(subSlotTime, 'override');
+                                          onScheduleToggle?.(subSlotTime, 'override', staffFilter !== "all" ? staffFilter : undefined);
                                         } else {
-                                          onScheduleToggle?.(subSlotTime, 'block');
+                                          onScheduleToggle?.(subSlotTime, 'block', staffFilter !== "all" ? staffFilter : undefined);
                                         }
                                       } else if (!isClosed && !isPastSlot) {
-                                        onSlotClick?.(subSlotTime);
+                                        onSlotClick?.(subSlotTime, staffFilter !== "all" ? staffFilter : undefined);
                                       }
                                     }}
                                   >
@@ -735,7 +748,7 @@ export function CalendarView({
           <div className="sticky left-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-300 dark:border-slate-600">
              {visibleSlots.map((slot, slotIdx) => {
                 return (
-                 <div key={slotIdx} className="border-b border-slate-300 dark:border-slate-600 p-2 text-xs flex items-center justify-center text-black dark:text-white" style={{ height: `${slotHeight}px` }}>
+                 <div key={slotIdx} className="border-b border-slate-300 dark:border-slate-600 p-2 text-xs flex items-center justify-center text-black dark:text-white last:border-b-0" style={{ height: `${slotHeight}px` }}>
                    {format(slot.time, timeDisplayFormat)}
                  </div>
                 );
@@ -753,7 +766,7 @@ export function CalendarView({
                       return (
                         <div 
                           key={slotIdx} 
-                          className="border-b border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900" 
+                          className="border-b border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900 last:border-b-0" 
                           style={{ height: `${slotHeight}px` }} 
                         >
                            {(() => {
@@ -761,14 +774,21 @@ export function CalendarView({
 
                              return Array.from({ length: subSlotsCount }).map((_, subIdx) => {
                                const subSlotTime = addMinutes(currentSlotTime, subIdx * 15);
-                               const isClosed = checkIsClosed(subSlotTime, staff.id);
-                               const isPastSlot = isPast(subSlotTime, mode === "booking" ? 0 : slotDuration);
+                               const existing = mode === "schedule" ? events.find(e => {
+                                  if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
+                                  if (!isSameDay(subSlotTime, e.start)) return false;
+                                  const subMin = subSlotTime.getHours() * 60 + subSlotTime.getMinutes();
+                                  const eStartMin = e.start.getHours() * 60 + e.start.getMinutes();
+                                  const eEndMin = e.end.getHours() * 60 + e.end.getMinutes();
+                                  const isTimeMatch = subMin >= eStartMin && subMin < eEndMin;
+                                  const isStaffMatch = e.staffId === staff.id;
+                                  return isTimeMatch && isStaffMatch;
+                               }) : null;
 
-                               const existing = mode === "schedule" ? events.find(e => 
-                                 (e.type === 'blocked' || (e.type as any) === 'availability-override') &&
-                                 subSlotTime >= e.start && subSlotTime < e.end &&
-                                 e.resourceName === staff.name
-                               ) : null;
+                               const isClosed = mode === "schedule" && existing
+                                 ? existing.type === 'blocked'
+                                 : checkIsClosed(subSlotTime, staff.id);
+                               const isPastSlot = isPast(subSlotTime, mode === "booking" ? 0 : slotDuration);
 
                                return (
                                   <div 

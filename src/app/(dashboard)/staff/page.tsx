@@ -46,7 +46,7 @@ export default async function StaffPage() {
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { plan: true, planStatus: true, businessType: true, timeFormat: true }
+      select: { plan: true, planStatus: true, trialEndsAt: true, businessType: true, timeFormat: true }
     }),
     prisma.service.findMany({
       where: { tenantId },
@@ -55,8 +55,12 @@ export default async function StaffPage() {
   ]);
 
   const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
-  let currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
-  if (tenant?.planStatus === "TRIALING" && currentLimit < 5) currentLimit = 5;
+  const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
+
+  // Check if trial is active
+  const now = new Date();
+  const isTrialActive = tenant?.planStatus === "TRIALING" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) > now;
+  const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
 
   const requestsWithConflicts = pendingRequests.map(req => {
     const hasConflicts = req.staff.bookings.some(booking => {

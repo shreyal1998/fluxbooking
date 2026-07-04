@@ -16,9 +16,11 @@ import {
   Info,
   X,
   Filter,
-  Check
+  Check,
+  Save,
+  Loader2
 } from "lucide-react";
-import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
+import { StructuredAvailabilityEditor } from "@/components/dashboard/structured-availability-editor";
 import { Portal } from "@/components/ui/portal";
 import { useRouter } from "next/navigation";
 import { getInTimezone } from "@/lib/timezone-utils";
@@ -34,9 +36,48 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
   const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
   const staffDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Separate filter for the master schedule modal to allow switching without changing the main grid
-  const [modalStaffFilter, setModalStaffFilter] = useState<string | "business">("business");
   const router = useRouter();
+  const [showScheduleViewModal, setShowScheduleViewModal] = useState(false);
+  const [viewStart, setViewStart] = useState(() => {
+    try {
+      const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
+      return parsed?.monday?.[0]?.start || "09:00";
+    } catch {
+      return "09:00";
+    }
+  });
+  const [viewEnd, setViewEnd] = useState(() => {
+    try {
+      const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
+      return parsed?.monday?.[0]?.end || "17:00";
+    } catch {
+      return "17:00";
+    }
+  });
+  const [saveViewLoading, setSaveViewLoading] = useState(false);
+
+  const handleSaveScheduleView = async () => {
+    setSaveViewLoading(true);
+    try {
+      const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      const cleaned = Object.fromEntries(
+        DAYS.map(day => [day, [{ start: viewStart, end: viewEnd }]])
+      );
+      const { updateBusinessHours } = await import("@/app/actions/dashboard");
+      const result = await updateBusinessHours(cleaned);
+      if (result.success) {
+        toast.success("Schedule view updated successfully!");
+        setShowScheduleViewModal(false);
+        router.refresh();
+      } else {
+        toast.error(result.error || "Failed to save schedule view");
+      }
+    } catch (e) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setSaveViewLoading(false);
+    }
+  };
 
   // Click outside to close staff dropdown
   useEffect(() => {
@@ -55,15 +96,6 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
       setStaffFilter(staff[0].id);
     }
   }, [staff, staffFilter]);
-
-  // Reset modal filter to business when opening
-  useEffect(() => {
-    if (showHoursModal && userRole !== "ADMIN" && staff.length > 0) {
-       setModalStaffFilter(staff[0].id);
-    } else if (!showHoursModal) {
-       setModalStaffFilter("business");
-    }
-  }, [showHoursModal, userRole, staff]);
 
   const selectedStaffName = staff.find((s: any) => s.id === staffFilter)?.name || "Select Team Member";
 
@@ -85,6 +117,7 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
           start: getInTimezone(new Date(block.startTime), tz),
           end: getInTimezone(new Date(block.endTime), tz),
           type: "blocked",
+          staffId: s.id,
           resourceName: s.name,
           color: s.color
         });
@@ -97,6 +130,7 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
           start: getInTimezone(new Date(override.startTime), tz),
           end: getInTimezone(new Date(override.endTime), tz),
           type: "availability-override",
+          staffId: s.id,
           resourceName: s.name,
           color: s.color
         });
@@ -114,10 +148,12 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
     }
 
     const endTime = addMinutes(date, slotDuration);
+    const localStartStr = format(date, "yyyy-MM-dd'T'HH:mm:ss");
+    const localEndStr = format(endTime, "yyyy-MM-dd'T'HH:mm:ss");
     const result = await toggleSlotStatus({
       staffId: targetStaffId,
-      startTime: date,
-      endTime,
+      startTime: localStartStr as any,
+      endTime: localEndStr as any,
       type
     });
 
@@ -144,14 +180,24 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
         </div>
         
         <div className="flex items-center gap-3">
-          {(userRole === "ADMIN" || userRole === "STAFF") && (
-            <button 
-              onClick={() => setShowHoursModal(true)}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95"
-            >
-              <CalendarIcon className="h-4 w-4" />
-              {userRole === "ADMIN" ? "Master Pattern" : "My Master Pattern"}
-            </button>
+          {userRole === "ADMIN" && (
+            <>
+              <button 
+                onClick={() => setShowScheduleViewModal(true)}
+                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm"
+              >
+                <Clock className="h-4 w-4" />
+                Schedule View
+              </button>
+
+              <button 
+                onClick={() => setShowHoursModal(true)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                Create Schedule
+              </button>
+            </>
           )}
 
           {userRole !== "STAFF" && (
@@ -285,16 +331,16 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
               onClick={() => setShowHoursModal(false)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-6 bg-indigo-50/50 dark:bg-slate-950/50">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-6 bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
                       <CalendarIcon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-black dark:text-white">Master Schedule</h3>
-                      <p className="text-xs text-black dark:text-white font-normal opacity-60">Set recurring weekly availability patterns.</p>
+                      <h3 className="text-xl font-black text-black dark:text-white">Create Schedule</h3>
+                      <p className="text-xs text-black dark:text-white font-normal opacity-60">Set recurring weekly opening and closing hours for the venue.</p>
                     </div>
                   </div>
                   <button 
@@ -304,35 +350,95 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
                     <X className="h-5 w-5 text-slate-400" />
                   </button>
                 </div>
-
-                {userRole === "ADMIN" && (
-                  <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar scrollbar-hide">
-                    <button 
-                      onClick={() => setModalStaffFilter("business")}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${modalStaffFilter === "business" ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                      Venue Hours
-                    </button>
-                    {staff.map((s: any) => (
-                      <button 
-                        key={s.id}
-                        onClick={() => setModalStaffFilter(s.id)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${modalStaffFilter === s.id ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                      >
-                        {s.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
               
-              <div className="p-8 overflow-y-auto max-h-[calc(90vh-280px)] custom-scrollbar">
-                <AvailabilityEditor 
-                  key={modalStaffFilter}
-                  initialAvailability={modalStaffFilter === 'business' ? tenant.businessHoursJson : staff.find((s: any) => s.id === modalStaffFilter)?.availabilityJson}
-                  staffId={modalStaffFilter === 'business' ? undefined : modalStaffFilter}
-                  isBusiness={modalStaffFilter === 'business'}
+              <div className="p-8 overflow-visible">
+                <StructuredAvailabilityEditor 
+                  staffList={staff}
+                  tenant={tenant}
+                  onSuccess={() => setShowHoursModal(false)}
                 />
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Schedule View Modal */}
+      {showScheduleViewModal && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+              onClick={() => setShowScheduleViewModal(false)}
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-black dark:text-white">Schedule View</h3>
+                    <p className="text-xs text-black dark:text-white font-normal opacity-60">Sets the visible hours on all calendars.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowScheduleViewModal(false)}
+                  className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all animate-none"
+                >
+                  <X className="h-5 w-5 text-slate-400" />
+                </button>
+              </div>
+              
+              <div className="p-8 space-y-6 bg-white dark:bg-slate-900">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Start Time</label>
+                    <div className="relative group">
+                      <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                      <input 
+                        type="time" 
+                        value={viewStart}
+                        onChange={(e) => setViewStart(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">End Time</label>
+                    <div className="relative group">
+                      <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                      <input 
+                        type="time" 
+                        value={viewEnd}
+                        onChange={(e) => setViewEnd(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button 
+                    onClick={() => setShowScheduleViewModal(false)}
+                    className="px-6 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveScheduleView}
+                    disabled={saveViewLoading}
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95"
+                  >
+                    {saveViewLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Save View
+                  </button>
+                </div>
               </div>
             </div>
           </div>

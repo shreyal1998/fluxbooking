@@ -12,6 +12,7 @@ interface TrialBannerProps {
 
 export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [isExpired, setIsExpired] = useState<boolean>(false);
 
   useEffect(() => {
     if (trialEndsAt) {
@@ -19,12 +20,13 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
       const end = new Date(trialEndsAt);
       const diffDays = differenceInCalendarDays(end, now);
       setDaysRemaining(diffDays > 0 ? diffDays : 0);
+      setIsExpired(end < now);
     }
   }, [trialEndsAt]);
 
   if (planStatus !== "TRIALING" || daysRemaining === null) return null;
 
-  const isCritical = daysRemaining <= 3;
+  const isCritical = daysRemaining <= 3 || isExpired;
 
   return (
     <div className={`mx-4 mb-4 p-5 rounded-[2rem] border transition-all duration-500 group ${
@@ -48,9 +50,11 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
            <p className={`text-xs font-black tracking-tight leading-tight ${
              isCritical ? "text-rose-900 dark:text-rose-100" : "text-slate-900 dark:text-indigo-100"
            }`}>
-             {daysRemaining === 0 
-               ? "Trial ends today!" 
-               : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left on trial.`}
+             {isExpired 
+               ? "Trial has expired!" 
+               : daysRemaining === 0 
+                 ? "Trial ends today!" 
+                 : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left on trial.`}
            </p>
            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest leading-relaxed">
              Starter Features

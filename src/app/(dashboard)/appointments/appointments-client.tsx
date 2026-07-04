@@ -228,6 +228,7 @@ export function AppointmentsClient({
         start: getInTimezone(new Date(b.startTime), tenant?.timezone || "UTC"),
         end: getInTimezone(new Date(b.endTime), tenant?.timezone || "UTC"),
         type: "booking" as const,
+        staffId: b.staffId,
         resourceName: b.staff.name,
         status: b.status,
         color: b.service.color
@@ -238,6 +239,7 @@ export function AppointmentsClient({
         start: getInTimezone(new Date(s.startTime), tenant?.timezone || "UTC"),
         end: getInTimezone(new Date(s.endTime), tenant?.timezone || "UTC"),
         type: "blocked" as const,
+        staffId: s.staffId,
         resourceName: s.staff.name,
         leaveType: (s as any).type
       })) || []),
@@ -247,6 +249,7 @@ export function AppointmentsClient({
         start: getInTimezone(new Date(o.startTime), tenant?.timezone || "UTC"),
         end: getInTimezone(new Date(o.endTime), tenant?.timezone || "UTC"),
         type: "availability-override" as const,
+        staffId: o.staffId,
         resourceName: o.staff.name,
         color: "#6366f1"
       })) || [])
