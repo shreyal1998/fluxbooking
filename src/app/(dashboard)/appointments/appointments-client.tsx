@@ -83,7 +83,8 @@ export function AppointmentsClient({
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">("week");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>(60);
-  const [currentStaffFilter, setCurrentStaffFilter] = useState<string>("all");
+  const [currentStaffFilter, setCurrentStaffFilter] = useState<string[]>(["all"]);
+  const [isFilterLoaded, setIsFilterLoaded] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
 
@@ -106,6 +107,32 @@ export function AppointmentsClient({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("lastSelectedStaffFilter");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const validIds = parsed.filter(id => id === "all" || id === "none" || staff.some(s => s.id === id));
+          if (validIds.length > 0) {
+            setCurrentStaffFilter(validIds);
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+    }
+    setIsFilterLoaded(true);
+  }, [staff]);
+
+  // Save to localStorage when changed
+  useEffect(() => {
+    if (isFilterLoaded) {
+      localStorage.setItem("lastSelectedStaffFilter", JSON.stringify(currentStaffFilter));
+    }
+  }, [currentStaffFilter, isFilterLoaded]);
+
   // Helper to get current date at venue
   const getVenueDate = useCallback(() => {
     try {
@@ -127,6 +154,18 @@ export function AppointmentsClient({
     const venueDate = getVenueDate();
     setCurrentDate(venueDate);
   }, [getVenueDate]);
+
+  // Lock body scroll when modal views are active
+  useEffect(() => {
+    if (showHoursModal || selectedSlotInfo) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showHoursModal, selectedSlotInfo]);
 
   const handleSlotClick = (date: Date, staffId?: string) => {
     setSelectedSlotInfo({ date, staffId });
@@ -191,8 +230,8 @@ export function AppointmentsClient({
 
   // Filtered Bookings for List View
   const listFilteredBookings = useMemo(() => {
-    if (userRole !== "ADMIN" || currentStaffFilter === "all") return initialBookings;
-    return initialBookings.filter((b) => b.staffId === currentStaffFilter);
+    if (userRole !== "ADMIN" || currentStaffFilter.includes("all") || currentStaffFilter.length === 0) return initialBookings;
+    return initialBookings.filter((b) => currentStaffFilter.includes(b.staffId));
   }, [initialBookings, currentStaffFilter, userRole]);
 
   // Pagination Calculations for List View
@@ -215,10 +254,12 @@ export function AppointmentsClient({
     let filteredBlocked = initialBlockedSlots;
     let filteredOverrides = availabilityOverrides;
 
-    if (userRole === "ADMIN" && currentStaffFilter !== "all") {
-      filteredBookings = initialBookings.filter((b) => b.staffId === currentStaffFilter);
-      filteredBlocked = initialBlockedSlots.filter((s) => s.staffId === currentStaffFilter);
-      filteredOverrides = availabilityOverrides.filter((o) => o.staffId === currentStaffFilter);
+    const isFiltered = userRole === "ADMIN" && !currentStaffFilter.includes("all") && currentStaffFilter.length > 0;
+
+    if (isFiltered) {
+      filteredBookings = initialBookings.filter((b) => currentStaffFilter.includes(b.staffId));
+      filteredBlocked = initialBlockedSlots.filter((s) => currentStaffFilter.includes(s.staffId));
+      filteredOverrides = availabilityOverrides.filter((o) => currentStaffFilter.includes(o.staffId));
     }
 
     return [
@@ -245,13 +286,12 @@ export function AppointmentsClient({
       })) || []),
       ...(filteredOverrides?.map((o) => ({
         id: o.id,
-        title: "One-off Shift",
+        title: "Override",
         start: getInTimezone(new Date(o.startTime), tenant?.timezone || "UTC"),
         end: getInTimezone(new Date(o.endTime), tenant?.timezone || "UTC"),
         type: "availability-override" as const,
         staffId: o.staffId,
-        resourceName: o.staff.name,
-        color: "#6366f1"
+        resourceName: o.staff.name
       })) || [])
     ];
   }, [initialBookings, initialBlockedSlots, availabilityOverrides, currentStaffFilter, userRole, tenant?.timezone]);
@@ -266,13 +306,47 @@ export function AppointmentsClient({
     }
   };
 
-  const selectedStaffName = currentStaffFilter === "all" ? "All Staff Members" : staff.find((s) => s.id === currentStaffFilter)?.name;
+  const handleToggleAll = () => {
+    setCurrentPage(1);
+    const isAllSelected = currentStaffFilter.includes("all") || currentStaffFilter.length === 0;
+    if (isAllSelected) {
+      setCurrentStaffFilter(["none"]);
+    } else {
+      setCurrentStaffFilter(["all"]);
+    }
+  };
+
+  const handleToggleStaff = (staffId: string) => {
+    setCurrentPage(1);
+    if (currentStaffFilter.includes("all") || currentStaffFilter.length === 0) {
+      const nextFilter = staff.map(s => s.id).filter(id => id !== staffId);
+      setCurrentStaffFilter(nextFilter.length === 0 ? ["none"] : nextFilter);
+    } else if (currentStaffFilter.includes("none")) {
+      setCurrentStaffFilter([staffId]);
+    } else {
+      if (currentStaffFilter.includes(staffId)) {
+        const nextFilter = currentStaffFilter.filter(id => id !== staffId);
+        setCurrentStaffFilter(nextFilter.length === 0 ? ["none"] : nextFilter);
+      } else {
+        const nextFilter = [...currentStaffFilter, staffId];
+        setCurrentStaffFilter(nextFilter);
+      }
+    }
+  };
+
+  const selectedStaffName = currentStaffFilter.includes("all") || currentStaffFilter.length === 0
+    ? "All Staff Members"
+    : (currentStaffFilter.includes("none")
+       ? "No Staff Selected"
+       : (currentStaffFilter.length === 1
+          ? (staff.find((s) => s.id === currentStaffFilter[0])?.name || "Select Staff")
+          : `${currentStaffFilter.length} Staff Selected`));
 
   const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "h:mm a";
   const listTimeFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
 
   return (
-    <div className="flex-1 flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
+    <div className="w-full flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
@@ -310,33 +384,48 @@ export function AppointmentsClient({
                   </div>
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
                     <button
-                      onClick={() => { setCurrentStaffFilter("all"); setCurrentPage(1); setIsStaffFilterOpen(false); }}
-                      className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === "all" ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+                      onClick={handleToggleAll}
+                      className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-500">
+                        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
                           <Users className="h-4 w-4" />
                         </div>
-                        <span className={`text-xs font-medium ${currentStaffFilter === "all" ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>All Staff Members</span>
+                        <span className="text-xs font-medium text-black dark:text-white">All Staff Members</span>
                       </div>
-                      {currentStaffFilter === "all" && <Check className="h-4 w-4 text-indigo-600" />}
+                      <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
+                        (currentStaffFilter.includes("all") || currentStaffFilter.length === 0)
+                          ? 'bg-indigo-600 border-indigo-600 text-white' 
+                          : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
+                      }`}>
+                        {(currentStaffFilter.includes("all") || currentStaffFilter.length === 0) && <Check className="h-3 w-3 stroke-[3] text-white" />}
+                      </div>
                     </button>
 
-                    {staff.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => { setCurrentStaffFilter(s.id); setCurrentPage(1); setIsStaffFilterOpen(false); }}
-                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${currentStaffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: s.color }}>
-                            {s.name.substring(0, 2).toUpperCase()}
+                    {staff.map((s) => {
+                      const isSelected = currentStaffFilter.includes(s.id) || (!currentStaffFilter.includes("none") && (currentStaffFilter.includes("all") || currentStaffFilter.length === 0));
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => handleToggleStaff(s.id)}
+                          className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: s.color }}>
+                              {s.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <span className="text-xs font-medium text-black dark:text-white">{s.name}</span>
                           </div>
-                          <span className={`text-xs font-medium ${currentStaffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>{s.name}</span>
-                        </div>
-                        {currentStaffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />}
-                      </button>
-                    ))}
+                          <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
+                            isSelected 
+                              ? 'bg-indigo-600 border-indigo-600 text-white' 
+                              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
+                          }`}>
+                            {isSelected && <Check className="h-3 w-3 stroke-[3] text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -475,7 +564,7 @@ export function AppointmentsClient({
       )}
 
       {/* Toolbar & Content Card */}
-      <div className="flex-1 flex flex-col">
+      <div className="w-full flex flex-col">
         {/* Navigation & View Control Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
@@ -553,9 +642,9 @@ export function AppointmentsClient({
         </div>
 
         {/* Main Content Card */}
-        <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+        <div className="w-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
           {viewMode === "list" ? (
-            <div className="flex-1 flex flex-col overflow-hidden" id="bookings-table-top">
+            <div className="w-full flex flex-col" id="bookings-table-top">
               {listFilteredBookings.length === 0 ? (
                 <div className="flex-1 p-24 flex flex-col items-center justify-center text-center">
                   <div className="h-20 w-20 rounded-[2rem] bg-slate-50 dark:bg-slate-900 flex items-center justify-center mb-6">

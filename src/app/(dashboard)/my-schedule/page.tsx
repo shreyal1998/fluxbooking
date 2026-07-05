@@ -217,7 +217,14 @@ export default async function MySchedulePage() {
                             </span>
                         </div>
                         <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                            {format(new Date(request.startTime), "MMM d")} - {format(new Date(request.endTime), "MMM d")}
+                            {(() => {
+                              const start = new Date(request.startTime);
+                              const endAdjusted = new Date(new Date(request.endTime).getTime() - 60000);
+                              const isSameDayVal = format(start, "yyyy-MM-dd") === format(endAdjusted, "yyyy-MM-dd");
+                              return isSameDayVal 
+                                ? format(start, "MMM d, yyyy")
+                                : `${format(start, "MMM d")} - ${format(endAdjusted, "MMM d, yyyy")}`;
+                            })()}
                         </p>
                     </div>
                   ))}

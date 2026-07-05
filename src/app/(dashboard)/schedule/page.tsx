@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { ScheduleClient } from "./schedule-client";
 
+import { Suspense } from "react";
+
 export default async function SchedulePage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -31,11 +33,19 @@ export default async function SchedulePage() {
     staff = staffProfile ? [staffProfile] : [];
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lastSelectedStaffId: true }
+  });
+
   return (
-    <ScheduleClient 
-      staff={staff as any}
-      tenant={tenant as any}
-      userRole={userRole}
-    />
+    <Suspense fallback={null}>
+      <ScheduleClient 
+        staff={staff as any}
+        tenant={tenant as any}
+        userRole={userRole}
+        defaultStaffId={user?.lastSelectedStaffId || undefined}
+      />
+    </Suspense>
   );
 }

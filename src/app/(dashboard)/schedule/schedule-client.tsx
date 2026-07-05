@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
-import { toggleSlotStatus } from "@/app/actions/schedule";
+import { toggleSlotStatus, saveLastSelectedStaff } from "@/app/actions/schedule";
 import { toast } from "sonner";
 import { addMinutes, format } from "date-fns";
 import { 
@@ -13,6 +13,7 @@ import {
   Minus,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Info,
   X,
   Filter,
@@ -22,15 +23,50 @@ import {
 } from "lucide-react";
 import { StructuredAvailabilityEditor } from "@/components/dashboard/structured-availability-editor";
 import { Portal } from "@/components/ui/portal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { getInTimezone } from "@/lib/timezone-utils";
 
-export function ScheduleClient({ staff, tenant, userRole }: any) {
+const startTimes = (() => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ["00", "30"]) {
+      const hourStr = h.toString().padStart(2, "0");
+      const timeStr = `${hourStr}:${m}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
+      options.push({ value: timeStr, label });
+    }
+  }
+  return options;
+})();
+
+const endTimes = (() => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ["00", "30"]) {
+      if (h === 0 && m === "00") continue;
+      const hourStr = h.toString().padStart(2, "0");
+      const timeStr = `${hourStr}:${m}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${displayHour}:${m} ${period}${h === 12 && m === "00" ? " (Noon)" : ""}`;
+      options.push({ value: timeStr, label });
+    }
+  }
+  options.push({ value: "24:00", label: "12:00 AM (Midnight)" });
+  return options;
+})();
+
+let lastSelectedStaffFilter = "";
+
+export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<any>("week");
   const [slotDuration, setSlotDuration] = useState<any>(60);
-  const [staffFilter, setStaffFilter] = useState(staff[0]?.id || "");
+  const [staffFilter, setStaffFilter] = useState(defaultStaffId || lastSelectedStaffFilter);
   const [showHoursModal, setShowHoursModal] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
   
   // Custom Staff Dropdown State
   const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
@@ -49,19 +85,60 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
   const [viewEnd, setViewEnd] = useState(() => {
     try {
       const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
-      return parsed?.monday?.[0]?.end || "17:00";
+      const val = parsed?.monday?.[0]?.end || "17:00";
+      return val === "00:00" ? "24:00" : val;
     } catch {
       return "17:00";
     }
   });
   const [saveViewLoading, setSaveViewLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [isStartOpen, setIsStartOpen] = useState(false);
+  const [isEndOpen, setIsEndOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const startDropdownRef = useRef<HTMLDivElement>(null);
+  const endDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setErrorMsg(null);
+    if (showScheduleViewModal) {
+      try {
+        const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
+        const start = parsed?.monday?.[0]?.start || "09:00";
+        const endVal = parsed?.monday?.[0]?.end || "17:00";
+        setViewStart(start);
+        setViewEnd(endVal === "00:00" ? "24:00" : endVal);
+      } catch {
+        setViewStart("09:00");
+        setViewEnd("17:00");
+      }
+    }
+  }, [showScheduleViewModal]);
 
   const handleSaveScheduleView = async () => {
+    const startMins = (() => {
+      const [h, m] = viewStart.split(":").map(Number);
+      return h * 60 + m;
+    })();
+    const endMins = (() => {
+      if (viewEnd === "24:00") return 1440;
+      const [h, m] = viewEnd.split(":").map(Number);
+      return h * 60 + m;
+    })();
+
+    if (endMins <= startMins) {
+      setErrorMsg("End time must be after the start time.");
+      return;
+    }
+    setErrorMsg(null);
+
     setSaveViewLoading(true);
     try {
       const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      const endToSave = viewEnd === "24:00" ? "00:00" : viewEnd;
       const cleaned = Object.fromEntries(
-        DAYS.map(day => [day, [{ start: viewStart, end: viewEnd }]])
+        DAYS.map(day => [day, [{ start: viewStart, end: endToSave }]])
       );
       const { updateBusinessHours } = await import("@/app/actions/dashboard");
       const result = await updateBusinessHours(cleaned);
@@ -79,23 +156,71 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
     }
   };
 
-  // Click outside to close staff dropdown
+  // Click outside to close staff/start/end dropdowns
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: any) => {
       if (staffDropdownRef.current && !staffDropdownRef.current.contains(event.target as Node)) {
         setIsStaffFilterOpen(false);
       }
+      if (startDropdownRef.current && !startDropdownRef.current.contains(event.target as Node)) {
+        setIsStartOpen(false);
+      }
+      if (endDropdownRef.current && !endDropdownRef.current.contains(event.target as Node)) {
+        setIsEndOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [showScheduleViewModal]);
 
-  // Ensure staffFilter is correctly initialized if staff list loads late
+  // Lock body scroll when modals are open
   useEffect(() => {
-    if (staff.length > 0 && !staffFilter) {
-      setStaffFilter(staff[0].id);
+    if (showHoursModal || showScheduleViewModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
-  }, [staff, staffFilter]);
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showHoursModal, showScheduleViewModal]);
+
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // Ensure staffFilter is correctly initialized if staff list loads late and respect URL/default parameter
+  useEffect(() => {
+    if (staff.length > 0) {
+      const urlId = searchParams.get("staffId");
+      const isValidUrlId = urlId && staff.some((s: any) => s.id === urlId);
+
+      if (isValidUrlId) {
+        if (staffFilter !== urlId) {
+          setStaffFilter(urlId!);
+          lastSelectedStaffFilter = urlId!;
+        }
+      } else {
+        const isValidDefaultId = defaultStaffId && staff.some((s: any) => s.id === defaultStaffId);
+        const isValidGlobalId = lastSelectedStaffFilter && staff.some((s: any) => s.id === lastSelectedStaffFilter);
+        
+        const targetId = isValidDefaultId 
+          ? defaultStaffId 
+          : (isValidGlobalId ? lastSelectedStaffFilter : (staff[0]?.id || ""));
+        
+        if (targetId) {
+          setStaffFilter(targetId);
+          lastSelectedStaffFilter = targetId;
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("staffId", targetId);
+          router.replace(`${pathname}?${params.toString()}`);
+        }
+      }
+    }
+  }, [staff, staffFilter, searchParams, pathname, router, defaultStaffId]);
 
   const selectedStaffName = staff.find((s: any) => s.id === staffFilter)?.name || "Select Team Member";
 
@@ -191,7 +316,10 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
               </button>
 
               <button 
-                onClick={() => setShowHoursModal(true)}
+                onClick={() => {
+                  setModalKey(prev => prev + 1);
+                  setShowHoursModal(true);
+                }}
                 className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95"
               >
                 <CalendarIcon className="h-4 w-4" />
@@ -222,7 +350,16 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
                     {staff.map((s: any) => (
                       <button
                         key={s.id}
-                        onClick={() => { setStaffFilter(s.id); setIsStaffFilterOpen(false); }}
+                        onClick={async () => { 
+                          setStaffFilter(s.id); 
+                          lastSelectedStaffFilter = s.id;
+                          const params = new URLSearchParams(searchParams.toString());
+                          params.set("staffId", s.id);
+                          router.replace(`${pathname}?${params.toString()}`);
+                          setIsStaffFilterOpen(false); 
+                          // Save to database in background
+                          await saveLastSelectedStaff(s.id);
+                        }}
                         className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
                       >
                         <div className="flex items-center gap-3">
@@ -303,7 +440,7 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
         </div>
 
         {/* Calendar Container */}
-        <div className={`${(view === 'team' || view === 'day') ? 'w-full' : 'flex-1'} bg-white dark:bg-slate-900 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden`}>
+        <div className={`${(view === 'month') ? 'flex-1' : 'w-full'} bg-white dark:bg-slate-900 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden`}>
 
         <CalendarView 
           initialEvents={events}
@@ -329,7 +466,6 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
-              onClick={() => setShowHoursModal(false)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-6 bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
@@ -354,6 +490,7 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
               
               <div className="p-8 overflow-visible">
                 <StructuredAvailabilityEditor 
+                  key={modalKey}
                   staffList={staff}
                   tenant={tenant}
                   onSuccess={() => setShowHoursModal(false)}
@@ -370,10 +507,9 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
-              onClick={() => setShowScheduleViewModal(false)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
                     <Clock className="h-5 w-5" />
@@ -391,33 +527,106 @@ export function ScheduleClient({ staff, tenant, userRole }: any) {
                 </button>
               </div>
               
-              <div className="p-8 space-y-6 bg-white dark:bg-slate-900">
+              <div className="p-8 space-y-6 bg-white dark:bg-slate-900 rounded-b-[2.5rem]">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 min-w-0 space-y-2" ref={startDropdownRef}>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Start Time</label>
                     <div className="relative group">
-                      <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                      <input 
-                        type="time" 
-                        value={viewStart}
-                        onChange={(e) => setViewStart(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm"
-                      />
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          setOpenUpward(spaceBelow < 250);
+                          setIsStartOpen(!isStartOpen);
+                        }}
+                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group"
+                      >
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                          <Clock className="h-4 w-4" />
+                        </div>
+                        <span className="truncate w-full pr-2">
+                          {startTimes.find(t => t.value === viewStart)?.label || viewStart}
+                        </span>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isStartOpen ? "rotate-180 text-indigo-500" : ""}`} />
+                        </div>
+                      </button>
+
+                      {isStartOpen && (
+                        <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
+                          <div className="max-h-60 overflow-y-auto pr-1">
+                            {startTimes.map((t) => (
+                              <button
+                                key={t.value}
+                                type="button"
+                                onClick={() => {
+                                  setViewStart(t.value);
+                                  setIsStartOpen(false);
+                                }}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${viewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                              >
+                                {t.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 min-w-0 space-y-2" ref={endDropdownRef}>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">End Time</label>
                     <div className="relative group">
-                      <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                      <input 
-                        type="time" 
-                        value={viewEnd}
-                        onChange={(e) => setViewEnd(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm"
-                      />
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          setOpenUpward(spaceBelow < 250);
+                          setIsEndOpen(!isEndOpen);
+                        }}
+                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group"
+                      >
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                          <Clock className="h-4 w-4" />
+                        </div>
+                        <span className="truncate w-full pr-2">
+                          {endTimes.find(t => t.value === viewEnd)?.label || viewEnd}
+                        </span>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isEndOpen ? "rotate-180 text-indigo-500" : ""}`} />
+                        </div>
+                      </button>
+
+                      {isEndOpen && (
+                        <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
+                          <div className="max-h-60 overflow-y-auto pr-1">
+                            {endTimes.map((t) => (
+                              <button
+                                key={t.value}
+                                type="button"
+                                onClick={() => {
+                                  setViewEnd(t.value);
+                                  setIsEndOpen(false);
+                                }}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${viewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                              >
+                                {t.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
+
+                {errorMsg && (
+                  <div className="p-4 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-2xl flex items-center gap-2 border border-rose-100 dark:border-rose-950/50 animate-fade-in">
+                    <Info className="h-4 w-4 shrink-0 animate-pulse" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <button 

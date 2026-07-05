@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcrypt";
 import { sendStaffWelcomeEmail } from "@/lib/mail";
 import { getLabels } from "@/lib/labels";
-import { parseInTimezone } from "@/lib/timezone-utils";
+import { parseInTimezone, formatInTimezone } from "@/lib/timezone-utils";
 
 export async function addStaff(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -65,13 +65,7 @@ export async function addStaff(formData: FormData) {
         bio,
         tenantId: tenantId || "",
         userId: targetUserId || null,
-        availabilityJson: JSON.stringify({
-          monday: { start: "09:00", end: "17:00" },
-          tuesday: { start: "09:00", end: "17:00" },
-          wednesday: { start: "09:00", end: "17:00" },
-          thursday: { start: "09:00", end: "17:00" },
-          friday: { start: "09:00", end: "17:00" },
-        }),
+        availabilityJson: JSON.stringify({}),
         services: {
           connect: serviceIds.map((id: string) => ({ id }))
         }
@@ -386,6 +380,11 @@ export async function updateStaffAvailability(staffId: string, availability: any
 
     revalidatePath("/staff");
     revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
+    revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {
     return { error: "Failed to update availability" };
@@ -428,7 +427,11 @@ export async function addBlockedSlot(formData: FormData) {
     });
 
     revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
     revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {
     return { error: "Failed to add block" };
@@ -449,7 +452,11 @@ export async function removeBlockedSlot(slotId: string) {
     });
 
     revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
     revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {
     return { error: "Failed to remove block" };
@@ -506,6 +513,44 @@ export async function submitLeaveRequest(formData: FormData) {
 
     if (!staff) return { error: "Staff profile not found" };
 
+    const existingLeave = await prisma.leaveRequest.findFirst({
+      where: {
+        staffId: staff.id,
+        status: { in: ["PENDING", "APPROVED"] },
+        startTime: { lt: endTime },
+        endTime: { gt: startTime }
+      }
+    });
+
+    if (existingLeave) {
+      const endAdjusted = new Date(existingLeave.endTime.getTime() - 60000);
+      const isSameDay = formatInTimezone(existingLeave.startTime, businessTimezone, "yyyy-MM-dd") === 
+                        formatInTimezone(endAdjusted, businessTimezone, "yyyy-MM-dd");
+      
+      const startMin = formatInTimezone(existingLeave.startTime, businessTimezone, "HH:mm");
+      const endMin = formatInTimezone(endAdjusted, businessTimezone, "HH:mm");
+      const isAllDay = startMin === "00:00" && endMin === "23:59";
+      
+      let dateRangeStr = "";
+      if (isAllDay) {
+        dateRangeStr = isSameDay 
+          ? formatInTimezone(existingLeave.startTime, businessTimezone, "MMM d, yyyy")
+          : `${formatInTimezone(existingLeave.startTime, businessTimezone, "MMM d")} - ${formatInTimezone(endAdjusted, businessTimezone, "MMM d, yyyy")}`;
+      } else {
+        const formattedStart = formatInTimezone(existingLeave.startTime, businessTimezone, "MMM d, yyyy h:mm a");
+        const formattedEnd = isSameDay 
+          ? formatInTimezone(endAdjusted, businessTimezone, "h:mm a")
+          : formatInTimezone(endAdjusted, businessTimezone, "MMM d, yyyy h:mm a");
+        dateRangeStr = `${formattedStart} - ${formattedEnd}`;
+      }
+      
+      const statusLabel = existingLeave.status.toLowerCase();
+
+      return { 
+        error: `You already have a ${statusLabel} leave request for ${dateRangeStr}.` 
+      };
+    }
+
     await prisma.leaveRequest.create({
       data: {
         tenantId: tenantId || "",
@@ -548,14 +593,19 @@ export async function approveLeaveRequest(requestId: string) {
       data: {
         tenantId: request.tenantId,
         staffId: request.staffId,
-        reason: `Leave: ${request.reason || 'Personal'}`,
+        reason: `Leave: ${request.reason || (request.type.charAt(0).toUpperCase() + request.type.slice(1).toLowerCase())}`,
         startTime: request.startTime,
         endTime: request.endTime,
       }
     });
 
     revalidatePath("/staff");
+    revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
     revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {
     return { error: "Failed to approve request" };
@@ -573,6 +623,12 @@ export async function rejectLeaveRequest(requestId: string) {
     });
 
     revalidatePath("/staff");
+    revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
+    revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {
     return { error: "Failed to reject request" };

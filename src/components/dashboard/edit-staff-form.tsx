@@ -119,6 +119,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     // Append selected services
     selectedServices.forEach(id => formData.append("services", id));
 
+    const form = e.currentTarget;
     const result = await updateStaffProfile(staff.id, formData);
 
     if (result?.error) {
@@ -130,7 +131,6 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
       router.refresh();
       
       // Clear password inputs
-      const form = e.currentTarget;
       const pwdInput = form.querySelector('input[name="password"]') as HTMLInputElement;
       const cpwdInput = form.querySelector('input[name="confirmPassword"]') as HTMLInputElement;
       if (pwdInput) pwdInput.value = "";

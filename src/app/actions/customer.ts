@@ -149,3 +149,54 @@ export async function searchCustomers(query: string, includeInactive = false) {
         return [];
     }
 }
+
+export async function getActiveCustomers() {
+    const session = await getServerSession(authOptions);
+    if (!session) return [];
+
+    const tenantId = session.user.tenantId;
+
+    try {
+        const customers = await prisma.customer.findMany({
+            where: {
+                tenantId: tenantId || "",
+                status: CustomerStatus.ACTIVE
+            },
+            orderBy: {
+                name: "asc"
+            }
+        });
+        return customers;
+    } catch {
+        return [];
+    }
+}
+
+export async function getPaginatedActiveCustomers(search: string = "", skip: number = 0, take: number = 10) {
+    const session = await getServerSession(authOptions);
+    if (!session) return [];
+
+    const tenantId = session.user.tenantId;
+
+    try {
+        const customers = await prisma.customer.findMany({
+            where: {
+                tenantId: tenantId || "",
+                status: CustomerStatus.ACTIVE,
+                OR: search ? [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } },
+                    { phone: { contains: search, mode: 'insensitive' } },
+                ] : undefined
+            },
+            orderBy: {
+                name: "asc"
+            },
+            skip,
+            take
+        });
+        return customers;
+    } catch {
+        return [];
+    }
+}

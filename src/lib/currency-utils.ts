@@ -26,3 +26,20 @@ export function formatCurrency(amount: number | string, currencyCode: string = "
     return `${symbol}${numericAmount.toFixed(2)}`;
   }
 }
+
+export function getCurrencySymbol(currencyCode: string = "USD") {
+  const code = currencyCode.toUpperCase();
+  try {
+    const locale = code === 'INR' ? 'en-IN' : 'en-US';
+    const formatter = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: code,
+    });
+    const parts = formatter.formatToParts(0);
+    const symbolPart = parts.find(p => p.type === 'currency');
+    return symbolPart ? symbolPart.value : "$";
+  } catch {
+    const country = COUNTRIES.find(c => c.currency === code);
+    return country?.symbol || "$";
+  }
+}

@@ -81,17 +81,27 @@ export function formatInTimezone(date: Date, timeZone: string, formatStr: string
   
   const options: Intl.DateTimeFormatOptions = {
     timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: is12h,
   };
 
-  if (formatStr.includes("MMM")) options.month = "short";
-  if (formatStr.includes("MMMM")) options.month = "long";
+  const hasTime = /H|h|m|s|a/.test(formatStr);
+  if (hasTime) {
+    options.hour = "2-digit";
+    options.minute = "2-digit";
+    options.hour12 = is12h;
+  }
+
+  if (formatStr.includes("MMMM")) {
+    options.month = "long";
+  } else if (formatStr.includes("MMM")) {
+    options.month = "short";
+  }
   if (formatStr.includes("d")) options.day = "numeric";
   if (formatStr.includes("yyyy")) options.year = "numeric";
-  if (formatStr.includes("EEEE")) options.weekday = "long";
-  if (formatStr.includes("EEE")) options.weekday = "short";
+  if (formatStr.includes("EEEE")) {
+    options.weekday = "long";
+  } else if (formatStr.includes("EEE")) {
+    options.weekday = "short";
+  }
 
   // If formatStr is just a time format, keep it simple
   if (formatStr === "HH:mm" || formatStr === "hh:mm a" || formatStr === "h:mm a") {

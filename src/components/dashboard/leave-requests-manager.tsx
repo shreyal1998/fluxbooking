@@ -86,7 +86,14 @@ export function LeaveRequestsManager({ initialRequests, timeFormat = "12h" }: { 
             <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
               <Calendar className="h-4 w-4" />
               <p className="text-xs font-bold">
-                {format(new Date(request.startTime), "EEEE, MMM d, yyyy")}
+                {(() => {
+                  const start = new Date(request.startTime);
+                  const endAdjusted = new Date(new Date(request.endTime).getTime() - 60000);
+                  const isSameDayVal = format(start, "yyyy-MM-dd") === format(endAdjusted, "yyyy-MM-dd");
+                  return isSameDayVal 
+                    ? format(start, "EEEE, MMM d, yyyy")
+                    : `${format(start, "MMM d, yyyy")} - ${format(endAdjusted, "MMM d, yyyy")}`;
+                })()}
               </p>
             </div>
             <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">

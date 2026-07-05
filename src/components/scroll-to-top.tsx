@@ -10,8 +10,7 @@ export function ScrollToTop() {
 
   // 1. EARLY EXIT: Identify pages where the utility should NEVER appear
   const hideOnPages = [
-    "/register", "/login", "/overview", "/appointments", 
-    "/bookings", "/sessions",
+    "/register", "/login", "/overview",
     "/services", "/staff", "/customers", 
     "/classes", "/treatments",
     "/team", "/trainers", "/practitioners",
@@ -54,10 +53,10 @@ export function ScrollToTop() {
     >
       <button
         onClick={scrollToTop}
-        className="h-12 w-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/40 hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all group border border-indigo-400/20"
+        className="h-9 w-9 bg-indigo-600/70 dark:bg-indigo-500/70 text-white rounded-xl flex items-center justify-center shadow-md backdrop-blur-sm hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:scale-110 active:scale-95 transition-all group border border-indigo-500/20"
         aria-label="Scroll to top"
       >
-        <ArrowUp className="h-5 w-5 stroke-[3] group-hover:-translate-y-1 transition-transform" />
+        <ArrowUp className="h-4 w-4 stroke-[3] group-hover:-translate-y-0.5 transition-transform" />
       </button>
     </div>
   );

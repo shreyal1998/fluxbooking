@@ -4,8 +4,41 @@ import { useState, useEffect, useRef } from "react";
 import { Clock, Plus, Minus, Save, AlertTriangle, User, Building, Loader2, ChevronDown, Check, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { updateBusinessHours, updateStaffAvailability } from "@/app/actions/dashboard";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+const startTimes = (() => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ["00", "30"]) {
+      const hourStr = h.toString().padStart(2, "0");
+      const timeStr = `${hourStr}:${m}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
+      options.push({ value: timeStr, label });
+    }
+  }
+  return options;
+})();
+
+const endTimes = (() => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ["00", "30"]) {
+      if (h === 0 && m === "00") continue;
+      const hourStr = h.toString().padStart(2, "0");
+      const timeStr = `${hourStr}:${m}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${displayHour}:${m} ${period}${h === 12 && m === "00" ? " (Noon)" : ""}`;
+      options.push({ value: timeStr, label });
+    }
+  }
+  options.push({ value: "24:00", label: "12:00 AM (Midnight)" });
+  return options;
+})();
 
 interface TimeRange {
   start: string;
@@ -21,10 +54,10 @@ interface StructuredAvailabilityEditorProps {
 export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: StructuredAvailabilityEditorProps) {
   const router = useRouter();
   
-  // Multi-select targets (defaults to 'venue')
-  const [selectedTargets, setSelectedTargets] = useState<string[]>(["venue"]);
-  // Multi-select days (defaults to 'monday')
-  const [selectedDays, setSelectedDays] = useState<string[]>(["monday"]);
+  // Multi-select targets (defaults to empty)
+  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  // Multi-select days (defaults to empty)
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -32,26 +65,45 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
   // Custom dropdown states
   const [isTargetOpen, setIsTargetOpen] = useState(false);
   const [isDayOpen, setIsDayOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<{ index: number; field: "start" | "end" } | null>(null);
+  const [openUpward, setOpenUpward] = useState(false);
 
   const targetRef = useRef<HTMLDivElement>(null);
   const dayRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: any) {
       if (targetRef.current && !targetRef.current.contains(event.target as Node)) {
         setIsTargetOpen(false);
       }
       if (dayRef.current && !dayRef.current.contains(event.target as Node)) {
         setIsDayOpen(false);
       }
+      if (!event.target.closest(".time-dropdown-wrapper")) {
+        setOpenDropdown(null);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   // Time ranges currently being edited
-  const [tempRanges, setTempRanges] = useState<TimeRange[]>([]);
+  const [tempRanges, setTempRanges] = useState<TimeRange[]>(() => {
+    try {
+      const parsed = typeof tenant?.businessHoursJson === "string"
+        ? JSON.parse(tenant.businessHoursJson)
+        : tenant?.businessHoursJson;
+      const val = parsed?.monday || parsed?.Monday;
+      if (Array.isArray(val)) return val;
+      if (val && val.start && val.end) return [val];
+    } catch (e) {}
+    return [{ start: "09:00", end: "17:00" }];
+  });
 
   // Load availability when selectedTarget/Day changes
   useEffect(() => {
@@ -95,7 +147,8 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
   const handleTimeChange = (index: number, type: "start" | "end", value: string) => {
     setTempRanges(prev => {
       const newShifts = [...prev];
-      newShifts[index] = { ...newShifts[index], [type]: value };
+      const normalizedValue = value === "24:00" ? "00:00" : value;
+      newShifts[index] = { ...newShifts[index], [type]: normalizedValue };
       return newShifts;
     });
   };
@@ -125,7 +178,6 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
             updated[day] = tempRanges;
           });
           
-          const { updateBusinessHours } = await import("@/app/actions/dashboard");
           await updateBusinessHours(updated);
         } else {
           const staffMember = staffList.find(s => s.id === target);
@@ -138,7 +190,6 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
             updated[day] = tempRanges;
           });
           
-          const { updateStaffAvailability } = await import("@/app/actions/dashboard");
           await updateStaffAvailability(target, updated);
         }
       }
@@ -226,7 +277,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
   // Display trigger labels
   const getTargetLabel = () => {
     const allCount = staffList.length + 1;
-    if (selectedTargets.length === 0) return "Select Target(s)";
+    if (selectedTargets.length === 0) return "Select targets";
     if (selectedTargets.length === allCount) return "All Targets Selected";
     
     const parts = [];
@@ -238,7 +289,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
   };
 
   const getDayLabel = () => {
-    if (selectedDays.length === 0) return "Select Day(s)";
+    if (selectedDays.length === 0) return "Select days";
     if (selectedDays.length === DAYS.length) return "All 7 Days";
     return selectedDays.map(d => d.substring(0, 3)).join(", ");
   };
@@ -253,20 +304,25 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
         <div className="relative" ref={targetRef}>
           <button
             type="button"
-            onClick={() => setIsTargetOpen(!isTargetOpen)}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const spaceBelow = window.innerHeight - rect.bottom;
+              setOpenUpward(spaceBelow < 280);
+              setIsTargetOpen(!isTargetOpen);
+            }}
             className="w-full flex items-center justify-between pl-10 pr-4 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl transition-all shadow-sm group min-h-[46px]"
           >
             <div className="flex items-center gap-3">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                 {selectedTargets.includes("venue") ? <Building className="h-4.5 w-4.5" /> : <User className="h-4.5 w-4.5" />}
               </div>
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{getTargetLabel()}</span>
+              <span className={`text-xs font-bold ${selectedTargets.length === 0 ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-100"}`}>{getTargetLabel()}</span>
             </div>
             <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isTargetOpen ? "rotate-180 text-indigo-500" : ""}`} />
           </button>
 
           {isTargetOpen && (
-            <div className="absolute left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 max-h-64 overflow-y-auto custom-scrollbar">
+            <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 max-h-64 overflow-y-auto custom-scrollbar ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
               {/* Select All Targets */}
               <button
                 type="button"
@@ -344,14 +400,19 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
         <div className="relative" ref={dayRef}>
           <button
             type="button"
-            onClick={() => setIsDayOpen(!isDayOpen)}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const spaceBelow = window.innerHeight - rect.bottom;
+              setOpenUpward(spaceBelow < 280);
+              setIsDayOpen(!isDayOpen);
+            }}
             className="w-full flex items-center justify-between pl-10 pr-4 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl transition-all shadow-sm group min-h-[46px]"
           >
             <div className="flex items-center gap-3">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                 <Calendar className="h-4.5 w-4.5" />
               </div>
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 capitalize">
+              <span className={`text-xs font-bold capitalize ${selectedDays.length === 0 ? "text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-slate-100"}`}>
                 {getDayLabel()}
               </span>
             </div>
@@ -359,7 +420,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
           </button>
 
           {isDayOpen && (
-            <div className="absolute left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 max-h-64 overflow-y-auto custom-scrollbar">
+            <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 max-h-64 overflow-y-auto custom-scrollbar ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
               {/* Select All Days */}
               <button
                 type="button"
@@ -422,24 +483,94 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
           {tempRanges.length > 0 ? (
             tempRanges.map((shift, index) => (
               <div key={index} className="flex items-center gap-3 animate-in slide-in-from-left-2 duration-200">
-                <div className="flex-1 relative group">
-                  <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors pointer-events-none" />
-                  <input
-                    type="time"
-                    value={shift.start}
-                    onChange={(e) => handleTimeChange(index, "start", e.target.value)}
-                    className="w-full pl-10 pr-3 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white transition-all shadow-sm min-h-[46px]"
-                  />
+                {/* Start Time Dropdown */}
+                <div className="flex-1 min-w-0 relative group time-dropdown-wrapper">
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const spaceBelow = window.innerHeight - rect.bottom;
+                      setOpenUpward(spaceBelow < 250);
+                      setOpenDropdown(prev => prev?.index === index && prev?.field === "start" ? null : { index, field: "start" });
+                    }}
+                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white transition-all shadow-sm min-h-[46px] text-left relative"
+                  >
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <span className="truncate w-full pr-2">
+                      {startTimes.find(t => t.value === shift.start)?.label || shift.start}
+                    </span>
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openDropdown?.index === index && openDropdown?.field === "start" ? "rotate-180 text-indigo-500" : ""}`} />
+                    </div>
+                  </button>
+
+                  {openDropdown?.index === index && openDropdown?.field === "start" && (
+                    <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
+                      <div className="max-h-60 overflow-y-auto pr-1">
+                        {startTimes.map((t) => (
+                          <button
+                            key={t.value}
+                            type="button"
+                            onClick={() => {
+                              handleTimeChange(index, "start", t.value);
+                              setOpenDropdown(null);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${shift.start === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
                 <span className="text-slate-400 dark:text-slate-600 font-bold text-xs uppercase shrink-0">to</span>
-                <div className="flex-1 relative group">
-                  <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors pointer-events-none" />
-                  <input
-                    type="time"
-                    value={shift.end}
-                    onChange={(e) => handleTimeChange(index, "end", e.target.value)}
-                    className="w-full pl-10 pr-3 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white transition-all shadow-sm min-h-[46px]"
-                  />
+
+                {/* End Time Dropdown */}
+                <div className="flex-1 min-w-0 relative group time-dropdown-wrapper">
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const spaceBelow = window.innerHeight - rect.bottom;
+                      setOpenUpward(spaceBelow < 250);
+                      setOpenDropdown(prev => prev?.index === index && prev?.field === "end" ? null : { index, field: "end" });
+                    }}
+                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white transition-all shadow-sm min-h-[46px] text-left relative"
+                  >
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <span className="truncate w-full pr-2">
+                      {endTimes.find(t => t.value === (shift.end === "00:00" ? "24:00" : shift.end))?.label || shift.end}
+                    </span>
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openDropdown?.index === index && openDropdown?.field === "end" ? "rotate-180 text-indigo-500" : ""}`} />
+                    </div>
+                  </button>
+
+                  {openDropdown?.index === index && openDropdown?.field === "end" && (
+                    <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
+                      <div className="max-h-60 overflow-y-auto pr-1">
+                        {endTimes.map((t) => (
+                          <button
+                            key={t.value}
+                            type="button"
+                            onClick={() => {
+                              handleTimeChange(index, "end", t.value);
+                              setOpenDropdown(null);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${(shift.end === "00:00" ? "24:00" : shift.end) === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -473,32 +604,58 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
       {/* Confirmation Dialog Pop-up */}
       {showConfirm && (
         <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md" onClick={() => setShowConfirm(false)} />
-          <div className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-2xl p-8 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-start gap-4">
-              <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center text-amber-500 shrink-0">
-                <AlertTriangle className="h-5 w-5" />
+          <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md" onClick={() => setShowConfirm(false)} />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+
+            {/* Top accent bar */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
+
+            <div className="p-8 space-y-6">
+              {/* Icon + Title */}
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="h-16 w-16 rounded-[1.25rem] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-100 dark:shadow-amber-950/30">
+                  <AlertTriangle className="h-8 w-8 text-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-xl font-black text-black dark:text-white tracking-tight">Confirm Overwrite</h4>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs">
+                    You&apos;re about to replace the existing recurring schedule for the selected targets.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h4 className="text-base font-bold text-black dark:text-white">Confirm Overwrite</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Applying this schedule will override the existing recurring schedule for all selected targets on all selected days. Do you want to proceed?
-                </p>
+
+              {/* What will happen */}
+              <div className="bg-amber-50 dark:bg-amber-950/20 rounded-2xl p-4 border border-amber-100 dark:border-amber-900/30 space-y-2.5">
+                <p className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">What will happen</p>
+                <ul className="space-y-2">
+                  {[
+                    "All selected days will be updated",
+                    "Existing shifts will be overwritten",
+                    "This cannot be undone automatically",
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2.5 text-xs font-medium text-slate-700 dark:text-slate-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all active:scale-95 shadow-md shadow-indigo-100 dark:shadow-none"
-              >
-                Okay
-              </button>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all active:scale-95 shadow-lg shadow-amber-100 dark:shadow-amber-950/30"
+                >
+                  Yes, Overwrite
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -60,13 +60,25 @@ export async function toggleSlotStatus({
     }
 
     if (type === 'block') {
+      const leave = await prisma.leaveRequest.findFirst({
+        where: {
+          staffId,
+          status: "APPROVED",
+          startTime: { lte: startUTC },
+          endTime: { gt: startUTC }
+        }
+      });
+      const blockReason = leave 
+        ? `Leave: ${leave.reason || (leave.type.charAt(0).toUpperCase() + leave.type.slice(1).toLowerCase())}` 
+        : (reason || "Scheduled Off");
+
       await prisma.blockedSlot.create({
         data: {
           tenantId: tenantId || "",
           staffId,
           startTime: startUTC,
           endTime: endUTC,
-          reason: reason || "Scheduled Off"
+          reason: blockReason
         }
       });
     } else if (type === 'override') {
@@ -80,13 +92,44 @@ export async function toggleSlotStatus({
         }
       });
     } else if (type === 'remove-block') {
-      await prisma.blockedSlot.deleteMany({
+      const overlappingBlocks = await prisma.blockedSlot.findMany({
         where: {
           staffId,
-          startTime: { lte: startUTC },
+          startTime: { lt: endUTC },
           endTime: { gt: startUTC }
         }
       });
+
+      for (const block of overlappingBlocks) {
+        if (block.startTime >= startUTC && block.endTime <= endUTC) {
+          await prisma.blockedSlot.delete({ where: { id: block.id } });
+        } else if (block.startTime < startUTC && block.endTime > endUTC) {
+          const originalEndTime = block.endTime;
+          await prisma.blockedSlot.update({
+            where: { id: block.id },
+            data: { endTime: startUTC }
+          });
+          await prisma.blockedSlot.create({
+            data: {
+              tenantId: block.tenantId,
+              staffId: block.staffId,
+              reason: block.reason,
+              startTime: endUTC,
+              endTime: originalEndTime
+            }
+          });
+        } else if (block.startTime < startUTC && block.endTime > startUTC && block.endTime <= endUTC) {
+          await prisma.blockedSlot.update({
+            where: { id: block.id },
+            data: { endTime: startUTC }
+          });
+        } else if (block.startTime >= startUTC && block.startTime < endUTC && block.endTime > endUTC) {
+          await prisma.blockedSlot.update({
+            where: { id: block.id },
+            data: { startTime: endUTC }
+          });
+        }
+      }
     } else if (type === 'remove-override') {
       await prisma.availabilityOverride.deleteMany({
         where: {
@@ -98,8 +141,11 @@ export async function toggleSlotStatus({
     }
 
     revalidatePath("/schedule");
+    revalidatePath("/my-schedule");
     revalidatePath("/appointments");
-    revalidatePath("/(public)/b/[slug]", "layout");
+    revalidatePath("/bookings");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     
     return { success: true };
   } catch (error) {
@@ -142,5 +188,21 @@ export async function getScheduleData(staffId: string, date: Date) {
   } catch (error) {
     console.error("Get schedule data error:", error);
     return null;
+  }
+}
+
+export async function saveLastSelectedStaff(staffId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { lastSelectedStaffId: staffId }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Save last selected staff error:", error);
+    return { error: "Failed to save selected practitioner" };
   }
 }

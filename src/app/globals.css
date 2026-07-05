@@ -186,3 +186,39 @@ body {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
+
+/* Premium Custom Scrollbar */
+.premium-scrollbar::-webkit-scrollbar {
+  height: 6px !important;
+  width: 6px !important;
+}
+
+.premium-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3) !important;
+  border-radius: 9999px !important;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6) !important;
+}
+
+.dark .premium-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.4) !important;
+}
+
+.dark .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.7) !important;
+}
+
+.premium-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent !important;
+}
+
+.dark .premium-scrollbar {
+  scrollbar-color: rgba(71, 85, 105, 0.4) transparent !important;
+}

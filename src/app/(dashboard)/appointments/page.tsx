@@ -65,6 +65,7 @@ export default async function AppointmentsPage() {
 
   const serializedBookings = bookings.map(b => ({
     ...b,
+    price: b.price ? b.price.toString() : null,
     service: b.service ? {
       ...b.service,
       price: b.service.price.toString()
