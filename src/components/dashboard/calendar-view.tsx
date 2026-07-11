@@ -86,7 +86,9 @@ export function CalendarView({
   onSlotDurationChange,
   staffFilter = "all",
   mode = "booking",
-  onScheduleToggle
+  onScheduleToggle,
+  scheduleViewStart,
+  scheduleViewEnd
 }: {
   initialEvents: Event[],
   userRole: string,
@@ -103,7 +105,9 @@ export function CalendarView({
   onSlotDurationChange?: (duration: 15 | 30 | 60) => void,
   staffFilter?: string | string[],
   mode?: "booking" | "schedule",
-  onScheduleToggle?: (date: Date, type: 'block' | 'override' | 'remove-block' | 'remove-override', staffId?: string) => void
+  onScheduleToggle?: (date: Date, type: 'block' | 'override' | 'remove-block' | 'remove-override', staffId?: string) => void,
+  scheduleViewStart?: string,
+  scheduleViewEnd?: string
 }) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
@@ -279,15 +283,23 @@ export function CalendarView({
     return !isAnyStaffAvailable;
   }, [businessHours, staffFilter, staffList, parseAvailability, events]);
 
-  // Calculate the display range based on business hours
+  // Calculate the display range based on business hours or scheduleView overrides
   const displayRange = useMemo(() => {
+    if (scheduleViewStart && scheduleViewEnd) {
+      return {
+        start: timeToMinutes(scheduleViewStart),
+        end: scheduleViewEnd === "24:00" ? 1440 : timeToMinutes(scheduleViewEnd)
+      };
+    }
+
     const bizHours = parseAvailability(businessHours);
     if (!bizHours) return { start: 0, end: 1440 };
 
     let minMinutes = 1440;
     let maxMinutes = 0;
 
-    Object.values(bizHours).forEach((val: any) => {
+    Object.entries(bizHours).forEach(([key, val]: [string, any]) => {
+      if (key === "scheduleView") return;
       if (!val) return;
       const shifts = Array.isArray(val) ? val : [val];
       shifts.forEach((shift: any) => {
@@ -301,14 +313,14 @@ export function CalendarView({
     });
 
     // Fallback if no hours are defined
-    if (maxMinutes <= minMinutes) return { start: 480, end: 1200 }; // 8 AM to 8 PM
+    if (maxMinutes <= minMinutes) return { start: 0, end: 1440 }; // 24 hours (12 AM to 12 AM)
 
     // EXACT HOURS - NO PADDING
     const finalStart = Math.max(0, minMinutes);
     const finalEnd = Math.min(1440, maxMinutes);
 
     return { start: finalStart, end: finalEnd };
-  }, [businessHours, parseAvailability]);
+  }, [businessHours, parseAvailability, scheduleViewStart, scheduleViewEnd]);
 
   const getVisibleSlots = useCallback((refDate: Date) => {
     const startMinutes = displayRange.start;
@@ -522,7 +534,7 @@ export function CalendarView({
                                  <div 
                                    key={subIdx}
                                    className={`flex-1 relative group transition-colors hover:z-40 ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5]' : ''}`}
-                                   style={{ backgroundPositionY: isClosed ? `-${(slot.minutes / 15 + subIdx) * (slotHeight / subSlotsCount)}px` : undefined }}
+                                   style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                    onDragOver={handleDragOver}
                                    onDrop={(e) => handleDrop(e, subSlotTime, singleStaffParam)}
                                    onClick={() => {
@@ -550,7 +562,7 @@ export function CalendarView({
                                                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full shadow-xl border ${willMakeAvailable ? 'bg-emerald-600 border-emerald-500' : 'bg-rose-600 border-rose-500'}`}>
                                                     {willMakeAvailable ? <Plus className="h-3.5 w-3.5 text-white" /> : <Minus className="h-3.5 w-3.5 text-white" />}
                                                     <span className="text-[10px] font-bold text-white uppercase tracking-tight">
-                                                      {willMakeAvailable ? "Make Available (+)" : "Make Unavailable (-)"}
+                                                      {willMakeAvailable ? "Make Available" : "Make Unavailable"}
                                                     </span>
                                                   </div>
                                                   {existing?.type === 'blocked' && (
@@ -811,7 +823,7 @@ export function CalendarView({
                                     <div 
                                       key={subIdx}
                                       className={`flex-1 relative group transition-colors hover:z-40 ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5]' : ''}`}
-                                      style={{ backgroundPositionY: isClosed ? `-${(slot.minutes / 15 + subIdx) * (slotHeight / subSlotsCount)}px` : undefined }}
+                                      style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                       onDragOver={handleDragOver}
                                       onDrop={(e) => handleDrop(e, subSlotTime, activeStaffParam)}
                                       onClick={() => {
@@ -839,7 +851,7 @@ export function CalendarView({
                                                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full shadow-xl border ${willMakeAvailable ? 'bg-emerald-600 border-emerald-500' : 'bg-rose-600 border-rose-500'}`}>
                                                     {willMakeAvailable ? <Plus className="h-3.5 w-3.5 text-white" /> : <Minus className="h-3.5 w-3.5 text-white" />}
                                                     <span className="text-[10px] font-bold text-white uppercase tracking-tight">
-                                                      {willMakeAvailable ? "Make Available (+)" : "Make Unavailable (-)"}
+                                                      {willMakeAvailable ? "Make Available" : "Make Unavailable"}
                                                     </span>
                                                   </div>
                                                   {existing?.type === 'blocked' && (
@@ -1052,7 +1064,7 @@ export function CalendarView({
                                     <div 
                                       key={subIdx}
                                        className={`flex-1 relative group transition-colors hover:z-40 ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5]' : ''}`}
-                                     style={{ backgroundPositionY: isClosed ? `-${(slot.minutes / 15 + subIdx) * (slotHeight / subSlotsCount)}px` : undefined }}
+                                     style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                      onDragOver={handleDragOver}
                                      onDrop={(e) => handleDrop(e, subSlotTime, staff.id)}
                                      onClick={() => {
@@ -1080,7 +1092,7 @@ export function CalendarView({
                                                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full shadow-xl border ${willMakeAvailable ? 'bg-emerald-600 border-emerald-500' : 'bg-rose-600 border-rose-500'}`}>
                                                     {willMakeAvailable ? <Plus className="h-3.5 w-3.5 text-white" /> : <Minus className="h-3.5 w-3.5 text-white" />}
                                                     <span className="text-[10px] font-bold text-white uppercase tracking-tight">
-                                                      {willMakeAvailable ? "Make Available (+)" : "Make Unavailable (-)"}
+                                                      {willMakeAvailable ? "Make Available" : "Make Unavailable"}
                                                     </span>
                                                   </div>
                                                   {existing?.type === 'blocked' && (

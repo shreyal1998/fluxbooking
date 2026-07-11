@@ -26,6 +26,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
+  const reason = searchParams.get("reason");
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -94,6 +95,13 @@ function LoginForm() {
             {registered === "password_reset_success" 
               ? "Password reset successful! Please log in with your new password."
               : "Registration successful! Please log in."}
+          </div>
+        )}
+
+        {reason === "inactive" && (
+          <div className="bg-amber-50 text-amber-700 p-4 rounded-2xl text-sm font-bold border border-amber-100 text-center animate-fade-in flex items-center justify-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+            <span>For your security, you have been logged out due to inactivity.</span>
           </div>
         )}
 

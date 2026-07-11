@@ -73,6 +73,7 @@ export async function registerBusiness(formData: FormData) {
           planInterval: selectedInterval,
           planStatus: "TRIALING",
           trialEndsAt: trialEndsAt,
+          businessHoursJson: {},
         },
       });
 
@@ -84,6 +85,16 @@ export async function registerBusiness(formData: FormData) {
           phone: fullPhone || null,
           role: UserRole.ADMIN,
           tenantId: tenant.id,
+        },
+      });
+
+      await tx.staff.create({
+        data: {
+          tenantId: tenant.id,
+          userId: user.id,
+          name: name,
+          color: "#6366f1",
+          availabilityJson: {},
         },
       });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Clock, Plus, Minus, Save, AlertTriangle, User, Building, Loader2, ChevronDown, Check, Calendar } from "lucide-react";
+import { Clock, Plus, Minus, Save, AlertTriangle, User, Building, Loader2, ChevronDown, Check, Calendar, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateBusinessHours, updateStaffAvailability } from "@/app/actions/dashboard";
@@ -61,6 +61,18 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
   
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const formatTimeStr = (timeVal: string) => {
+    if (!timeVal) return "";
+    const is12h = tenant?.timeFormat === "12h" || !tenant?.timeFormat;
+    if (!is12h) return timeVal;
+    const matched = startTimes.find(t => t.value === timeVal) || endTimes.find(t => t.value === timeVal);
+    if (matched) {
+      return matched.label.replace(/\s*\(.*?\)/g, "");
+    }
+    return timeVal;
+  };
   
   // Custom dropdown states
   const [isTargetOpen, setIsTargetOpen] = useState(false);
@@ -104,6 +116,10 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
     } catch (e) {}
     return [{ start: "09:00", end: "17:00" }];
   });
+
+  useEffect(() => {
+    setErrorMsg(null);
+  }, [selectedTargets, selectedDays, tempRanges]);
 
   // Load availability when selectedTarget/Day changes
   useEffect(() => {
@@ -206,11 +222,11 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
 
   const handleApplyClick = () => {
     if (selectedTargets.length === 0) {
-      toast.error("Please select at least one schedule target.");
+      setErrorMsg("Please select at least one schedule target.");
       return;
     }
     if (selectedDays.length === 0) {
-      toast.error("Please select at least one day of the week.");
+      setErrorMsg("Please select at least one day of the week.");
       return;
     }
 
@@ -220,23 +236,24 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
       for (let i = 0; i < sorted.length; i++) {
         const current = sorted[i];
         if (!current.start || !current.end) {
-          toast.error("All time ranges must have a start and end time.");
+          setErrorMsg("All time ranges must have a start and end time.");
           return;
         }
         if (current.end <= current.start) {
-          toast.error(`Invalid time range: End time (${current.end}) must be after start time (${current.start}).`);
+          setErrorMsg(`Invalid time range: End time (${formatTimeStr(current.end)}) must be after start time (${formatTimeStr(current.start)}).`);
           return;
         }
         if (i > 0) {
           const prev = sorted[i - 1];
           if (current.start < prev.end) {
-            toast.error(`Shifts cannot overlap (e.g., ${prev.start}-${prev.end} and ${current.start}-${current.end} overlap).`);
+            setErrorMsg(`Shifts cannot overlap (e.g., ${formatTimeStr(prev.start)}-${formatTimeStr(prev.end)} and ${formatTimeStr(current.start)}-${formatTimeStr(current.end)} overlap).`);
             return;
           }
         }
       }
     }
 
+    setErrorMsg(null);
     setShowConfirm(true);
   };
 
@@ -588,6 +605,13 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
           )}
         </div>
       </div>
+
+      {errorMsg && (
+        <div className="mb-4 p-4 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-2xl flex items-center gap-2 border border-rose-100 dark:border-rose-950/50 animate-fade-in">
+          <Info className="h-4 w-4 shrink-0 animate-pulse" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {/* Save Button triggers Confirmation */}
       <div className="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-slate-800">

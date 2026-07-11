@@ -59,13 +59,13 @@ body {
 
 /* High-Contrast Zebra Patterns */
 .bg-zebra {
-  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0L16 16M-8 8L8 24M8 -8L24 8' stroke='rgba(79,70,229,0.15)' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0L16 16M-8 8L8 24M8 -8L24 8' stroke='%234f46e5' stroke-opacity='0.15' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") !important;
   background-repeat: repeat !important;
   background-size: 16px 16px !important;
 }
 
 .dark .bg-zebra {
-  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0L16 16M-8 8L8 24M8 -8L24 8' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0L16 16M-8 8L8 24M8 -8L24 8' stroke='%23ffffff' stroke-opacity='0.3' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") !important;
   background-size: 16px 16px !important;
 }
 
@@ -221,4 +221,10 @@ body {
 
 .dark .premium-scrollbar {
   scrollbar-color: rgba(71, 85, 105, 0.4) transparent !important;
+}
+
+/* Hide dashboard background during security modal overlays */
+body.inactivity-active #dashboard-root,
+body.logout-confirm-active #dashboard-root {
+  display: none !important;
 }

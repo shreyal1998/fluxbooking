@@ -2,9 +2,59 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BookingForm } from "./booking-form";
-import { Calendar, ShieldCheck, Star } from "lucide-react";
+import { Calendar, ShieldCheck, Star, Clock } from "lucide-react";
 import { ThemeCleaner } from "@/components/providers/theme-cleaner";
 import { COUNTRIES } from "@/config/countries";
+
+function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
+  if (!hoursJson) return [];
+  let hours: any = hoursJson;
+  if (typeof hours === "string") {
+    try { hours = JSON.parse(hours); } catch { return []; }
+  }
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return [];
+
+  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return "";
+    const [hStr, mStr] = timeStr.split(":");
+    const h = parseInt(hStr, 10);
+    if (isNaN(h)) return timeStr;
+    if (timeFormat === "24h") return timeStr;
+    const period = h < 12 ? "AM" : "PM";
+    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${displayHour}:${mStr} ${period}`;
+  };
+
+  const dayLabels = {
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun"
+  };
+
+  const formattedDays: string[] = [];
+  
+  DAYS.forEach(day => {
+    const val = hours[day] || hours[day.charAt(0).toUpperCase() + day.slice(1)];
+    const shifts = Array.isArray(val) ? val : (val ? [val] : []);
+    if (shifts.length === 0) {
+      formattedDays.push(`${dayLabels[day as keyof typeof dayLabels]}: Closed`);
+    } else {
+      const shiftStrings = shifts.map((s: any) => {
+        if (!s.start || !s.end) return "Closed";
+        return `${formatTime(s.start)} - ${formatTime(s.end)}`;
+      });
+      formattedDays.push(`${dayLabels[day as keyof typeof dayLabels]}: ${shiftStrings.join(", ")}`);
+    }
+  });
+
+  return formattedDays;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -82,14 +132,43 @@ export default async function PublicBookingPage({
           </div>
           <div className="text-center space-y-2">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">{tenant.name}</h1>
-            <div className="flex items-center justify-center gap-4">
-               <div className="flex items-center gap-1 text-amber-500 font-bold text-sm bg-amber-50 px-2 py-0.5 rounded-full">
-                 <Star className="h-3.5 w-3.5 fill-current" /> 4.9
-               </div>
-               <div className="flex items-center gap-1 text-slate-400 font-semibold text-sm">
-                 <ShieldCheck className="h-4 w-4 text-emerald-500" /> Secure Booking
-               </div>
-            </div>
+            {(() => {
+              const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
+              return (
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-1 text-amber-500 font-bold text-sm bg-amber-50 px-2 py-0.5 rounded-full">
+                    <Star className="h-3.5 w-3.5 fill-current" /> 4.9
+                  </div>
+                  
+                  {formattedHours.length > 0 && (
+                    <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-bold text-xs bg-slate-100/80 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700 relative group cursor-pointer select-none">
+                      <Clock className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                      <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Venue Hours</span>
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full pb-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
+                          <div className="space-y-2">
+                            {formattedHours.map((fh, idx) => {
+                              const [day, hoursText] = fh.split(": ");
+                              return (
+                                <div key={idx} className="flex justify-between text-[11px] font-bold">
+                                  <span className="text-slate-400">{day}</span>
+                                  <span className="text-slate-700 dark:text-slate-200">{hoursText}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1 text-slate-400 font-semibold text-sm">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" /> Secure Booking
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

@@ -179,7 +179,9 @@ export async function getAvailableSlots(
       let isFullyCovered = true;
       for (let offset = 0; offset < duration; offset += 15) {
         const checkTime = addMinutes(currentSlot, offset);
-        const checkTimeEnd = addMinutes(checkTime, 15);
+        const checkTimeEnd = isBefore(addMinutes(checkTime, 15), slotEnd)
+          ? addMinutes(checkTime, 15)
+          : slotEnd;
 
         const isCoveredByShift = staffShifts.some(shift => {
           const sStart = parseInTimezone(dateStr, shift.start, businessTimezone);
@@ -201,17 +203,12 @@ export async function getAvailableSlots(
         }
       }
 
-      // Check if the entire slot is within business hours or overrides (timezone-safe)
+      // Check if the entire slot is within business hours (timezone-safe)
       const isWithinBusinessHours = bizShifts.length === 0 || bizShifts.some(shift => {
         const bStart = parseInTimezone(dateStr, shift.start, businessTimezone);
         const bEnd = parseInTimezone(dateStr, shift.end, businessTimezone);
         return (isBefore(bStart, currentSlot) || isEqual(bStart, currentSlot)) &&
                (isAfter(bEnd, slotEnd) || isEqual(bEnd, slotEnd));
-      }) || overrides.some(override => {
-        const oStart = new Date(override.startTime);
-        const oEnd = new Date(override.endTime);
-        return (isBefore(oStart, currentSlot) || isEqual(oStart, currentSlot)) &&
-               isAfter(oEnd, currentSlot);
       });
 
       const hasConflict = bookings.some(booking => {

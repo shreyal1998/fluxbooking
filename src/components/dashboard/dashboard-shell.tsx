@@ -71,6 +71,18 @@ export function DashboardShell({
     return () => document.body.classList.remove('in-dashboard');
   }, []);
 
+  // Manage body class for logout confirmation
+  useEffect(() => {
+    if (showLogoutConfirm) {
+      document.body.classList.add("logout-confirm-active");
+    } else {
+      document.body.classList.remove("logout-confirm-active");
+    }
+    return () => {
+      document.body.classList.remove("logout-confirm-active");
+    };
+  }, [showLogoutConfirm]);
+
   // Global Search Logic
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {

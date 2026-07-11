@@ -8,6 +8,7 @@ import { addMinutes, format } from "date-fns";
 import { 
   Clock, 
   Users, 
+  Building,
   Calendar as CalendarIcon,
   Plus,
   Minus,
@@ -23,6 +24,56 @@ import {
 } from "lucide-react";
 import { StructuredAvailabilityEditor } from "@/components/dashboard/structured-availability-editor";
 import { Portal } from "@/components/ui/portal";
+
+function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
+  if (!hoursJson) return [];
+  let hours: any = hoursJson;
+  if (typeof hours === "string") {
+    try { hours = JSON.parse(hours); } catch { return []; }
+  }
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return [];
+
+  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return "";
+    const [hStr, mStr] = timeStr.split(":");
+    const h = parseInt(hStr, 10);
+    if (isNaN(h)) return timeStr;
+    if (timeFormat === "24h") return timeStr;
+    const period = h < 12 ? "AM" : "PM";
+    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${displayHour}:${mStr} ${period}`;
+  };
+
+  const dayLabels = {
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun"
+  };
+
+  const formattedDays: string[] = [];
+  
+  DAYS.forEach(day => {
+    const val = hours[day] || hours[day.charAt(0).toUpperCase() + day.slice(1)];
+    const shifts = Array.isArray(val) ? val : (val ? [val] : []);
+    if (shifts.length === 0) {
+      formattedDays.push(`${dayLabels[day as keyof typeof dayLabels]}: Closed`);
+    } else {
+      const shiftStrings = shifts.map((s: any) => {
+        if (!s.start || !s.end) return "Closed";
+        return `${formatTime(s.start)} - ${formatTime(s.end)}`;
+      });
+      formattedDays.push(`${dayLabels[day as keyof typeof dayLabels]}: ${shiftStrings.join(", ")}`);
+    }
+  });
+
+  return formattedDays;
+}
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { getInTimezone } from "@/lib/timezone-utils";
 
@@ -77,7 +128,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
   const [viewStart, setViewStart] = useState(() => {
     try {
       const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
-      return parsed?.monday?.[0]?.start || "09:00";
+      return parsed?.scheduleView?.start || parsed?.monday?.[0]?.start || "09:00";
     } catch {
       return "09:00";
     }
@@ -85,7 +136,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
   const [viewEnd, setViewEnd] = useState(() => {
     try {
       const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
-      const val = parsed?.monday?.[0]?.end || "17:00";
+      const val = parsed?.scheduleView?.end || parsed?.monday?.[0]?.end || "17:00";
       return val === "00:00" ? "24:00" : val;
     } catch {
       return "17:00";
@@ -101,20 +152,17 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
   const endDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setErrorMsg(null);
-    if (showScheduleViewModal) {
-      try {
-        const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
-        const start = parsed?.monday?.[0]?.start || "09:00";
-        const endVal = parsed?.monday?.[0]?.end || "17:00";
-        setViewStart(start);
-        setViewEnd(endVal === "00:00" ? "24:00" : endVal);
-      } catch {
-        setViewStart("09:00");
-        setViewEnd("17:00");
-      }
+    try {
+      const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant.businessHoursJson;
+      const start = parsed?.scheduleView?.start || parsed?.monday?.[0]?.start || "09:00";
+      const endVal = parsed?.scheduleView?.end || parsed?.monday?.[0]?.end || "17:00";
+      setViewStart(start);
+      setViewEnd(endVal === "00:00" ? "24:00" : endVal);
+    } catch {
+      setViewStart("09:00");
+      setViewEnd("17:00");
     }
-  }, [showScheduleViewModal]);
+  }, [tenant.businessHoursJson]);
 
   const handleSaveScheduleView = async () => {
     const startMins = (() => {
@@ -135,13 +183,16 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
 
     setSaveViewLoading(true);
     try {
-      const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-      const endToSave = viewEnd === "24:00" ? "00:00" : viewEnd;
-      const cleaned = Object.fromEntries(
-        DAYS.map(day => [day, [{ start: viewStart, end: endToSave }]])
-      );
+      const parsed = typeof tenant.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : (tenant.businessHoursJson || {});
+      const updated = {
+        ...parsed,
+        scheduleView: {
+          start: viewStart,
+          end: viewEnd === "24:00" ? "00:00" : viewEnd
+        }
+      };
       const { updateBusinessHours } = await import("@/app/actions/dashboard");
-      const result = await updateBusinessHours(cleaned);
+      const result = await updateBusinessHours(updated);
       if (result.success) {
         toast.success("Schedule view updated successfully!");
         setShowScheduleViewModal(false);
@@ -301,7 +352,35 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
-          <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Schedule Calendar</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Schedule Calendar</h2>
+            {(() => {
+              const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
+              if (formattedHours.length === 0) return null;
+              return (
+                <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700">
+                  <Building className="h-3.5 w-3.5 text-indigo-500" />
+                  <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Venue Hours</span>
+                  <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
+                      <div className="space-y-2">
+                        {formattedHours.map((fh, idx) => {
+                          const [day, hoursText] = fh.split(": ");
+                          return (
+                            <div key={idx} className="flex justify-between text-[11px] font-bold">
+                              <span className="text-slate-400">{day}</span>
+                              <span className="text-slate-700 dark:text-slate-200">{hoursText}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
@@ -456,6 +535,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
           staffFilter={view === "team" ? "all" : staffFilter}
           mode="schedule"
           onScheduleToggle={handleScheduleToggle}
+          scheduleViewStart={viewStart}
+          scheduleViewEnd={viewEnd}
         />
       </div>
       </div>

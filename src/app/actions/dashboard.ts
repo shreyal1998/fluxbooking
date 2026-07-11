@@ -371,12 +371,17 @@ export async function updateStaffAvailability(staffId: string, availability: any
   if (!session) return { error: "Not authenticated" };
 
   try {
-    await prisma.staff.update({
-      where: { id: staffId },
-      data: {
-        availabilityJson: JSON.stringify(availability)
-      }
-    });
+    await prisma.$transaction([
+      prisma.availabilityOverride.deleteMany({
+        where: { staffId: staffId }
+      }),
+      prisma.staff.update({
+        where: { id: staffId },
+        data: {
+          availabilityJson: JSON.stringify(availability)
+        }
+      })
+    ]);
 
     revalidatePath("/staff");
     revalidatePath("/my-schedule");
@@ -386,7 +391,8 @@ export async function updateStaffAvailability(staffId: string, availability: any
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
-  } catch {
+  } catch (error) {
+    console.error("Failed to update availability:", error);
     return { error: "Failed to update availability" };
   }
 }

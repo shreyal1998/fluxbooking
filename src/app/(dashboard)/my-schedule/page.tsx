@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { AvailabilityEditor } from "@/components/dashboard/availability-editor";
 import { EditStaffForm } from "@/components/dashboard/edit-staff-form";
 import { LeaveRequestForm } from "@/components/dashboard/leave-request-form";
 import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
@@ -138,24 +137,7 @@ export default async function MySchedulePage() {
             </div>
           )}
 
-          {/* Availability Section */}
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-indigo-50/50 dark:bg-slate-900/50">
-              <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900 dark:text-white">Weekly Working Hours</h3>
-                <p className="text-xs text-slate-900 dark:text-white font-normal opacity-60">Standard weekly availability.</p>
-              </div>
-            </div>
-            <div className="p-8">
-              <AvailabilityEditor 
-                staffId={staffProfile.id} 
-                initialAvailability={staffProfile.availabilityJson} 
-              />
-            </div>
-          </div>
+
 
           {/* Quick Block Section */}
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">

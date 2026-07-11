@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { InactivityTimeout } from "@/components/providers/inactivity-provider";
 
 export default async function DashboardLayout({
   children,
@@ -23,8 +24,9 @@ export default async function DashboardLayout({
   if (!tenant) redirect("/login");
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div id="dashboard-root" className="min-h-screen flex flex-col">
       <DashboardShell session={session} tenant={tenant}>{children}</DashboardShell>
+      <InactivityTimeout />
     </div>
   );
 }
