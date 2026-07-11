@@ -40,6 +40,13 @@ const endTimes = (() => {
   return options;
 })();
 
+const timeToMinutes = (timeStr: string, isEnd = false) => {
+  if (!timeStr) return 0;
+  if (isEnd && (timeStr === "00:00" || timeStr === "24:00")) return 1440;
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
+};
+
 interface TimeRange {
   start: string;
   end: string;
@@ -239,13 +246,18 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
           setErrorMsg("All time ranges must have a start and end time.");
           return;
         }
-        if (current.end <= current.start) {
+        
+        const startMin = timeToMinutes(current.start, false);
+        const endMin = timeToMinutes(current.end, true);
+
+        if (endMin <= startMin) {
           setErrorMsg(`Invalid time range: End time (${formatTimeStr(current.end)}) must be after start time (${formatTimeStr(current.start)}).`);
           return;
         }
         if (i > 0) {
           const prev = sorted[i - 1];
-          if (current.start < prev.end) {
+          const prevEndMin = timeToMinutes(prev.end, true);
+          if (startMin < prevEndMin) {
             setErrorMsg(`Shifts cannot overlap (e.g., ${formatTimeStr(prev.start)}-${formatTimeStr(prev.end)} and ${formatTimeStr(current.start)}-${formatTimeStr(current.end)} overlap).`);
             return;
           }

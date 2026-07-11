@@ -140,28 +140,7 @@ export default async function PublicBookingPage({
                     <Star className="h-3.5 w-3.5 fill-current" /> 4.9
                   </div>
                   
-                  {formattedHours.length > 0 && (
-                    <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-bold text-xs bg-slate-100/80 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700 relative group cursor-pointer select-none">
-                      <Clock className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                      <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Venue Hours</span>
-                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full pb-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
-                          <div className="space-y-2">
-                            {formattedHours.map((fh, idx) => {
-                              const [day, hoursText] = fh.split(": ");
-                              return (
-                                <div key={idx} className="flex justify-between text-[11px] font-bold">
-                                  <span className="text-slate-400">{day}</span>
-                                  <span className="text-slate-700 dark:text-slate-200">{hoursText}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
 
                   <div className="flex items-center gap-1 text-slate-400 font-semibold text-sm">
                     <ShieldCheck className="h-4 w-4 text-emerald-500" /> Secure Booking

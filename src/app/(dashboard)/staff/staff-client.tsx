@@ -141,17 +141,15 @@ export function StaffClient({
                     className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
                   />
                 </div>
-                {userRole === "ADMIN" && (
-                  <Tooltip content={`Add New ${labels.staff}`} position="bottom">
-                    <button 
-                      onClick={() => setIsAddModalOpen(true)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add
-                    </button>
-                  </Tooltip>
-                )}
+            {userRole === "ADMIN" && (
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+              >
+                <Plus className="h-4 w-4" />
+                Add
+              </button>
+            )}
               </div>
             </div>
 
@@ -377,18 +375,31 @@ export function StaffClient({
       {/* Add Staff Modal */}
       {isAddModalOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
-               <div className="p-6 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-800 sticky top-0 z-10">
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">Add New {labels.staff}</h3>
-                  <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                    <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                  <div className="flex items-center gap-3">
+                     <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
+                        <labels.staffIcon className="h-5 w-5" />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                           Add {labels.staff}
+                        </h2>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">New Profile Registration</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => setIsAddModalOpen(false)} 
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                     <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                   </button>
                </div>
-               <div className="max-h-[80vh] overflow-y-auto">
+               <div className="flex-1 flex flex-col min-h-0">
                   <AddStaffForm 
                     users={initialUsers} 
                     services={initialServices} 

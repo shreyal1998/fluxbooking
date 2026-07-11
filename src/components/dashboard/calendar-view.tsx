@@ -375,6 +375,7 @@ export function CalendarView({
       event.start < other.end && event.end > other.start
     );
     const baseClass = hasConflict ? "conflict-pulse " : "";
+    const isPastEvent = isPast(event.end);
     
     if (event.type === "blocked") {
       return baseClass + "bg-zebra bg-slate-100 dark:bg-slate-900/50 text-transparent border-slate-300 dark:border-slate-600 shadow-none";
@@ -384,6 +385,13 @@ export function CalendarView({
       return {
         className: baseClass + "bg-white dark:bg-slate-900 text-transparent border-none shadow-none",
         style: {}
+      };
+    }
+
+    if (isPastEvent) {
+      return {
+        className: baseClass + "bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800 shadow-none border-l-4",
+        style: { borderLeftColor: event.color ? `${event.color}80` : "#6366f180" }
       };
     }
 
@@ -411,7 +419,7 @@ export function CalendarView({
         </div>
         <div className={`grid grid-cols-7 ${mode === 'booking' ? '' : 'flex-1 overflow-y-auto'} auto-rows-[120px] premium-scrollbar`}>
           {calendarDays.map((day, idx) => {
-            const dayEvents = events.filter(e => isSameDay(e.start, day));
+            const dayEvents = events.filter(e => isSameDay(e.start, day) && e.type === 'booking');
             return (
               <div
                 key={idx}
@@ -631,7 +639,7 @@ export function CalendarView({
                      onScheduleToggle?.(event.start, 'remove-block');
                    }
                  }}
-                 className={`absolute left-[80px] right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'opacity-60 grayscale-[0.4]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                 className={`absolute left-[80px] right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'grayscale-[0.2]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
                  style={{ top: `${top}px`, height: `${height}px`, minHeight: '30px', ...(typeof styleData === 'object' ? styleData.style : {}) }}
                >
                  {event.type !== 'blocked' && (
@@ -916,7 +924,7 @@ export function CalendarView({
                         const isPastEvent = isPast(event.end);
 
                         return (
-                          <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'opacity-60 grayscale-[0.4]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '25px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
+                          <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'grayscale-[0.2]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '25px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
                             {event.type !== 'blocked' && (
                               <p className="text-[9px] leading-tight font-medium truncate">{event.title}</p>
                             )}
@@ -1157,7 +1165,7 @@ export function CalendarView({
                        const isPastEvent = isPast(event.end);
 
                        return (
-                         <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'opacity-60 grayscale-[0.4]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
+                         <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'grayscale-[0.2]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
                            {event.type !== 'blocked' && (
                              <p className="text-[9px] leading-tight font-medium truncate">{event.title}</p>
                            )}

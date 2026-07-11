@@ -142,6 +142,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
       return "17:00";
     }
   });
+  const [tempViewStart, setTempViewStart] = useState(viewStart);
+  const [tempViewEnd, setTempViewEnd] = useState(viewEnd);
   const [saveViewLoading, setSaveViewLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -158,25 +160,37 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
       const endVal = parsed?.scheduleView?.end || parsed?.monday?.[0]?.end || "17:00";
       setViewStart(start);
       setViewEnd(endVal === "00:00" ? "24:00" : endVal);
+      setTempViewStart(start);
+      setTempViewEnd(endVal === "00:00" ? "24:00" : endVal);
     } catch {
       setViewStart("09:00");
       setViewEnd("17:00");
+      setTempViewStart("09:00");
+      setTempViewEnd("17:00");
     }
   }, [tenant.businessHoursJson]);
 
+  useEffect(() => {
+    if (showScheduleViewModal) {
+      setTempViewStart(viewStart);
+      setTempViewEnd(viewEnd);
+      setErrorMsg(null);
+    }
+  }, [showScheduleViewModal, viewStart, viewEnd]);
+
   const handleSaveScheduleView = async () => {
     const startMins = (() => {
-      const [h, m] = viewStart.split(":").map(Number);
+      const [h, m] = tempViewStart.split(":").map(Number);
       return h * 60 + m;
     })();
     const endMins = (() => {
-      if (viewEnd === "24:00") return 1440;
-      const [h, m] = viewEnd.split(":").map(Number);
+      if (tempViewEnd === "24:00") return 1440;
+      const [h, m] = tempViewEnd.split(":").map(Number);
       return h * 60 + m;
     })();
 
-    if (endMins <= startMins) {
-      setErrorMsg("End time must be after the start time.");
+    if (endMins - startMins < 120) {
+      setErrorMsg("Invalid range: Visible schedule view must span at least 2 hours.");
       return;
     }
     setErrorMsg(null);
@@ -187,13 +201,15 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
       const updated = {
         ...parsed,
         scheduleView: {
-          start: viewStart,
-          end: viewEnd === "24:00" ? "00:00" : viewEnd
+          start: tempViewStart,
+          end: tempViewEnd === "24:00" ? "00:00" : tempViewEnd
         }
       };
       const { updateBusinessHours } = await import("@/app/actions/dashboard");
       const result = await updateBusinessHours(updated);
       if (result.success) {
+        setViewStart(tempViewStart);
+        setViewEnd(tempViewEnd);
         toast.success("Schedule view updated successfully!");
         setShowScheduleViewModal(false);
         router.refresh();
@@ -627,7 +643,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                           <Clock className="h-4 w-4" />
                         </div>
                         <span className="truncate w-full pr-2">
-                          {startTimes.find(t => t.value === viewStart)?.label || viewStart}
+                          {startTimes.find(t => t.value === tempViewStart)?.label || tempViewStart}
                         </span>
                         <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                           <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isStartOpen ? "rotate-180 text-indigo-500" : ""}`} />
@@ -642,10 +658,10 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                                 key={t.value}
                                 type="button"
                                 onClick={() => {
-                                  setViewStart(t.value);
+                                  setTempViewStart(t.value);
                                   setIsStartOpen(false);
                                 }}
-                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${viewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${tempViewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                               >
                                 {t.label}
                               </button>
@@ -672,7 +688,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                           <Clock className="h-4 w-4" />
                         </div>
                         <span className="truncate w-full pr-2">
-                          {endTimes.find(t => t.value === viewEnd)?.label || viewEnd}
+                          {endTimes.find(t => t.value === tempViewEnd)?.label || tempViewEnd}
                         </span>
                         <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                           <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isEndOpen ? "rotate-180 text-indigo-500" : ""}`} />
@@ -687,10 +703,10 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                                 key={t.value}
                                 type="button"
                                 onClick={() => {
-                                  setViewEnd(t.value);
+                                  setTempViewEnd(t.value);
                                   setIsEndOpen(false);
                                 }}
-                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${viewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${tempViewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                               >
                                 {t.label}
                               </button>

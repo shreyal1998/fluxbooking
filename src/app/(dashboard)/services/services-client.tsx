@@ -157,18 +157,16 @@ export function ServicesClient({
               />
             </div>
             {userRole === "ADMIN" && (
-              <Tooltip content={`Add New ${labels.service}`} position="bottom">
-                <button 
-                  onClick={() => {
-                    setFieldErrors({});
-                    setIsAddModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add
-                </button>
-              </Tooltip>
+              <button 
+                onClick={() => {
+                  setFieldErrors({});
+                  setIsAddModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+              >
+                <Plus className="h-4 w-4" />
+                Add
+              </button>
             )}
           </div>
         </div>
@@ -232,7 +230,7 @@ export function ServicesClient({
                          <td className="px-8 py-5 whitespace-nowrap text-right">
                             {userRole === "ADMIN" && (
                               <div className="flex items-center justify-end gap-2">
-                                <Tooltip content={`Delete ${labels.service}`} position="bottom">
+                                <Tooltip content="Delete" position="bottom">
                                   <button 
                                     onClick={() => setDeletingService(service)}
                                     className="p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100 rounded-xl"
@@ -241,7 +239,7 @@ export function ServicesClient({
                                   </button>
                                 </Tooltip>
 
-                                <Tooltip content={`Edit ${labels.service}`} position="bottom">
+                                <Tooltip content="Edit" position="bottom">
                                   <button 
                                     onClick={() => {
                                       setFieldErrors({});
@@ -304,20 +302,33 @@ export function ServicesClient({
       {/* Add Service Modal */}
       {isAddModalOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">Add New {labels.service}</h3>
-                <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                  <X className="h-4 w-4 text-slate-400" />
-                </button>
-              </div>
-              <div className="max-h-[80vh] overflow-y-auto">
-                <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} businessType={businessType} currency={currency} />
-              </div>
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                  <div className="flex items-center gap-3">
+                     <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
+                        <Palette className="h-5 w-5" />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                           Add {labels.service}
+                        </h2>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">New Service Profile</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => setIsAddModalOpen(false)} 
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                     <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </button>
+               </div>
+               <div className="flex-1 flex flex-col min-h-0">
+                  <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} businessType={businessType} currency={currency} />
+               </div>
             </div>
           </div>
         </Portal>

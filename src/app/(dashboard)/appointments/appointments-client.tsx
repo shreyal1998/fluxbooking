@@ -296,6 +296,23 @@ export function AppointmentsClient({
     ];
   }, [initialBookings, initialBlockedSlots, availabilityOverrides, currentStaffFilter, userRole, tenant?.timezone]);
 
+  const scheduleView = useMemo(() => {
+    try {
+      if (!tenant?.businessHoursJson) return null;
+      const parsed = typeof tenant.businessHoursJson === 'string' 
+        ? JSON.parse(tenant.businessHoursJson) 
+        : tenant.businessHoursJson as any;
+      const start = parsed?.scheduleView?.start || parsed?.monday?.[0]?.start || "09:00";
+      const endVal = parsed?.scheduleView?.end || parsed?.monday?.[0]?.end || "17:00";
+      return {
+        start,
+        end: endVal === "00:00" ? "24:00" : endVal
+      };
+    } catch {
+      return null;
+    }
+  }, [tenant?.businessHoursJson]);
+
   const getStatusStyle = (status: BookingStatus) => {
     switch (status) {
       case "PENDING": return "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900/50";
@@ -488,7 +505,6 @@ export function AppointmentsClient({
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                       <Tooltip content={`Schedule a new ${labels.appointment}`} position="top">
                          <button 
                           onClick={() => setActionType("book")}
                           className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
@@ -498,7 +514,6 @@ export function AppointmentsClient({
                             </div>
                             <span className="font-black text-black dark:text-white uppercase tracking-widest text-xs">Add</span>
                          </button>
-                       </Tooltip>
 
                        <Tooltip content="Block specific time on calendar" position="top">
                          <button 
@@ -569,30 +584,24 @@ export function AppointmentsClient({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 p-1.5 shadow-sm">
-              <Tooltip content="Previous Period" position="bottom">
-                <button 
-                  onClick={prevDate} 
-                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              </Tooltip>
-              <Tooltip content="Jump to Today" position="bottom">
-                <button 
-                  onClick={() => setCurrentDate(new Date())} 
-                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
-                >
-                  Today
-                </button>
-              </Tooltip>
-              <Tooltip content="Next Period" position="bottom">
-                <button 
-                  onClick={nextDate} 
-                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </Tooltip>
+              <button 
+                onClick={prevDate} 
+                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => setCurrentDate(new Date())} 
+                className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
+              >
+                Today
+              </button>
+              <button 
+                onClick={nextDate} 
+                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
             
             {viewMode !== "list" && (
@@ -717,7 +726,7 @@ export function AppointmentsClient({
                                         <CheckCircle2 className="h-4 w-4" />
                                       </button>
                                     </Tooltip>
-                                    <Tooltip content="Delete Booking" position="bottom">
+                                    <Tooltip content="Delete" position="bottom">
                                       <button 
                                         onClick={() => handleDelete(booking.id)}
                                         disabled={processingId === booking.id}
@@ -786,6 +795,8 @@ export function AppointmentsClient({
               onViewChange={setViewMode as any}
               onSlotDurationChange={setSlotDuration}
               staffFilter={currentStaffFilter}
+              scheduleViewStart={scheduleView?.start}
+              scheduleViewEnd={scheduleView?.end}
             />
           )}
         </div>

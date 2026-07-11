@@ -807,15 +807,13 @@ export function ManualBooking({
   return (
     <>
       {mode === "create" && (
-        <Tooltip content={`Add New ${labels.appointment}`} position="bottom">
-          <button 
-            onClick={() => setIsOpen(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10"
-          >
-            <Plus className="h-4 w-4" />
-            Add
-          </button>
-        </Tooltip>
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10"
+        >
+          <Plus className="h-4 w-4" />
+          Add
+        </button>
       )}
 
       {isOpen && (

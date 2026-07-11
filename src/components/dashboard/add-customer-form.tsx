@@ -67,84 +67,88 @@ export function AddCustomerForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-8 space-y-6" noValidate>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-            {labels.customer} Name <span className="text-rose-500">*</span>
-          </label>
-          <div className="relative">
-            <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              name="name"
-              type="text"
-              required
-              placeholder={labels.customerPlaceholder}
-              className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
-                fieldErrors.name 
-                  ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                  : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-              }`}
-            />
+    <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
+      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              {labels.customer} Name <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
+              <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                name="name"
+                type="text"
+                required
+                placeholder={labels.customerPlaceholder}
+                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                  fieldErrors.name 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                }`}
+              />
+            </div>
+            <InputError message={fieldErrors.name} />
           </div>
-          <InputError message={fieldErrors.name} />
-        </div>
 
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-            Email Address <span className="text-rose-500">*</span>
-          </label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="customer@example.com"
-              className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
-                fieldErrors.email 
-                  ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                  : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-              }`}
-            />
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              Email Address <span className="text-rose-500">*</span>
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="customer@example.com"
+                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                  fieldErrors.email 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                }`}
+              />
+            </div>
+            <InputError message={fieldErrors.email} />
           </div>
-          <InputError message={fieldErrors.email} />
-        </div>
 
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
-          <div className="relative">
-            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              name="phone"
-              type="tel"
-              placeholder="+1 234 567 890"
-              className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-            />
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                name="phone"
+                type="tel"
+                placeholder="+1 234 567 890"
+                className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
-          <div className="relative">
-            <FileText className="absolute left-4 top-4 h-4 w-4 text-slate-400" />
-            <textarea
-              name="notes"
-              rows={3}
-              placeholder="Any specific preferences or history..."
-              className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white resize-none shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-            />
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
+            <div className="relative">
+              <FileText className="absolute left-4 top-4 h-4 w-4 text-slate-400" />
+              <textarea
+                name="notes"
+                rows={3}
+                placeholder="Any specific preferences or history..."
+                className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white resize-none shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-      >
-        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Add {labels.customer}</>}
-      </button>
+      <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors">
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Add {labels.customer}</>}
+        </button>
+      </div>
     </form>
   );
 }

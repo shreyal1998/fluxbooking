@@ -340,11 +340,33 @@ export async function createBooking(formData: FormData) {
 
     if (isBlocked) return { error: "Staff member is unavailable during this time." };
 
+    // Find or create the Customer record
+    let customer = await prisma.customer.findUnique({
+      where: {
+        tenantId_email: {
+          tenantId,
+          email: customerEmail,
+        }
+      }
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          tenantId,
+          name: customerName,
+          email: customerEmail,
+          status: "ACTIVE"
+        }
+      });
+    }
+
     const booking = await prisma.booking.create({
       data: {
         tenantId,
         serviceId,
         staffId,
+        customerId: customer.id,
         customerName,
         customerEmail,
         startTime,
@@ -374,9 +396,12 @@ export async function createBooking(formData: FormData) {
     revalidatePath("/appointments");
     revalidatePath("/bookings");
     revalidatePath("/sessions");
+    revalidatePath("/customers");
+    revalidatePath("/patients");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
-  } catch {
+  } catch (e) {
+    console.error("Booking error:", e);
     return { error: "Failed to create booking" };
   }
 }
@@ -425,11 +450,33 @@ export async function updateBooking(bookingId: string, formData: FormData) {
       endTime = addMinutes(startTime, service.durationMinutes);
     }
 
+    // Find or create the Customer record
+    let customer = await prisma.customer.findUnique({
+      where: {
+        tenantId_email: {
+          tenantId: tenantId || "",
+          email: customerEmail,
+        }
+      }
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          tenantId: tenantId || "",
+          name: customerName,
+          email: customerEmail,
+          status: "ACTIVE"
+        }
+      });
+    }
+
     await prisma.booking.update({
       where: { id: bookingId },
       data: { 
         serviceId, 
         staffId, 
+        customerId: customer.id,
         customerName, 
         customerEmail, 
         startTime, 
@@ -441,6 +488,8 @@ export async function updateBooking(bookingId: string, formData: FormData) {
     revalidatePath("/appointments");
     revalidatePath("/bookings");
     revalidatePath("/sessions");
+    revalidatePath("/customers");
+    revalidatePath("/patients");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {

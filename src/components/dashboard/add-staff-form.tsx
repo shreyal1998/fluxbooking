@@ -176,8 +176,8 @@ export function AddStaffForm({
   };
 
   return (
-    <div className="px-8 py-6 transition-colors text-left bg-white dark:bg-slate-900">
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
+      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5 premium-scrollbar">
         <div>
           <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
             Full Name <span className="text-rose-500">*</span>
@@ -451,10 +451,13 @@ export function AddStaffForm({
           />
         </div>
 
+      </div>
+
+      <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 py-4 px-4 rounded-2xl text-sm font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-100 dark:disabled:border-slate-800 transition-all active:scale-[0.98]"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
@@ -467,12 +470,12 @@ export function AddStaffForm({
         {generalError && (
           <div 
             ref={errorRef}
-            className="mt-3 p-4 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-bold border border-rose-100 dark:border-rose-900/30 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold border border-rose-100 dark:border-rose-900/30 animate-in fade-in slide-in-from-top-2 duration-200"
           >
             {generalError}
           </div>
         )}
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

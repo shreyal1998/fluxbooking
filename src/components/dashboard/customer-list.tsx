@@ -10,7 +10,7 @@ import {
   Pencil, 
   X,
   FileText,
-  UserX,
+  UserMinus,
   UserCheck,
   RotateCcw,
   Archive,
@@ -141,7 +141,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
       const result = await toggleCustomerStatus(id, newStatus, reason);
       
       if (result.success) {
-          toast.success(newStatus === 'ACTIVE' ? `${labels.customer} restored successfully!` : `${labels.customer} archived successfully!`);
+          toast.success(newStatus === 'ACTIVE' ? `${labels.customer} restored successfully!` : `${labels.customer} inactivated successfully!`);
           router.refresh();
           setArchivingCustomer(null);
           setArchiveReason("");
@@ -254,19 +254,19 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       
                       {customer.status === 'ACTIVE' ? (
-                          <Tooltip content={`Archive ${labels.customer}`} position="bottom">
+                          <Tooltip content="Inactivate" position="bottom">
                             <button 
                               onClick={() => handleArchiveRequest(customer)}
                               disabled={processingId === customer.id}
                               className="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-100"
                               title=""
                             >
-                              <Archive className="h-4 w-4" />
+                              <UserMinus className="h-4 w-4" />
                             </button>
                           </Tooltip>
                       ) : (
                         userRole === "ADMIN" && (
-                          <Tooltip content={`Restore ${labels.customer}`} position="bottom">
+                          <Tooltip content="Activate" position="bottom">
                             <button 
                               onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
                               disabled={processingId === customer.id}
@@ -279,7 +279,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                         )
                       )}
 
-                      <Tooltip content={`Edit ${labels.customer} Profile`} position="bottom">
+                      <Tooltip content="Edit" position="bottom">
                         <button 
                           onClick={() => setEditingCustomer(customer)}
                           className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
@@ -427,14 +427,14 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Archive {labels.customer}?</h3>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Inactivate {labels.customer}?</h3>
                 <p className="text-sm text-slate-900 dark:text-white font-normal opacity-60 mb-8">
-                  Warning: You are moving <span className="font-semibold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive. 
-                  They will be hidden from your list. Only an Administrator can restore them.
+                  Warning: You are inactivating <span className="font-semibold text-slate-900 dark:text-white">{archivingCustomer.name}</span>. 
+                  They will be hidden from your active list. Only an Administrator can restore them.
                 </p>
 
                 <div className="space-y-4 text-left">
-                  <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 opacity-40">Reason for Archiving</label>
+                  <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 opacity-40">Reason for Inactivating</label>
                   <select 
                     value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}
@@ -470,7 +470,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                     disabled={!archiveReason || processingId === archivingCustomer.id}
                     className="bg-amber-600 text-white py-4 rounded-2xl font-black hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50"
                   >
-                    {processingId === archivingCustomer.id ? "Archiving..." : "Confirm Archive"}
+                    {processingId === archivingCustomer.id ? "Inactivating..." : "Inactivate"}
                   </button>
                 </div>
               </div>

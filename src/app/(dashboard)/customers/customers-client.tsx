@@ -13,6 +13,7 @@ import {
   Phone,
   Archive,
   UserCheck,
+  UserMinus,
   Pencil,
   FileText,
   AlertTriangle
@@ -108,7 +109,7 @@ export function CustomersClient({
       const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
       const result = await toggleCustomerStatus(id, newStatus, reason);
       if (result.success) {
-          toast.success(newStatus === 'ACTIVE' ? `${labels.customer} restored!` : `${labels.customer} archived!`);
+          toast.success(newStatus === 'ACTIVE' ? `${labels.customer} activated!` : `${labels.customer} inactivated!`);
           router.refresh();
           setArchivingCustomer(null);
       } else {
@@ -162,15 +163,13 @@ export function CustomersClient({
               </div>
             )}
 
-            <Tooltip content={`Add New ${labels.customer}`} position="bottom">
-              <button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
-              >
-                <Plus className="h-4 w-4" />
-                Add
-              </button>
-            </Tooltip>
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </button>
           </div>
         </div>
 
@@ -242,18 +241,18 @@ export function CustomersClient({
                         <td className="px-8 py-5 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2 transition-opacity">
                             {customer.status === 'ACTIVE' ? (
-                                <Tooltip content={`Archive ${labels.customer}`} position="bottom">
+                                <Tooltip content="Inactivate" position="bottom">
                                   <button 
                                     onClick={() => userRole === "ADMIN" ? handleToggleStatus(customer.id, 'ACTIVE') : setArchivingCustomer(customer)}
                                     disabled={processingId === customer.id}
                                     className="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-100 rounded-xl"
                                   >
-                                    <Archive className="h-4 w-4" />
+                                    <UserMinus className="h-4 w-4" />
                                   </button>
                                 </Tooltip>
                             ) : (
                               userRole === "ADMIN" && (
-                                <Tooltip content={`Restore ${labels.customer}`} position="bottom">
+                                <Tooltip content="Activate" position="bottom">
                                   <button 
                                     onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
                                     disabled={processingId === customer.id}
@@ -265,7 +264,7 @@ export function CustomersClient({
                               )
                             )}
 
-                            <Tooltip content={`Edit ${labels.customer}`} position="bottom">
+                            <Tooltip content="Edit" position="bottom">
                               <button 
                                 onClick={() => setEditingCustomer(customer)}
                                 className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-100 dark:border-slate-800 shadow-sm"
@@ -324,18 +323,31 @@ export function CustomersClient({
       {/* Add Customer Modal */}
       {isAddModalOpen && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
-               <div className="p-5 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">Add {labels.customer}</h3>
-                  <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                    <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                  <div className="flex items-center gap-3">
+                     <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
+                        <UserCircle className="h-5 w-5" />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                           Add {labels.customer}
+                        </h2>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">New Patient File</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => setIsAddModalOpen(false)} 
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                     <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                   </button>
                </div>
-               <div className="max-h-[80vh] overflow-y-auto">
+               <div className="flex-1 flex flex-col min-h-0">
                   <AddCustomerForm 
                     tenantId={tenantId} 
                     onSuccess={() => setIsAddModalOpen(false)} 
@@ -431,13 +443,13 @@ export function CustomersClient({
                 <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6 border border-amber-100">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Archive {labels.customer}?</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Inactivate {labels.customer}?</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-8">
-                  Moving <span className="font-bold text-slate-900 dark:text-white">{archivingCustomer.name}</span> to the Archive will hide them from your main list. Only an Administrator can restore them.
+                  Inactivating <span className="font-bold text-slate-900 dark:text-white">{archivingCustomer.name}</span> will hide them from your main list. Only an Administrator can restore them.
                 </p>
 
                 <div className="space-y-4 text-left">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Archiving</label>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Inactivating</label>
                   <select 
                     value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}
@@ -473,7 +485,7 @@ export function CustomersClient({
                     disabled={!archiveReason || processingId === archivingCustomer.id}
                     className="bg-amber-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50"
                   >
-                    {processingId === archivingCustomer.id ? "Archiving..." : "Confirm"}
+                    {processingId === archivingCustomer.id ? "Inactivating..." : "Inactivate"}
                   </button>
                 </div>
               </div>
