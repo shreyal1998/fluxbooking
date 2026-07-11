@@ -91,10 +91,10 @@ export function InactivityTimeout() {
           </div>
 
           <h3 className="text-center text-2xl font-black text-slate-900 dark:text-white mt-5 tracking-tight">
-            Session Expired
+            Logout
           </h3>
           <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 mt-3 px-2 leading-relaxed">
-            For your security, you have been automatically logged out due to 10 minutes of inactivity.
+            Your security is our priority. Your session has closed due to inactivity.
           </p>
           
           {/* Action */}
@@ -103,7 +103,7 @@ export function InactivityTimeout() {
               onClick={handleRedirectToLogin}
               className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black text-sm shadow-lg shadow-indigo-600/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center outline-none"
             >
-              <span>Log Back In</span>
+              <span>Login</span>
             </button>
           </div>
         </div>
