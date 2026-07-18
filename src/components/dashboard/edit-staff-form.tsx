@@ -146,19 +146,12 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
   };
 
   return (
-    <div className="space-y-6">
-      {generalError && (
-        <div className="p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 rounded-2xl flex items-start gap-3 text-rose-600 dark:text-rose-400">
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-          <p className="text-xs font-bold leading-relaxed">{generalError}</p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
+      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5 premium-scrollbar">
         {isAdmin && (
           <>
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
                 Full Name <span className="text-rose-500">*</span>
               </label>
               <input
@@ -178,7 +171,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
                 Email Address <span className="text-rose-500">*</span>
               </label>
               <input
@@ -260,7 +253,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         )}
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Bio / specialization</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Bio / specialization</label>
           <textarea
             name="bio"
             rows={3}
@@ -277,7 +270,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
           <input
             name="phone"
             type="tel"
@@ -294,7 +287,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 flex items-center gap-2">
             <Palette className="h-4 w-4 text-slate-400" />
             Calendar Color
           </label>
@@ -327,7 +320,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         {/* Service Selection */}
         {isAdmin && (
           <div className="pt-2">
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 flex items-center gap-2">
               <labels.serviceIcon className="h-4 w-4 text-slate-400" />
               Assigned {labels.service}s
             </label>
@@ -353,15 +346,25 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
             </div>
           </div>
         )}
+      </div>
 
+      <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
         <button
           type="submit"
           disabled={loading || deleteLoading}
-          className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 flex items-center justify-center gap-2 disabled:bg-slate-100 dark:disabled:bg-slate-950/40 disabled:text-slate-400 disabled:border-slate-100 dark:disabled:border-slate-800 active:scale-[0.98]"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Profile Changes"}
         </button>
-      </form>
-    </div>
+
+        {generalError && (
+          <div 
+            className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold border border-rose-100 dark:border-rose-900/30 animate-in fade-in slide-in-from-top-2 duration-200"
+          >
+            {generalError}
+          </div>
+        )}
+      </div>
+    </form>
   );
 }

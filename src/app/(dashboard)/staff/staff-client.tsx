@@ -419,34 +419,38 @@ export function StaffClient({
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
-            <div className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-                <div className="flex items-center gap-5">
-                  <div 
-                    className="h-14 w-14 rounded-2xl flex items-center justify-center border-2 shadow-sm"
-                    style={{ borderColor: editingStaff.color, backgroundColor: `${editingStaff.color}10` }}
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                  <div className="flex items-center gap-3">
+                     <div 
+                        className="h-10 w-10 rounded-2xl flex items-center justify-center border shadow-sm"
+                        style={{ borderColor: editingStaff.color, backgroundColor: `${editingStaff.color}10` }}
+                     >
+                        <labels.staffIcon className="h-5 w-5" style={{ color: editingStaff.color }} />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                           Edit {labels.staff}
+                        </h2>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Configuring {editingStaff.name}</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => setEditingStaff(null)} 
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                   >
-                    <labels.staffIcon className="h-7 w-7" style={{ color: editingStaff.color }} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Edit {labels.staff}</h3>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Configuring {editingStaff.name}</p>
-                  </div>
-                </div>
-                <button onClick={() => setEditingStaff(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                  <X className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                </button>
-              </div>
-
-              <div className="p-8 overflow-y-auto bg-white dark:bg-slate-800 flex-1 scrollbar-hide">
-                <EditStaffForm 
-                  staff={editingStaff} 
-                  isAdmin={userRole === "ADMIN"} 
-                  onSuccess={() => setEditingStaff(null)} 
-                  services={initialServices}
-                  businessType={businessType}
-                />
-              </div>
+                     <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </button>
+               </div>
+               <div className="flex-1 flex flex-col min-h-0">
+                  <EditStaffForm 
+                    staff={editingStaff} 
+                    isAdmin={userRole === "ADMIN"} 
+                    onSuccess={() => setEditingStaff(null)} 
+                    services={initialServices}
+                    businessType={businessType}
+                  />
+               </div>
             </div>
           </div>
         </Portal>

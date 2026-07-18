@@ -90,9 +90,9 @@ const labelsMap: Record<BusinessType, BusinessLabels> = {
     customerPlaceholder: "e.g., Robert Brown",
     customerIcon: UserCircle,
     customerSlug: "patients",
-    appointment: "Appointment",
-    appointmentLower: "appointment",
-    appointmentSlug: "appointments",
+    appointment: "Booking",
+    appointmentLower: "booking",
+    appointmentSlug: "bookings",
   },
 };
 

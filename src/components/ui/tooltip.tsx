@@ -31,7 +31,7 @@ export function Tooltip({
       let top = 0;
       let left = 0;
 
-      const offset = 8;
+      const offset = 4;
 
       switch (position) {
         case "top":
@@ -112,9 +112,9 @@ export function Tooltip({
               visibility: isPositioned ? 'visible' : 'hidden'
             }}
             className={`
-              pointer-events-none px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest
-              bg-slate-900/90 dark:bg-slate-800/95 backdrop-blur-md text-white
-              border border-white/10 shadow-2xl shadow-black/20
+              pointer-events-none px-3 py-1.5 rounded-xl text-[10px] font-medium tracking-wide
+              bg-indigo-600 dark:bg-indigo-600 text-white
+              border border-indigo-500/20 dark:border-indigo-400/20 shadow-2xl shadow-indigo-500/10
               transition-opacity duration-150
               animate-in fade-in zoom-in-95
             `}

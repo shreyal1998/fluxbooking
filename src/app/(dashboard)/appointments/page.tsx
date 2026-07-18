@@ -50,7 +50,10 @@ export default async function AppointmentsPage() {
       orderBy: { startTime: "desc" },
     }),
     prisma.service.findMany({ where: { tenantId } }),
-    prisma.staff.findMany({ where: { tenantId } }),
+    prisma.staff.findMany({ 
+      where: { tenantId },
+      include: { services: true }
+    }),
     prisma.tenant.findUnique({ 
       where: { id: tenantId }
     })
@@ -82,13 +85,21 @@ export default async function AppointmentsPage() {
 
   const updatedTenant = tenant ? { ...tenant, currency } : null;
 
+  const serializedStaff = staff.map(s => ({
+    ...s,
+    services: s.services?.map(srv => ({
+      ...srv,
+      price: srv.price.toString()
+    })) || []
+  }));
+
   return (
     <AppointmentsClient 
       bookings={serializedBookings as any}
       blockedSlots={blockedSlots}
       availabilityOverrides={availabilityOverrides}
       services={services.map(s => ({ ...s, price: s.price.toString() }))}
-      staff={staff}
+      staff={serializedStaff as any}
       tenantId={tenantId}
       userRole={userRole}
       tenant={updatedTenant}

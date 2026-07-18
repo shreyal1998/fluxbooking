@@ -16,7 +16,9 @@ import {
   UserMinus,
   Pencil,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  Check
 } from "lucide-react";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
@@ -360,74 +362,102 @@ export function CustomersClient({
       )}
 
       {/* Edit Modal */}
+      {/* Edit Modal */}
       {editingCustomer && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
-             <div 
-               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
-             />
-             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
-                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-900/50">
-                   <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{labels.customer} Profile</h3>
-                   <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                     <X className="h-5 w-5 text-slate-400" />
-                   </button>
-                </div>
-                <form onSubmit={handleUpdate} className="p-8 space-y-6" noValidate>
-                   <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Status</label>
-                              <select 
-                                  name="status" 
-                                  defaultValue={editingCustomer.status} 
-                                  disabled={userRole !== "ADMIN" && editingCustomer.status === "INACTIVE"}
-                                  className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none disabled:opacity-50"
-                              >
-                                  <option value="ACTIVE">ACTIVE</option>
-                                  <option value="INACTIVE">INACTIVE</option>
-                              </select>
-                          </div>
-                          <div>
-                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Full Name</label>
-                              <input 
-                                name="name" 
-                                defaultValue={editingCustomer.name} 
-                                required 
-                                placeholder={labels.customerPlaceholder}
-                                className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-900 dark:text-white px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
-                              />
-                          </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Email Address</label>
-                        <input 
-                          name="email" 
-                          type="email" 
-                          defaultValue={editingCustomer.email} 
-                          required 
-                          placeholder="customer@example.com"
-                          className="w-full rounded-2xl border-none bg-slate-50 dark:bg-slate-900 dark:text-white px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-600/20 outline-none transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
-                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-indigo-600/20 transition-all" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
-                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} placeholder="Any specific preferences or history..." className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none focus:ring-2 focus:ring-indigo-600/20 transition-all" />
-                      </div>
-                   </div>
-                   <button 
-                     type="submit" 
-                     disabled={loading}
-                     className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50 flex items-center justify-center gap-2"
-                   >
-                     {loading ? "Saving..." : "Save Changes"}
-                   </button>
-                </form>
-             </div>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+            />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                  <div className="flex items-center gap-3">
+                     <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
+                        <UserCircle className="h-5 w-5" />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                           Edit {labels.customer}
+                        </h2>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Configuring {editingCustomer.name}</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => setEditingCustomer(null)} 
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                     <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </button>
+               </div>
+               
+               <form onSubmit={handleUpdate} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate={false}>
+                 <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                        Full Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        name="name" 
+                        defaultValue={editingCustomer.name} 
+                        required 
+                        placeholder={labels.customerPlaceholder}
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <input 
+                        name="email" 
+                        type="email" 
+                        defaultValue={editingCustomer.email} 
+                        required 
+                        placeholder="customer@example.com"
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
+                      <input 
+                        name="phone" 
+                        type="tel"
+                        defaultValue={editingCustomer.phone || ""} 
+                        placeholder="+1 234 567 890" 
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
+                      <textarea 
+                        name="notes" 
+                        rows={3} 
+                        defaultValue={editingCustomer.notes || ""} 
+                        placeholder="Any specific preferences or history..." 
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm resize-none"
+                      />
+                    </div>
+                 </div>
+
+                 <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                        <>
+                          <Check className="h-5 w-5" />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                 </div>
+               </form>
+            </div>
           </div>
         </Portal>
       )}

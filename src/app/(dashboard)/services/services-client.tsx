@@ -386,20 +386,36 @@ export function ServicesClient({
       {/* Edit Service Modal */}
       {editingService && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
-             <div 
-               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
-             />
-             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
-                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                   <h3 className="text-xl font-black text-slate-900 dark:text-white">Edit {labels.service}</h3>
-                   <button onClick={closeEditModal} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                     <X className="h-5 w-5 text-slate-400" />
-                   </button>
-                </div>
-                
-                <div className="p-8 overflow-y-auto max-h-[70vh]">
-                  <form onSubmit={handleUpdate} className="space-y-6" noValidate>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+            />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                  <div className="flex items-center gap-3">
+                     <div 
+                        className="h-10 w-10 rounded-2xl flex items-center justify-center border shadow-md"
+                        style={{ borderColor: editingService.color, backgroundColor: `${editingService.color}10` }}
+                     >
+                        <Palette className="h-5 w-5" style={{ color: editingService.color }} />
+                     </div>
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                           Edit {labels.service}
+                        </h2>
+                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Configuring {editingService.name}</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={closeEditModal} 
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  >
+                     <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </button>
+               </div>
+               
+               <form onSubmit={handleUpdate} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
+                 <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
                     <div>
                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
                         {labels.service} Name <span className="text-rose-500">*</span>
@@ -411,14 +427,16 @@ export function ServicesClient({
                         defaultValue={editingService.name}
                         onChange={() => clearFieldError("name")}
                         placeholder={labels.servicePlaceholder}
-                        className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                          fieldErrors.name ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
+                        className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                          fieldErrors.name 
+                            ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                            : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                         }`}
                       />
                       <InputError message={fieldErrors.name} />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div>
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
                           Duration (min) <span className="text-rose-500">*</span>
@@ -432,23 +450,26 @@ export function ServicesClient({
                             defaultValue={editingService.durationMinutes}
                             onChange={() => clearFieldError("duration")}
                             placeholder="30"
-                            className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                              fieldErrors.duration ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
+                            className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                              fieldErrors.duration 
+                                ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                                : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                             }`}
                           />
                         </div>
                         <InputError message={fieldErrors.duration} />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer (min)</label>
+                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer Time (min)</label>
                         <div className="relative">
                           <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                           <input
                             name="bufferTime"
                             type="number"
-                            defaultValue={editingService.bufferTime}
+                            min="0"
+                            defaultValue={editingService.bufferTime || 0}
                             placeholder="10"
-                            className="w-full pl-11 rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent"
+                            className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                           />
                         </div>
                       </div>
@@ -468,8 +489,10 @@ export function ServicesClient({
                           defaultValue={editingService.price.toString()}
                           onChange={() => clearFieldError("price")}
                           placeholder="50.00"
-                          className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white bg-transparent ${
-                            fieldErrors.price ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" : "border-slate-100 dark:border-slate-800 focus:border-indigo-600"
+                          className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                            fieldErrors.price 
+                              ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                              : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                           }`}
                         />
                       </div>
@@ -477,7 +500,10 @@ export function ServicesClient({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3">Brand Color</label>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 flex items-center gap-2">
+                        <Palette className="h-4 w-4 text-slate-400" />
+                        Brand Color
+                      </label>
                       <div className="flex flex-wrap gap-3">
                         {[
                           { name: 'Indigo', value: '#6366f1' },
@@ -494,19 +520,19 @@ export function ServicesClient({
                         ))}
                       </div>
                     </div>
+                 </div>
 
-                    <div className="pt-4">
-                      <button
-                        type="submit"
-                        disabled={loading || deleteLoading}
-                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                      >
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Save Changes</>}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-             </div>
+                 <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
+                    <button
+                      type="submit"
+                      disabled={loading || deleteLoading}
+                      className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Save Changes</>}
+                    </button>
+                 </div>
+               </form>
+            </div>
           </div>
         </Portal>
       )}

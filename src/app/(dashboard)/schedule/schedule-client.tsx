@@ -4,7 +4,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { toggleSlotStatus, saveLastSelectedStaff } from "@/app/actions/schedule";
 import { toast } from "sonner";
-import { addMinutes, format } from "date-fns";
+import { 
+  addMinutes, 
+  format,
+  startOfWeek,
+  endOfWeek,
+  isSameMonth
+} from "date-fns";
 import { 
   Clock, 
   Users, 
@@ -114,6 +120,19 @@ let lastSelectedStaffFilter = "";
 export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<any>("week");
+
+  const getHeaderText = () => {
+    if (view === "month") return format(currentDate, "MMMM yyyy");
+    if (view === "day" || view === "team") return format(currentDate, "d MMMM yyyy");
+    
+    const start = startOfWeek(currentDate);
+    const end = endOfWeek(currentDate);
+    
+    if (isSameMonth(start, end)) {
+      return `${format(start, "d")} - ${format(end, "d MMMM yyyy")}`;
+    }
+    return `${format(start, "d MMM")} - ${format(end, "d MMM yyyy")}`;
+  };
   const [slotDuration, setSlotDuration] = useState<any>(60);
   const [staffFilter, setStaffFilter] = useState(defaultStaffId || lastSelectedStaffFilter);
   const [showHoursModal, setShowHoursModal] = useState(false);
@@ -505,8 +524,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <span className="text-base font-normal text-black dark:text-white whitespace-nowrap px-2 tracking-tight hidden sm:inline-block">
-                {format(currentDate, "MMMM yyyy")}
+              <span className="text-base font-normal text-black dark:text-white whitespace-nowrap px-2 tracking-tight">
+                {getHeaderText()}
               </span>
            </div>
 

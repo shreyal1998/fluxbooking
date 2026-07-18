@@ -24,6 +24,14 @@ import {
 } from "@/lib/mail";
 import { getInTimezone, parseInTimezone, formatInTimezone } from "@/lib/timezone-utils";
 
+function parseShiftEnd(dateStr: string, timeStr: string, timezone: string): Date {
+  if (timeStr === "00:00" || timeStr === "24:00") {
+    const base = parseInTimezone(dateStr, "00:00", timezone);
+    return new Date(base.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return parseInTimezone(dateStr, timeStr, timezone);
+}
+
 export async function getAvailableSlots(
   tenantId: string, 
   serviceId: string, 
@@ -112,11 +120,9 @@ export async function getAvailableSlots(
     const bookings = await prisma.booking.findMany({
       where: {
         staffId: staff.id,
-        startTime: {
-          gte: dayStart,
-          lte: dayEnd,
-        },
-        status: { in: ["PENDING", "CONFIRMED"] },
+        startTime: { lt: dayEnd },
+        endTime: { gt: dayStart },
+        status: { in: ["PENDING", "CONFIRMED", "COMPLETED"] },
         NOT: excludeBookingId ? { id: excludeBookingId } : undefined
       },
       include: { service: true }
@@ -127,6 +133,15 @@ export async function getAvailableSlots(
         staffId: staff.id,
         startTime: { lte: dayEnd },
         endTime: { gte: dayStart }
+      }
+    });
+
+    const leaves = await prisma.leaveRequest.findMany({
+      where: {
+        staffId: staff.id,
+        status: "APPROVED",
+        startTime: { lt: dayEnd },
+        endTime: { gt: dayStart }
       }
     });
 
@@ -143,7 +158,7 @@ export async function getAvailableSlots(
     for (const shift of staffShifts) {
       if (!shift.start || !shift.end) continue;
       let tempSlot = parseInTimezone(dateStr, shift.start, businessTimezone);
-      const shiftEnd = parseInTimezone(dateStr, shift.end, businessTimezone);
+      const shiftEnd = parseShiftEnd(dateStr, shift.end, businessTimezone);
 
       while (isBefore(addMinutes(tempSlot, duration), shiftEnd) || isEqual(addMinutes(tempSlot, duration), shiftEnd)) {
         potentialStartTimes.add(tempSlot.getTime());
@@ -185,7 +200,7 @@ export async function getAvailableSlots(
 
         const isCoveredByShift = staffShifts.some(shift => {
           const sStart = parseInTimezone(dateStr, shift.start, businessTimezone);
-          const sEnd = parseInTimezone(dateStr, shift.end, businessTimezone);
+          const sEnd = parseShiftEnd(dateStr, shift.end, businessTimezone);
           return (isBefore(sStart, checkTime) || isEqual(sStart, checkTime)) &&
                  (isAfter(sEnd, checkTimeEnd) || isEqual(sEnd, checkTimeEnd));
         });
@@ -206,7 +221,7 @@ export async function getAvailableSlots(
       // Check if the entire slot is within business hours (timezone-safe)
       const isWithinBusinessHours = bizShifts.length === 0 || bizShifts.some(shift => {
         const bStart = parseInTimezone(dateStr, shift.start, businessTimezone);
-        const bEnd = parseInTimezone(dateStr, shift.end, businessTimezone);
+        const bEnd = parseShiftEnd(dateStr, shift.end, businessTimezone);
         return (isBefore(bStart, currentSlot) || isEqual(bStart, currentSlot)) &&
                (isAfter(bEnd, slotEnd) || isEqual(bEnd, slotEnd));
       });
@@ -218,7 +233,13 @@ export async function getAvailableSlots(
         return isBefore(currentSlot, bEndWithBuffer) && isAfter(slotEndWithBuffer, bStart);
       });
 
-      if (!hasConflict && !isBlocked && isWithinBusinessHours && isFullyCovered) {
+      const isOnLeave = leaves.some(leave => {
+        const lStart = new Date(leave.startTime);
+        const lEnd = new Date(leave.endTime);
+        return isBefore(currentSlot, lEnd) && isAfter(slotEnd, lStart);
+      });
+
+      if (!hasConflict && !isBlocked && !isOnLeave && isWithinBusinessHours && isFullyCovered) {
         // Only show slots that are in the future
         if (allowPast || currentSlot > new Date()) {
           allAvailableSlots.push({
@@ -312,33 +333,37 @@ export async function createBooking(formData: FormData) {
     }
   }
 
+  const isPractitioner = !!session && (session.user.role === "ADMIN" || session.user.role === "STAFF");
+
   try {
-    const conflict = await prisma.booking.findFirst({
-      where: {
-        staffId,
-        status: { in: ["PENDING", "CONFIRMED"] },
-        OR: [
-          { startTime: { lt: endTimeWithBuffer, gte: startTime } },
-          { endTime: { gt: startTime, lte: endTimeWithBuffer } },
-          { startTime: { lte: startTime }, endTime: { gte: endTimeWithBuffer } }
-        ]
-      },
-      include: { service: true }
-    });
+    if (!isPractitioner) {
+      const conflict = await prisma.booking.findFirst({
+        where: {
+          staffId,
+          status: { in: ["PENDING", "CONFIRMED"] },
+          OR: [
+            { startTime: { lt: endTimeWithBuffer, gte: startTime } },
+            { endTime: { gt: startTime, lte: endTimeWithBuffer } },
+            { startTime: { lte: startTime }, endTime: { gte: endTimeWithBuffer } }
+          ]
+        },
+        include: { service: true }
+      });
 
-    if (conflict) {
-      const conflictBuffer = conflict.service.bufferTime || 0;
-      const conflictEndWithBuffer = addMinutes(new Date(conflict.endTime), conflictBuffer);
-      if (isBefore(startTime, conflictEndWithBuffer) && isAfter(endTimeWithBuffer, conflict.startTime)) {
-        return { error: "This slot was just taken. Please pick another time." };
+      if (conflict) {
+        const conflictBuffer = conflict.service.bufferTime || 0;
+        const conflictEndWithBuffer = addMinutes(new Date(conflict.endTime), conflictBuffer);
+        if (isBefore(startTime, conflictEndWithBuffer) && isAfter(endTimeWithBuffer, conflict.startTime)) {
+          return { error: "This slot was just taken. Please pick another time." };
+        }
       }
+
+      const isBlocked = await prisma.blockedSlot.findFirst({
+        where: { staffId, startTime: { lt: endTime }, endTime: { gt: startTime } }
+      });
+
+      if (isBlocked) return { error: "Staff member is unavailable during this time." };
     }
-
-    const isBlocked = await prisma.blockedSlot.findFirst({
-      where: { staffId, startTime: { lt: endTime }, endTime: { gt: startTime } }
-    });
-
-    if (isBlocked) return { error: "Staff member is unavailable during this time." };
 
     // Find or create the Customer record
     let customer = await prisma.customer.findUnique({

@@ -87,6 +87,7 @@ export function AppointmentsClient({
   const [isFilterLoaded, setIsFilterLoaded] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Pagination State for List View
   const [currentPage, setCurrentPage] = useState(1);
@@ -169,7 +170,7 @@ export function AppointmentsClient({
 
   const handleSlotClick = (date: Date, staffId?: string) => {
     setSelectedSlotInfo({ date, staffId });
-    setActionType(null); // Show selection first
+    setActionType("book"); // Open manual booking directly
   };
 
   const nextDate = () => {
@@ -215,8 +216,6 @@ export function AppointmentsClient({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to permanently delete this booking?")) return;
-    
     setProcessingId(id);
     const result = await deleteBooking(id);
     if (result.success) {
@@ -247,6 +246,43 @@ export function AppointmentsClient({
       tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  const pageNumbersRange = useMemo(() => {
+    const pageNumbers: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+
+      if (currentPage > 3) {
+        pageNumbers.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      let adjustedStart = start;
+      let adjustedEnd = end;
+      if (currentPage <= 3) {
+        adjustedEnd = 4;
+      } else if (currentPage >= totalPages - 2) {
+        adjustedStart = totalPages - 3;
+      }
+
+      for (let i = adjustedStart; i <= adjustedEnd; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+    return pageNumbers;
+  }, [totalPages, currentPage]);
 
   // Filter events based on selected staff
   const filteredEvents = useMemo(() => {
@@ -578,6 +614,51 @@ export function AppointmentsClient({
         </Portal>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              onClick={() => setDeleteConfirmId(null)}
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 space-y-6 text-center">
+                <div className="mx-auto h-16 w-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-600 dark:text-rose-450 animate-bounce">
+                  <Trash2 className="h-8 w-8" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Delete Appointment?</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-450">
+                    Are you sure you want to permanently delete this appointment? This action cannot be undone.
+                  </p>
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <button 
+                    onClick={() => setDeleteConfirmId(null)}
+                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      const id = deleteConfirmId;
+                      setDeleteConfirmId(null);
+                      if (id) await handleDelete(id);
+                    }}
+                    className="flex-1 py-3 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 shadow-md active:scale-95 transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
       {/* Toolbar & Content Card */}
       <div className="w-full flex flex-col">
         {/* Navigation & View Control Toolbar */}
@@ -721,18 +802,18 @@ export function AppointmentsClient({
                                       <button 
                                         onClick={() => handleStatusUpdate(booking.id, "COMPLETED")}
                                         disabled={processingId === booking.id}
-                                        className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100"
+                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50"
                                       >
-                                        <CheckCircle2 className="h-4 w-4" />
+                                        <CheckCircle2 className="h-5 w-5" />
                                       </button>
                                     </Tooltip>
                                     <Tooltip content="Delete" position="bottom">
                                       <button 
-                                        onClick={() => handleDelete(booking.id)}
+                                        onClick={() => setDeleteConfirmId(booking.id)}
                                         disabled={processingId === booking.id}
-                                        className="p-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100"
+                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50"
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-5 w-5" />
                                       </button>
                                     </Tooltip>
                                   </>
@@ -747,7 +828,7 @@ export function AppointmentsClient({
 
                   {/* Integrated Pagination Footer */}
                   {listFilteredBookings.length > itemsPerPage && (
-                    <div className="px-10 py-8 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                       <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
                         Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="text-black dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
                       </p>
@@ -761,9 +842,34 @@ export function AppointmentsClient({
                           <ChevronLeft className="h-4 w-4" />
                         </button>
 
-                        <div className="flex items-center gap-2 px-4">
-                          <span className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tighter">PAGE {currentPage}</span>
-                          <span className="text-[10px] font-normal text-slate-400">/ {totalPages}</span>
+                        <div className="flex items-center gap-1.5 px-2">
+                          {pageNumbersRange.map((pageNum, idx) => {
+                            if (pageNum === "...") {
+                              return (
+                                <span 
+                                  key={`ellipsis-${idx}`} 
+                                  className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400 dark:text-slate-500 select-none"
+                                >
+                                  ...
+                                </span>
+                              );
+                            }
+                            
+                            const isActive = currentPage === pageNum;
+                            return (
+                              <button
+                                key={`page-${pageNum}`}
+                                onClick={() => paginate(pageNum as number)}
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 ${
+                                  isActive
+                                    ? "bg-indigo-600 text-white shadow-sm"
+                                    : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
                         </div>
 
                         <button

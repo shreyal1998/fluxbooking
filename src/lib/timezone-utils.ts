@@ -10,22 +10,42 @@
 export function getInTimezone(date: Date, timeZone: string): Date {
   if (isNaN(date.getTime())) return date;
   
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    hour12: false
-  });
-  
-  const parts = formatter.formatToParts(date);
-  const partMap: any = {};
-  parts.forEach(p => partMap[p.type] = parseInt(p.value, 10));
-  
-  return new Date(partMap.year, partMap.month - 1, partMap.day, partMap.hour, partMap.minute, partMap.second);
+  try {
+    const tz = timeZone && timeZone.trim() ? timeZone : "UTC";
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false
+    });
+    
+    const parts = formatter.formatToParts(date);
+    const partMap: any = { 
+      year: date.getFullYear(), 
+      month: date.getMonth() + 1, 
+      day: date.getDate(), 
+      hour: date.getHours(), 
+      minute: date.getMinutes(), 
+      second: date.getSeconds() 
+    };
+    
+    parts.forEach(p => {
+      const val = parseInt(p.value, 10);
+      if (!isNaN(val)) {
+        partMap[p.type] = val;
+      }
+    });
+    
+    const res = new Date(partMap.year, partMap.month - 1, partMap.day, partMap.hour, partMap.minute, partMap.second);
+    if (!isNaN(res.getTime())) return res;
+  } catch (err) {
+    console.error("Error in getInTimezone:", err);
+  }
+  return date;
 }
 
 /**

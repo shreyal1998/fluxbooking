@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useTheme } from "next-themes";
 import {
   format,
   addMonths,
@@ -34,6 +36,7 @@ import {
   Plus,
   Minus,
   Hand,
+  Sparkles,
 } from "lucide-react";
 import { rescheduleBooking } from "@/app/actions/booking";
 import { toast } from "sonner";
@@ -68,6 +71,82 @@ interface Staff {
   name: string;
   color: string;
   availabilityJson: BusinessHours | string | null;
+}
+
+interface PositionedEvent {
+  event: Event;
+  left: number;
+  width: number;
+}
+
+function getPositionedEvents(columnEvents: Event[]): PositionedEvent[] {
+  if (columnEvents.length === 0) return [];
+
+  // Sort by start time, then duration descending
+  const sorted = [...columnEvents].sort((a, b) => {
+    const aStart = a.start.getTime();
+    const bStart = b.start.getTime();
+    if (aStart !== bStart) return aStart - bStart;
+    return (b.end.getTime() - b.start.getTime()) - (a.end.getTime() - a.start.getTime());
+  });
+
+  const clusters: Event[][] = [];
+  let currentCluster: Event[] = [];
+  let clusterEnd = 0;
+
+  for (const ev of sorted) {
+    if (currentCluster.length === 0) {
+      currentCluster.push(ev);
+      clusterEnd = ev.end.getTime();
+    } else if (ev.start.getTime() < clusterEnd) {
+      currentCluster.push(ev);
+      if (ev.end.getTime() > clusterEnd) {
+        clusterEnd = ev.end.getTime();
+      }
+    } else {
+      clusters.push(currentCluster);
+      currentCluster = [ev];
+      clusterEnd = ev.end.getTime();
+    }
+  }
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  const result: PositionedEvent[] = [];
+
+  for (const cluster of clusters) {
+    const columns: Event[][] = [];
+
+    for (const ev of cluster) {
+      let placed = false;
+      for (let colIdx = 0; colIdx < columns.length; colIdx++) {
+        const colEvents = columns[colIdx];
+        const lastEv = colEvents[colEvents.length - 1];
+        if (ev.start.getTime() >= lastEv.end.getTime()) {
+          colEvents.push(ev);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        columns.push([ev]);
+      }
+    }
+
+    const colCount = columns.length;
+    for (let colIdx = 0; colIdx < colCount; colIdx++) {
+      for (const ev of columns[colIdx]) {
+        result.push({
+          event: ev,
+          left: (colIdx / colCount) * 100,
+          width: 100 / colCount
+        });
+      }
+    }
+  }
+
+  return result;
 }
 
 export function CalendarView({
@@ -111,7 +190,32 @@ export function CalendarView({
 }) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
+  const { resolvedTheme } = useTheme();
+  const [tooltipInfo, setTooltipInfo] = useState<{ event: Event; x: number; cardRight: number; y: number } | null>(null);
   const [now, setNow] = useState<Date | null>(null);
+  const closeTimeoutRef = useRef<any>(null);
+
+  const showTooltip = useCallback((event: Event, x: number, cardRight: number, y: number) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setTooltipInfo({ event, x, cardRight, y });
+  }, []);
+
+  const hideTooltip = useCallback(() => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    closeTimeoutRef.current = setTimeout(() => {
+      setTooltipInfo(null);
+    }, 150);
+  }, []);
+
+  const cancelTooltipHide = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
 
   const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
 
@@ -119,6 +223,31 @@ export function CalendarView({
   useEffect(() => {
     setEvents(initialEvents);
   }, [initialEvents]);
+
+  // Close tooltip on scroll to prevent alignment issues
+  useEffect(() => {
+    if (!tooltipInfo) return;
+    const handleScroll = () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+      setTooltipInfo(null);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [tooltipInfo]);
+
+  // Clean up closeTimeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const slotHeight = slotDuration === 15 ? 40 : slotDuration === 30 ? 60 : 80;
   const pixelsPerMinute = slotHeight / slotDuration;
@@ -312,6 +441,26 @@ export function CalendarView({
       });
     });
 
+    // Expand range to include any loaded booking events that fall outside business hours
+    if (Array.isArray(events)) {
+      events.forEach((e) => {
+        if (e && e.type === "booking" && e.start && e.end) {
+          try {
+            const start = e.start instanceof Date ? e.start : new Date(e.start);
+            const end = e.end instanceof Date ? e.end : new Date(e.end);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+              const startMin = start.getHours() * 60 + start.getMinutes();
+              const endMin = end.getHours() * 60 + end.getMinutes();
+              if (startMin < minMinutes) minMinutes = startMin;
+              if (endMin > maxMinutes) maxMinutes = endMin;
+            }
+          } catch (err) {
+            console.error("Error parsing event in displayRange:", err);
+          }
+        }
+      });
+    }
+
     // Fallback if no hours are defined
     if (maxMinutes <= minMinutes) return { start: 0, end: 1440 }; // 24 hours (12 AM to 12 AM)
 
@@ -320,7 +469,7 @@ export function CalendarView({
     const finalEnd = Math.min(1440, maxMinutes);
 
     return { start: finalStart, end: finalEnd };
-  }, [businessHours, parseAvailability, scheduleViewStart, scheduleViewEnd]);
+  }, [businessHours, parseAvailability, scheduleViewStart, scheduleViewEnd, events]);
 
   const getVisibleSlots = useCallback((refDate: Date) => {
     const startMinutes = displayRange.start;
@@ -390,8 +539,8 @@ export function CalendarView({
 
     if (isPastEvent) {
       return {
-        className: baseClass + "bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800 shadow-none border-l-4",
-        style: { borderLeftColor: event.color ? `${event.color}80` : "#6366f180" }
+        className: baseClass + "bg-slate-200/90 dark:bg-slate-900/60 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600 shadow-sm border-l-4",
+        style: { borderLeftColor: event.color || "#6366f1" }
       };
     }
 
@@ -423,15 +572,15 @@ export function CalendarView({
             return (
               <div
                 key={idx}
-                className={`p-3 relative transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/20 ${
+                className={`flex flex-col p-2 relative overflow-hidden transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/20 ${
                   (idx + 1) % 7 === 0 ? "" : "border-r border-slate-200 dark:border-slate-800"
                 } ${
                   idx >= calendarDays.length - 7 ? "" : "border-b border-slate-200 dark:border-slate-800"
                 } ${
-                  !isSameMonth(day, monthStart) ? "bg-slate-50/30 dark:bg-slate-950/20 opacity-40" : ""      
+                  !isSameMonth(day, monthStart) ? "bg-slate-50/30 dark:bg-slate-950/20 opacity-40" : ""
                 }`}
               >
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start mb-1 flex-shrink-0">
                   <span className={`text-sm font-normal ${
                     now && isSameDay(day, now)
                       ? "h-7 w-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none"
@@ -440,19 +589,24 @@ export function CalendarView({
                     {format(day, "d")}
                   </span>
                 </div>
-                <div className="space-y-1 overflow-hidden">
-                  {dayEvents.slice(0, 3).map((event) => {
+                <div className="flex flex-col gap-1 min-h-0 overflow-hidden flex-1">
+                  {dayEvents.slice(0, 2).map((event) => {
                     const styleData = getEventStyle(event);
                     return (
                       <div
                         key={event.id}
-                        className={`text-[10px] px-2 py-1 rounded-lg border truncate font-normal ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                        className={`text-[10px] px-2 py-0.5 rounded-md border truncate font-normal flex-shrink-0 ${typeof styleData === 'string' ? styleData : styleData.className}`}
                         style={typeof styleData === 'object' ? styleData.style : {}}
                       >
-                        {format(event.start, timeDisplayFormat)} {event.title}
+                        {format(event.start, timeDisplayFormat)} {event.title.split(" - ")[0]}
                       </div>
                     );
                   })}
+                  {dayEvents.length > 2 && (
+                    <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 pl-1 flex-shrink-0 mt-0.5">
+                      +{dayEvents.length - 2}
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -618,38 +772,54 @@ export function CalendarView({
               })}
            </div>
 
-           {dayEvents.filter(e => e.type === 'booking').map(event => {
-             const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
-             if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
+            {getPositionedEvents(dayEvents.filter(e => e.type === 'booking')).map(({ event, left, width }) => {
+              const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
+              if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
 
-             const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
-             const top = (startTotalMinutes - displayRange.start) * pixelsPerMinute;
-             const height = duration * pixelsPerMinute;
-             const styleData = getEventStyle(event);
-             const isPastEvent = isPast(event.end);
+              const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
+              const top = (startTotalMinutes - displayRange.start) * pixelsPerMinute;
+              const height = duration * pixelsPerMinute;
+              const styleData = getEventStyle(event);
+              const isPastEvent = isPast(event.end);
 
-             return (
-               <div 
-                 key={event.id} 
-                 draggable={event.type !== 'blocked'} 
-                 onDragStart={(e) => handleDragStart(e, event.id)} 
-                 onDragEnd={handleDragEnd} 
-                 onClick={() => {
-                   if (mode === "schedule" && event.type === 'blocked') {
-                     onScheduleToggle?.(event.start, 'remove-block');
-                   }
-                 }}
-                 className={`absolute left-[80px] right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'grayscale-[0.2]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
-                 style={{ top: `${top}px`, height: `${height}px`, minHeight: '30px', ...(typeof styleData === 'object' ? styleData.style : {}) }}
-               >
-                 {event.type !== 'blocked' && (
-                   <>
-                     <h4 className="text-sm font-normal truncate">{event.title}</h4>
-                     <p className="text-[10px] opacity-70">{format(event.start, timeDisplayFormat)}</p>
-                   </>
-                 )}
-               </div>
-             );
+              return (
+                <div 
+                  key={event.id} 
+                  draggable={event.type !== 'blocked'} 
+                  onDragStart={(e) => handleDragStart(e, event.id)} 
+                  onDragEnd={handleDragEnd} 
+                  onClick={() => {
+                    if (mode === "schedule" && event.type === 'blocked') {
+                      onScheduleToggle?.(event.start, 'remove-block');
+                    }
+                  }}
+                  className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 px-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                  style={{ 
+                    top: `${top}px`, 
+                    height: `${height}px`, 
+                    minHeight: '20px', 
+                    left: `calc(80px + (100% - 80px) * ${left / 100})`,
+                    width: `calc((100% - 80px) * ${width / 100})`,
+                    ...(typeof styleData === 'object' ? styleData.style : {}) 
+                  }}
+                  onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                  onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
+                >
+                  {event.type !== 'blocked' && (
+                    duration >= 60 ? (
+                      <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
+                        <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
+                        <span className="text-xs font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center truncate h-full w-full">
+                        <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                        <span className="text-xs font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                      </div>
+                    )
+                  )}
+                </div>
+              );
            })}
         </div>
       </div>
@@ -912,8 +1082,8 @@ export function CalendarView({
                          </div>
                       </div>
                     )}
-                    <div className="relative z-10 mx-1">
-                      {staffEvents.filter(e => e.type === 'booking').map(event => {
+                    <div className={`relative z-10 ${mode === 'booking' ? '' : 'mx-1'}`}>
+                      {getPositionedEvents(staffEvents.filter(e => e.type === 'booking')).map(({ event, left, width }) => {
                         const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
                         if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
 
@@ -924,10 +1094,32 @@ export function CalendarView({
                         const isPastEvent = isPast(event.end);
 
                         return (
-                          <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'grayscale-[0.2]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '25px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
-                            {event.type !== 'blocked' && (
-                              <p className="text-[9px] leading-tight font-medium truncate">{event.title}</p>
-                            )}
+                          <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd}
+                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden'} border ${mode === 'booking' ? 'py-0.5 px-1.5' : 'p-2'} shadow-sm z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                            style={{ 
+                              top: `${top}px`, 
+                              height: `${height}px`, 
+                              minHeight: '20px', 
+                              left: `${left}%`,
+                              width: `${width}%`,
+                              ...(typeof styleData === 'object' ? styleData.style : {}) 
+                            }}
+                            onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                            onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
+                          >
+                             {event.type !== 'blocked' && (
+                               duration >= 60 ? (
+                                 <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
+                                   <span className="text-[10px] font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
+                                   <span className="text-[9px] font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                                 </div>
+                               ) : (
+                                 <div className="flex items-center truncate h-full w-full">
+                                   <span className="text-[10px] font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                                   <span className="text-[9px] font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                                 </div>
+                               )
+                             )}
                           </div>
                         );
                       })}
@@ -1028,7 +1220,7 @@ export function CalendarView({
 
             {/* Practitioner Columns (Row 2) */}
             {activeStaffList.map((staff, staffIdx) => {
-               const staffEvents = dayEvents.filter(e => e.resourceName === staff.name);
+               const staffEvents = dayEvents.filter(e => e.staffId === staff.id || e.resourceName === staff.name);
                const isLastColumn = staffIdx === activeStaffList.length - 1;
                return (
                  <div 
@@ -1153,25 +1345,51 @@ export function CalendarView({
                         </div>
                      </div>
                    )}
-                   <div className="relative z-10 mx-1">
-                     {staffEvents.filter(e => e.type === 'booking').map(event => {
-                       const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
-                       if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
+                   <div className={`relative z-10 ${mode === 'booking' ? '' : 'mx-1'}`}>
+                      {getPositionedEvents(staffEvents.filter(e => e.type === 'booking')).map(({ event, left, width }) => {
+                        const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
+                        if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
 
-                       const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
-                       const top = (startTotalMinutes - displayRange.start) * pixelsPerMinute;
-                       const height = duration * pixelsPerMinute;
-                       const styleData = getEventStyle(event);
-                       const isPastEvent = isPast(event.end);
+                        const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
+                        const top = (startTotalMinutes - displayRange.start) * pixelsPerMinute;
+                        const height = duration * pixelsPerMinute;
+                        const styleData = getEventStyle(event);
+                        const isPastEvent = isPast(event.end);
 
-                       return (
-                         <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd} className={`absolute left-0 right-0 rounded-xl border p-2 shadow-sm overflow-hidden z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${isPastEvent ? 'grayscale-[0.2]' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px', ...(typeof styleData === 'object' ? styleData.style : {}) }}>
-                           {event.type !== 'blocked' && (
-                             <p className="text-[9px] leading-tight font-medium truncate">{event.title}</p>
-                           )}
-                         </div>
-                       );
-                     })}
+                        return (
+                          <div 
+                            key={event.id} 
+                            draggable={event.type !== 'blocked'} 
+                            onDragStart={(e) => handleDragStart(e, event.id)} 
+                            onDragEnd={handleDragEnd} 
+                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 px-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                            style={{ 
+                              top: `${top}px`, 
+                              height: `${height}px`, 
+                              minHeight: '20px', 
+                              left: `${left}%`,
+                              width: `${width}%`,
+                              ...(typeof styleData === 'object' ? styleData.style : {}) 
+                            }}
+                            onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                            onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
+                          >
+                            {event.type !== 'blocked' && (
+                              duration >= 60 ? (
+                                <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
+                                  <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
+                                  <span className="text-xs font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center truncate h-full w-full">
+                                  <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                                  <span className="text-xs font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        );
+                      })}
                    </div>
                  </div>
                );
@@ -1182,22 +1400,127 @@ export function CalendarView({
     );
   };
 
+  const tooltipEl = tooltipInfo && mode === 'booking' ? (() => {
+    const TOOLTIP_WIDTH = 220;
+    const TOOLTIP_GAP = 8;
+    const rawXPos = tooltipInfo.x - TOOLTIP_WIDTH - TOOLTIP_GAP;
+    const xPos = Math.max(8, rawXPos);
+    const caretOffset = tooltipInfo.x - TOOLTIP_GAP - (xPos + TOOLTIP_WIDTH);
+    const treatmentColor = tooltipInfo.event.color || '#6366f1';
+    
+    // Detect dark mode reactively using next-themes
+    const isDark = resolvedTheme === 'dark';
+    const baseBg = isDark ? '#0f172a' : '#ffffff';
+    const textColorClass = isDark ? 'text-white/80' : 'text-black';
+    const boldTextColorClass = isDark ? 'text-white' : 'text-black';
+    const iconColorClass = isDark ? 'text-white' : 'text-black';
+
+    // Blend helper to blend treatment color with background (white for light, slate-900 for dark)
+    const blendColors = (colorHex: string, bgHex: string, opacity: number): string => {
+      try {
+        const cHex = colorHex.replace('#', '');
+        const bHex = bgHex.replace('#', '');
+        
+        const r = parseInt(cHex.substring(0, 2), 16);
+        const g = parseInt(cHex.substring(2, 4), 16);
+        const b = parseInt(cHex.substring(4, 6), 16);
+        
+        const br = parseInt(bHex.substring(0, 2), 16);
+        const bg = parseInt(bHex.substring(2, 4), 16);
+        const bb = parseInt(bHex.substring(4, 6), 16);
+        
+        const blendR = Math.round(r * opacity + br * (1 - opacity));
+        const blendG = Math.round(g * opacity + bg * (1 - opacity));
+        const blendB = Math.round(b * opacity + bb * (1 - opacity));
+        
+        return `#${blendR.toString(16).padStart(2, '0')}${blendG.toString(16).padStart(2, '0')}${blendB.toString(16).padStart(2, '0')}`;
+      } catch (e) {
+        return colorHex;
+      }
+    };
+
+    const lightBg = blendColors(treatmentColor, baseBg, isDark ? 0.25 : 0.15);
+    const borderBg = blendColors(treatmentColor, baseBg, isDark ? 0.55 : 0.45);
+
+    return (
+      <div
+        className="fixed z-[200000] flex flex-col p-3 rounded-xl text-xs shadow-2xl backdrop-blur-sm pointer-events-auto border"
+        style={{ 
+          top: tooltipInfo.y, 
+          left: xPos, 
+          width: TOOLTIP_WIDTH,
+          backgroundColor: lightBg,
+          borderColor: borderBg
+        }}
+        onMouseEnter={cancelTooltipHide}
+        onMouseLeave={hideTooltip}
+      >
+        {/* Caret border line (behind caret) */}
+        <div 
+          className="absolute border-8 border-transparent" 
+          style={{ 
+            borderLeftColor: borderBg,
+            right: -(17 + caretOffset), 
+            top: 12 
+          }} 
+        />
+        {/* Caret fill */}
+        <div 
+          className="absolute border-8 border-transparent" 
+          style={{ 
+            borderLeftColor: lightBg,
+            right: -(16 + caretOffset), 
+            top: 12 
+          }} 
+        />
+        <p className={`font-bold truncate text-sm mb-0.5 ${boldTextColorClass}`}>
+          {tooltipInfo.event.title.split(" - ")[0]}
+        </p>
+        {tooltipInfo.event.title.split(" - ")[1] && (
+          <div className={`flex items-center gap-1.5 text-[11px] mb-2 ${textColorClass}`}>
+            <Sparkles className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
+            <span className="font-normal">{tooltipInfo.event.title.split(" - ")[1]}</span>
+          </div>
+        )}
+        <div className={`flex flex-col gap-1 text-[10px] ${textColorClass}`}>
+          <div className="flex items-center gap-1.5">
+            <Clock className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
+            <span>{format(tooltipInfo.event.start, "EEEE, MMMM d")}</span>
+          </div>
+          <div className="flex items-center gap-1.5 font-normal">
+            <span>{format(tooltipInfo.event.start, timeDisplayFormat)} – {format(tooltipInfo.event.end, timeDisplayFormat)}</span>
+          </div>
+          {tooltipInfo.event.resourceName && (
+            <div className="flex items-center gap-1.5">
+              <User className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
+              <span>{tooltipInfo.event.resourceName}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  })() : null;
+
   return (
-    <div className={`${(view === "month" && mode !== "booking") ? "h-full min-h-0" : "w-full"} flex flex-col animate-fade-in`}>
-      {view === "month" && renderMonthView()}
-      {view === "week" && renderWeekView()}
-      {view === "day" && (() => {
-        const isMultipleOrAll = !staffFilter || 
-          (Array.isArray(staffFilter) 
-            ? (staffFilter.includes("all") || staffFilter.length === 0 || staffFilter.length > 1)
-            : (staffFilter === "all")
-          );
-        if (isMultipleOrAll) {
-          return renderTeamView();
-        }
-        return renderDayView();
-      })()}
-      {view === "team" && renderTeamView()}
-    </div>
+    <>
+      <div className={`${(view === "month" && mode !== "booking") ? "h-full min-h-0" : "w-full"} flex flex-col animate-fade-in`}>
+        {view === "month" && renderMonthView()}
+        {view === "week" && renderWeekView()}
+        {view === "day" && (() => {
+          const isMultipleOrAll = !staffFilter || 
+            (Array.isArray(staffFilter) 
+              ? (staffFilter.includes("all") || staffFilter.length === 0 || staffFilter.length > 1)
+              : (staffFilter === "all")
+            );
+          if (isMultipleOrAll) {
+            return renderTeamView();
+          }
+          return renderDayView();
+        })()}
+        {view === "team" && renderTeamView()}
+      </div>
+      {/* Portal renders tooltip directly into document.body — outside any CSS transform context */}
+      {tooltipEl && typeof document !== 'undefined' && createPortal(tooltipEl, document.body)}
+    </>
   );
 }
