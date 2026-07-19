@@ -670,7 +670,13 @@ export function CalendarView({
                       style={{ height: `${slotHeight}px` }}
                     >
                         <span className="w-[80px] h-full p-2 pl-4 text-xs flex items-center justify-start border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-black dark:text-white">
-                          {format(currentSlotTime, timeDisplayFormat)}
+                          {currentSlotTime.getMinutes() !== 0 ? (
+                            <span className="text-xs font-normal text-slate-500 dark:text-slate-400 pl-3 tabular-nums">
+                              {currentSlotTime.getMinutes()}
+                            </span>
+                          ) : (
+                            format(currentSlotTime, timeDisplayFormat)
+                          )}
                         </span>
                         <div className="flex-1 h-full flex flex-col">
                            {(() => {
@@ -886,7 +892,13 @@ export function CalendarView({
           <div className="bg-white/95 dark:bg-slate-950/95">
              {visibleSlots.map((slot, slotIdx) => (
                 <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 pl-4 text-xs flex items-center justify-start text-black dark:text-white ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
-                 {format(slot.time, timeDisplayFormat)}
+                 {slot.time.getMinutes() !== 0 ? (
+                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400 pl-3 tabular-nums">
+                      {slot.time.getMinutes()}
+                    </span>
+                  ) : (
+                    format(slot.time, timeDisplayFormat)
+                  )}
                </div>
              ))}
           </div>
@@ -1168,7 +1180,13 @@ export function CalendarView({
           <div className="bg-white/95 dark:bg-slate-950/95">
              {visibleSlots.map((slot, slotIdx) => (
                 <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 pl-4 text-xs flex items-center justify-start text-black dark:text-white ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
-                 {format(slot.time, timeDisplayFormat)}
+                 {slot.time.getMinutes() !== 0 ? (
+                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400 pl-3 tabular-nums">
+                      {slot.time.getMinutes()}
+                    </span>
+                  ) : (
+                    format(slot.time, timeDisplayFormat)
+                  )}
                </div>
              ))}
           </div>

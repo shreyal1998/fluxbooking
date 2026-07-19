@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { format, addMinutes, parse } from "date-fns";
 import { 
   Calendar as CalendarIcon, 
@@ -48,7 +48,7 @@ const timeOptions = (() => {
       const timeStr = `${hourStr}:${m}`;
       const period = h < 12 ? "AM" : "PM";
       const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const label = `${displayHour}:${m} ${period}`;
+      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
       options.push({ value: timeStr, label });
     }
   }
@@ -143,6 +143,7 @@ export function ManualBooking({
   
   // Patient Selector States
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [customerDir, setCustomerDir] = useState<"up" | "down">("down");
   const [activeCustomers, setActiveCustomers] = useState<any[]>([]);
   const customerDropdownRef = useRef<HTMLDivElement>(null);
   const [hasMoreCustomers, setHasMoreCustomers] = useState(true);
@@ -181,12 +182,23 @@ export function ManualBooking({
   const [isStaffOpen, setIsStaffOpen] = useState(false);
   const [isStartTimeOpen, setIsStartTimeOpen] = useState(false);
   const [isEndTimeOpen, setIsEndTimeOpen] = useState(false);
+  const [startTimeDir, setStartTimeDir] = useState<"up" | "down">("down");
+  const [endTimeDir, setEndTimeDir] = useState<"up" | "down">("down");
+  const [serviceDir, setServiceDir] = useState<"up" | "down">("down");
+  const [staffDir, setStaffDir] = useState<"up" | "down">("down");
+  const [isStartAmPmOpen, setIsStartAmPmOpen] = useState(false);
+  const [isEndAmPmOpen, setIsEndAmPmOpen] = useState(false);
+  const [startAmPmDir, setStartAmPmDir] = useState<"up" | "down">("down");
+  const [endAmPmDir, setEndAmPmDir] = useState<"up" | "down">("down");
 
   // Dropdown Refs for Click Outside Detection
   const serviceRef = useRef<HTMLDivElement>(null);
   const staffRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<HTMLDivElement>(null);
   const endTimeRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const startAmPmRef = useRef<HTMLDivElement>(null);
+  const endAmPmRef = useRef<HTMLDivElement>(null);
 
   // Customer Search State
   const [customerSearch, setCustomerSearch] = useState("");
@@ -297,10 +309,92 @@ export function ManualBooking({
       if (customerDropdownRef.current && !customerDropdownRef.current.contains(event.target as Node)) {
         setIsCustomerDropdownOpen(false);
       }
+      if (startAmPmRef.current && !startAmPmRef.current.contains(event.target as Node)) {
+        setIsStartAmPmOpen(false);
+      }
+      if (endAmPmRef.current && !endAmPmRef.current.contains(event.target as Node)) {
+        setIsEndAmPmOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Calculate remaining viewport space to determine dropdown opening direction (up vs down)
+  // Register scroll and resize listeners when any dropdown is open to update positions in real-time
+  useLayoutEffect(() => {
+    const handleScrollOrResize = () => {
+      if (isStartTimeOpen && startTimeRef.current) {
+        const rect = startTimeRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setStartTimeDir(spaceBelow < 280 ? "up" : "down");
+      }
+      if (isEndTimeOpen && endTimeRef.current) {
+        const rect = endTimeRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setEndTimeDir(spaceBelow < 280 ? "up" : "down");
+      }
+      if (isCustomerDropdownOpen && customerDropdownRef.current) {
+        const rect = customerDropdownRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setCustomerDir(spaceBelow < 280 ? "up" : "down");
+      }
+      if (isServiceOpen && serviceRef.current) {
+        const rect = serviceRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setServiceDir(spaceBelow < 280 ? "up" : "down");
+      }
+      if (isStaffOpen && staffRef.current) {
+        const rect = staffRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setStaffDir(spaceBelow < 280 ? "up" : "down");
+      }
+      if (isStartAmPmOpen && startAmPmRef.current) {
+        const rect = startAmPmRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setStartAmPmDir(spaceBelow < 120 ? "up" : "down");
+      }
+      if (isEndAmPmOpen && endAmPmRef.current) {
+        const rect = endAmPmRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setEndAmPmDir(spaceBelow < 120 ? "up" : "down");
+      }
+    };
+
+    if (
+      isStartTimeOpen || 
+      isEndTimeOpen || 
+      isCustomerDropdownOpen || 
+      isServiceOpen || 
+      isStaffOpen ||
+      isStartAmPmOpen ||
+      isEndAmPmOpen
+    ) {
+      // Run once immediately on open
+      handleScrollOrResize();
+
+      const scrollEl = scrollContainerRef.current;
+      if (scrollEl) {
+        scrollEl.addEventListener("scroll", handleScrollOrResize, { passive: true });
+      }
+      window.addEventListener("resize", handleScrollOrResize);
+
+      return () => {
+        if (scrollEl) {
+          scrollEl.removeEventListener("scroll", handleScrollOrResize);
+        }
+        window.removeEventListener("resize", handleScrollOrResize);
+      };
+    }
+  }, [
+    isStartTimeOpen, 
+    isEndTimeOpen, 
+    isCustomerDropdownOpen, 
+    isServiceOpen, 
+    isStaffOpen,
+    isStartAmPmOpen,
+    isEndAmPmOpen
+  ]);
 
   // Reset form when popup is closed
   useEffect(() => {
@@ -437,7 +531,15 @@ export function ManualBooking({
 
   // Digits-only auto-format with smart format-aware hour detection
   // prevVal is the current field value, used to detect backspace vs forward typing
-  const handleTimeInputChange = (val: string, prevVal: string, setter: (v: string) => void) => {
+  // Digits-only auto-format with smart format-aware hour detection
+  // prevVal is the current field value, used to detect backspace vs forward typing
+  const handleTimeInputChange = (
+    val: string, 
+    prevVal: string, 
+    setter: (v: string) => void,
+    ampm?: "AM" | "PM",
+    setAmpm?: (p: "AM" | "PM") => void
+  ) => {
     const digits = val.replace(/[^0-9]/g, "");
     const prevDigits = prevVal.replace(/[^0-9]/g, "");
     const maxH = timeFormat === "24h" ? 23 : 12;
@@ -478,57 +580,155 @@ export function ManualBooking({
       }
     } else if (digits.length >= 4) {
       const fourDigits = digits.slice(0, 4);
+      let hhStr = "";
+      let mmStr = "";
       if (fourDigits.startsWith("0")) {
-        setter(`${fourDigits.slice(0, 2)}:${fourDigits.slice(2, 4)}`);
+        hhStr = fourDigits.slice(0, 2);
+        mmStr = fourDigits.slice(2, 4);
       } else {
         const hh = parseInt(fourDigits.slice(0, 2), 10);
         if (hh > maxH) {
-          setter(`0${fourDigits[0]}:${fourDigits[1]}${fourDigits[2]}`);
+          hhStr = `0${fourDigits[0]}`;
+          mmStr = `${fourDigits[1]}${fourDigits[2]}`;
         } else {
-          setter(`${fourDigits.slice(0, 2)}:${fourDigits.slice(2, 4)}`);
+          hhStr = fourDigits.slice(0, 2);
+          mmStr = fourDigits.slice(2, 4);
         }
       }
+
+      let hhVal = parseInt(hhStr, 10);
+      let mmVal = parseInt(mmStr, 10);
+      
+      if (mmVal === 60) {
+        // Roll over exactly 60 minutes to the next hour
+        mmVal = 0;
+        if (timeFormat === "24h") {
+          hhVal = (hhVal + 1) % 24;
+        } else if (ampm && setAmpm) {
+          let h24 = hhVal;
+          if (ampm === "PM" && hhVal < 12) h24 += 12;
+          if (ampm === "AM" && hhVal === 12) h24 = 0;
+          h24 = (h24 + 1) % 24;
+          
+          const newAmPm = h24 >= 12 ? "PM" : "AM";
+          setAmpm(newAmPm);
+          
+          let h12 = h24 % 12;
+          if (h12 === 0) h12 = 12;
+          hhVal = h12;
+        } else {
+          hhVal = hhVal + 1;
+          if (hhVal > 12) hhVal = 12;
+        }
+      } else if (mmVal > 60) {
+        // Any minute value strictly above 60 resets to the base hour (e.g. 4:65 -> 4:00)
+        mmVal = 0;
+      }
+
+      hhStr = hhVal.toString().padStart(2, "0");
+      mmStr = mmVal.toString().padStart(2, "0");
+
+      setter(`${hhStr}:${mmStr}`);
     }
   };
 
   // Pads any partial raw digit entry to full HH:MM on blur:
-  const padTimeInput = (input: string): string => {
+  const padTimeInput = (
+    input: string,
+    ampm?: "AM" | "PM",
+    setAmpm?: (p: "AM" | "PM") => void
+  ): string => {
     const digits = input.replace(/[^0-9]/g, "");
     if (!digits) return input;
     const maxH = timeFormat === "24h" ? 23 : 12;
     
+    let result = "";
     if (digits.length === 1) {
-      return `0${digits}:00`;
-    }
-    if (digits.length === 2) {
+      result = `0${digits}:00`;
+    } else if (digits.length === 2) {
       const hh = parseInt(digits, 10);
       if (hh > maxH) {
-        return `0${digits[0]}:0${digits[1]}`; // e.g. "98" -> "09:08"
+        result = `0${digits[0]}:0${digits[1]}`; // e.g. "98" -> "09:08"
       } else {
-        return `${digits}:00`; // e.g. "12" -> "12:00"
+        result = `${digits}:00`; // e.g. "12" -> "12:00"
+      }
+    } else if (digits.length === 3) {
+      if (digits.startsWith("0")) {
+        result = `${digits.slice(0, 2)}:${digits[2]}0`;
+      } else {
+        const hh = parseInt(digits.slice(0, 2), 10);
+        if (hh > maxH) {
+          result = `0${digits[0]}:${digits[1]}${digits[2]}`; // e.g. "320" -> "03:20"
+        } else {
+          result = `${digits.slice(0, 2)}:${digits[2]}0`; // e.g. "120" -> "12:00" (or 12:05)
+        }
+      }
+    } else {
+      const fourDigits = digits.slice(0, 4);
+      if (fourDigits.startsWith("0")) {
+        result = `${fourDigits.slice(0, 2)}:${fourDigits.slice(2, 4)}`;
+      } else {
+        const hh = parseInt(fourDigits.slice(0, 2), 10);
+        if (hh > maxH) {
+          result = `0${fourDigits[0]}:${fourDigits[1]}${fourDigits[2]}`;
+        } else {
+          result = `${fourDigits.slice(0, 2)}:${fourDigits.slice(2, 4)}`;
+        }
       }
     }
-    if (digits.length === 3) {
-      if (digits.startsWith("0")) {
-        return `${digits.slice(0, 2)}:${digits[2]}0`;
+
+    // Auto-correct/rollover minutes if they are above 59
+    const parts = result.split(":");
+    if (parts.length === 2) {
+      let hhVal = parseInt(parts[0], 10);
+      let mmVal = parseInt(parts[1], 10);
+      if (mmVal === 60) {
+        mmVal = 0;
+        if (timeFormat === "24h") {
+          hhVal = (hhVal + 1) % 24;
+        } else if (ampm && setAmpm) {
+          let h24 = hhVal;
+          if (ampm === "PM" && hhVal < 12) h24 += 12;
+          if (ampm === "AM" && hhVal === 12) h24 = 0;
+          h24 = (h24 + 1) % 24;
+          
+          const newAmPm = h24 >= 12 ? "PM" : "AM";
+          setAmpm(newAmPm);
+          
+          let h12 = h24 % 12;
+          if (h12 === 0) h12 = 12;
+          hhVal = h12;
+        } else {
+          hhVal = hhVal + 1;
+          if (hhVal > 12) hhVal = 12;
+        }
+      } else if (mmVal > 60) {
+        mmVal = 0;
       }
-      const hh = parseInt(digits.slice(0, 2), 10);
-      if (hh > maxH) {
-        return `0${digits[0]}:${digits[1]}${digits[2]}`; // e.g. "320" -> "03:20"
-      } else {
-        return `${digits.slice(0, 2)}:${digits[2]}0`; // e.g. "120" -> "12:00" (or 12:05)
-      }
+      return `${hhVal.toString().padStart(2, "0")}:${mmVal.toString().padStart(2, "0")}`;
+    }
+    return result;
+  };
+
+  const validateTimeInput = (paddedInput: string, ampm: "AM" | "PM"): string | null => {
+    const match = paddedInput.match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) {
+      const example = timeFormat === "24h" ? "14:30" : "09:30";
+      return `Enter time as HH:MM (e.g. ${example})`;
     }
     
-    const fourDigits = digits.slice(0, 4);
-    if (fourDigits.startsWith("0")) {
-      return `${fourDigits.slice(0, 2)}:${fourDigits.slice(2, 4)}`;
+    const h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const maxHour = timeFormat === "24h" ? 23 : 12;
+    const minHour = timeFormat === "24h" ? 0 : 1;
+
+    if (h < minHour || h > maxHour) {
+      return `Hour must be ${minHour}–${maxHour}`;
     }
-    const hh = parseInt(fourDigits.slice(0, 2), 10);
-    if (hh > maxH) {
-      return `0${fourDigits[0]}:${fourDigits[1]}${fourDigits[2]}`;
+    if (m < 0 || m > 59) {
+      return "Minutes must be between 00 and 59";
     }
-    return `${fourDigits.slice(0, 2)}:${fourDigits.slice(2, 4)}`;
+    return null;
   };
 
   // Parse HH:MM + AM/PM (12h) or HH:MM (24h) into 24h storage string
@@ -556,13 +756,10 @@ export function ManualBooking({
       setStartTimeStr("");
       return;
     }
-    const padded = padTimeInput(startTimeInput);
-    // Validate hour range before setting
-    const hourDigits = padded.split(":")[0];
-    const hourVal = parseInt(hourDigits, 10);
-    const maxHour = timeFormat === "24h" ? 23 : 12;
-    if (hourVal > maxHour) {
-      setFieldErrors(prev => ({ ...prev, startTime: `Hour must be 1–${maxHour}` }));
+    const padded = padTimeInput(startTimeInput, startAmPm, setStartAmPm);
+    const validationError = validateTimeInput(padded, startAmPm);
+    if (validationError) {
+      setFieldErrors(prev => ({ ...prev, startTime: validationError }));
       return;
     }
     setStartTimeInput(padded);
@@ -578,9 +775,6 @@ export function ManualBooking({
           setFieldErrors(prev => ({ ...prev, endTime: "" }));
         }
       }
-    } else {
-      const example = timeFormat === "24h" ? "14:30" : "09:30";
-      setFieldErrors(prev => ({ ...prev, startTime: `Enter time as HH:MM (e.g. ${example})` }));
     }
   };
 
@@ -590,12 +784,10 @@ export function ManualBooking({
       setEndTimeStr("");
       return;
     }
-    const padded = padTimeInput(endTimeInput);
-    const hourDigits = padded.split(":")[0];
-    const hourVal = parseInt(hourDigits, 10);
-    const maxHour = timeFormat === "24h" ? 23 : 12;
-    if (hourVal > maxHour) {
-      setFieldErrors(prev => ({ ...prev, endTime: `Hour must be 1–${maxHour}` }));
+    const padded = padTimeInput(endTimeInput, endAmPm, setEndAmPm);
+    const validationError = validateTimeInput(padded, endAmPm);
+    if (validationError) {
+      setFieldErrors(prev => ({ ...prev, endTime: validationError }));
       return;
     }
     setEndTimeInput(padded);
@@ -608,9 +800,6 @@ export function ManualBooking({
       } else {
         setFieldErrors(prev => ({ ...prev, endTime: "" }));
       }
-    } else {
-      const example = timeFormat === "24h" ? "14:30" : "09:30";
-      setFieldErrors(prev => ({ ...prev, endTime: `Enter time as HH:MM (e.g. ${example})` }));
     }
   };
 
@@ -686,19 +875,29 @@ export function ManualBooking({
     // Resolve start time from input if present
     if (startTimeInput) {
       const padded = padTimeInput(startTimeInput);
-      const parsed = parseHHMMAmPm(padded, startAmPm);
-      if (parsed) {
-        resolvedStart = parsed;
+      const error = validateTimeInput(padded, startAmPm);
+      if (error) {
+        errors.startTime = error;
+      } else {
+        const parsed = parseHHMMAmPm(padded, startAmPm);
+        if (parsed) resolvedStart = parsed;
       }
+    } else {
+      errors.startTime = "Please select a start time.";
     }
 
     // Resolve end time from input if present
     if (endTimeInput) {
       const padded = padTimeInput(endTimeInput);
-      const parsed = parseHHMMAmPm(padded, endAmPm);
-      if (parsed) {
-        resolvedEnd = parsed;
+      const error = validateTimeInput(padded, endAmPm);
+      if (error) {
+        errors.endTime = error;
+      } else {
+        const parsed = parseHHMMAmPm(padded, endAmPm);
+        if (parsed) resolvedEnd = parsed;
       }
+    } else {
+      errors.endTime = "Please select an end time.";
     }
 
     if (!selectedService) {
@@ -710,12 +909,13 @@ export function ManualBooking({
     if (!selectedDateStr) {
       errors.date = "Please select a date.";
     }
-    if (!resolvedStart) {
+    if (!errors.startTime && !resolvedStart) {
       errors.startTime = "Please select a start time.";
     }
-    if (!resolvedEnd) {
+    if (!errors.endTime && !resolvedEnd) {
       errors.endTime = "Please select an end time.";
-    } else if (resolvedStart && resolvedEnd <= resolvedStart) {
+    }
+    if (!errors.startTime && !errors.endTime && resolvedStart && resolvedEnd && resolvedEnd <= resolvedStart) {
       errors.endTime = "End time must be after start time";
     }
     if (!customerInfo.name) {
@@ -794,13 +994,23 @@ export function ManualBooking({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 space-y-6 premium-scrollbar">
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto p-8 space-y-6 premium-scrollbar"
+      >
         {/* Service Selector */}
         <div className="space-y-2 relative" ref={serviceRef}>
           <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select {labels.service} <span className="text-rose-500">*</span></label>
           <button 
             type="button"
-            onClick={() => setIsServiceOpen(!isServiceOpen)}
+            onClick={() => {
+              if (!isServiceOpen && serviceRef.current) {
+                const rect = serviceRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                setServiceDir(spaceBelow < 280 ? "up" : "down");
+              }
+              setIsServiceOpen(!isServiceOpen);
+            }}
             className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedService ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.service ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
           >
             <span>{selectedService ? `${selectedService.name} (${selectedService.durationMinutes} mins)` : "Select Treatment"}</span>
@@ -808,7 +1018,7 @@ export function ManualBooking({
           </button>
           <InputError message={fieldErrors.service} />
           {isServiceOpen && (
-            <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar">
+            <div className={`absolute left-0 right-0 ${serviceDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
               {services?.map(s => (
                 <button
                   key={s.id}
@@ -848,7 +1058,14 @@ export function ManualBooking({
           <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Practitioner <span className="text-rose-500">*</span></label>
           <button 
             type="button"
-            onClick={() => setIsStaffOpen(!isStaffOpen)}
+            onClick={() => {
+              if (!isStaffOpen && staffRef.current) {
+                const rect = staffRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                setStaffDir(spaceBelow < 280 ? "up" : "down");
+              }
+              setIsStaffOpen(!isStaffOpen);
+            }}
             className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedStaffId ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.staff ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
           >
             <span>{staff.find(st => st.id === selectedStaffId)?.name || "Select Practitioner"}</span>
@@ -856,7 +1073,7 @@ export function ManualBooking({
           </button>
           <InputError message={fieldErrors.staff} />
           {isStaffOpen && (
-            <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar">
+            <div className={`absolute left-0 right-0 ${staffDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
               {(selectedService 
                 ? staff.filter(st => st.services && st.services.some((srv: any) => srv.id === selectedService.id))
                 : staff
@@ -915,7 +1132,7 @@ export function ManualBooking({
                   type="text"
                   inputMode="numeric"
                   value={startTimeInput}
-                  onChange={(e) => handleTimeInputChange(e.target.value, startTimeInput, setStartTimeInput)}
+                  onChange={(e) => handleTimeInputChange(e.target.value, startTimeInput, setStartTimeInput, startAmPm, setStartAmPm)}
                   onFocus={() => setIsStartTimeFocused(true)}
                   onBlur={handleStartTimeBlur}
                   maxLength={5}
@@ -924,58 +1141,91 @@ export function ManualBooking({
                 />
               </div>
               
-              {/* AM/PM Select Dropdown — only shown in 12h mode, placed directly next to input */}
+              {/* AM/PM Custom Select Dropdown — only shown in 12h mode, placed directly next to input */}
               {timeFormat !== "24h" && (
-                <select
-                  value={startAmPm}
-                  onChange={(e) => {
-                    const next = e.target.value as "AM" | "PM";
-                    setStartAmPm(next);
-                    // Re-parse if we have a value
-                    if (startTimeInput) {
-                      const parsed = parseHHMMAmPm(startTimeInput, next);
-                      if (parsed) {
-                        setStartTimeStr(parsed);
-                        setFieldErrors(prev => ({ ...prev, startTime: "" }));
+                <div className="relative flex-shrink-0" ref={startAmPmRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isStartAmPmOpen && startAmPmRef.current) {
+                        const rect = startAmPmRef.current.getBoundingClientRect();
+                        const spaceBelow = window.innerHeight - rect.bottom;
+                        setStartAmPmDir(spaceBelow < 120 ? "up" : "down");
                       }
-                    }
-                  }}
-                  className="bg-indigo-50/50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 pl-2.5 pr-6 py-1.5 rounded-xl border border-indigo-100/50 dark:border-slate-800 text-[10px] font-black tracking-wider outline-none cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236366f1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.4c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:8px_8px] bg-[right_0.5rem_center] bg-no-repeat transition-all hover:border-indigo-300 dark:hover:border-indigo-850 flex-shrink-0"
-                >
-                  <option value="AM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">AM</option>
-                  <option value="PM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">PM</option>
-                </select>
+                      setIsStartAmPmOpen(!isStartAmPmOpen);
+                    }}
+                    className="flex items-center gap-1.5 bg-indigo-50/50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 pl-3 pr-2 py-1.5 rounded-xl border border-indigo-100/50 dark:border-slate-800 text-[10px] font-black tracking-wider outline-none cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-850 transition-all"
+                  >
+                    <span>{startAmPm}</span>
+                    <ChevronDown className={`h-3 w-3 text-indigo-500 transition-transform duration-200 ${isStartAmPmOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isStartAmPmOpen && (
+                    <div className={`absolute left-0 ${startAmPmDir === "up" ? "bottom-full mb-1" : "top-full mt-1"} w-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg z-50 py-1`}>
+                      {(["AM", "PM"] as const).map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            setStartAmPm(opt);
+                            setIsStartAmPmOpen(false);
+                            // Re-parse if we have a value
+                            if (startTimeInput) {
+                              const parsed = parseHHMMAmPm(startTimeInput, opt);
+                              if (parsed) {
+                                setStartTimeStr(parsed);
+                                setFieldErrors(prev => ({ ...prev, startTime: "" }));
+                              }
+                            }
+                          }}
+                          className={`w-full px-2.5 py-1.5 text-left text-[10px] font-bold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${startAmPm === opt ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
+                        >
+                          <span>{opt}</span>
+                          {startAmPm === opt && <Check className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Dropdown chevron — pushed to the far right edge of the wrapper */}
               <button
                 type="button"
-                onClick={() => setIsStartTimeOpen(!isStartTimeOpen)}
+                onClick={() => {
+                  if (!isStartTimeOpen && startTimeRef.current) {
+                    const rect = startTimeRef.current.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    setStartTimeDir(spaceBelow < 280 ? "up" : "down");
+                  }
+                  setIsStartTimeOpen(!isStartTimeOpen);
+                }}
                 className="ml-auto p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500"
               >
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isStartTimeOpen ? 'rotate-180' : ''}`} />
               </button>
+
+              {isStartTimeOpen && (
+                <div className={`absolute left-0 right-0 ${startTimeDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
+                  {timeOptions.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setStartTimeStr(opt.value);
+                        setIsStartTimeOpen(false);
+                        setFieldErrors(prev => ({ ...prev, startTime: "" }));
+                      }}
+                      className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${startTimeStr === opt.value ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
+                    >
+                      <span>{opt.label}</span>
+                      {startTimeStr === opt.value && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <InputError message={fieldErrors.startTime} />
-            {isStartTimeOpen && (
-              <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar">
-                {timeOptions.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setStartTimeStr(opt.value);
-                      setIsStartTimeOpen(false);
-                      setFieldErrors(prev => ({ ...prev, startTime: "" }));
-                    }}
-                    className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${startTimeStr === opt.value ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
-                  >
-                    <span>{opt.label}</span>
-                    {startTimeStr === opt.value && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* End Time Selector */}
@@ -994,7 +1244,7 @@ export function ManualBooking({
                   type="text"
                   inputMode="numeric"
                   value={endTimeInput}
-                  onChange={(e) => handleTimeInputChange(e.target.value, endTimeInput, setEndTimeInput)}
+                  onChange={(e) => handleTimeInputChange(e.target.value, endTimeInput, setEndTimeInput, endAmPm, setEndAmPm)}
                   onFocus={() => setIsEndTimeFocused(true)}
                   onBlur={handleEndTimeBlur}
                   maxLength={5}
@@ -1003,57 +1253,90 @@ export function ManualBooking({
                 />
               </div>
               
-              {/* AM/PM Select Dropdown — only shown in 12h mode, placed directly next to input */}
+              {/* AM/PM Custom Select Dropdown — only shown in 12h mode, placed directly next to input */}
               {timeFormat !== "24h" && (
-                <select
-                  value={endAmPm}
-                  onChange={(e) => {
-                    const next = e.target.value as "AM" | "PM";
-                    setEndAmPm(next);
-                    if (endTimeInput) {
-                      const parsed = parseHHMMAmPm(endTimeInput, next);
-                      if (parsed) {
-                        setEndTimeStr(parsed);
-                        setFieldErrors(prev => ({ ...prev, endTime: "" }));
+                <div className="relative flex-shrink-0" ref={endAmPmRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isEndAmPmOpen && endAmPmRef.current) {
+                        const rect = endAmPmRef.current.getBoundingClientRect();
+                        const spaceBelow = window.innerHeight - rect.bottom;
+                        setEndAmPmDir(spaceBelow < 120 ? "up" : "down");
                       }
-                    }
-                  }}
-                  className="bg-indigo-50/50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 pl-2.5 pr-6 py-1.5 rounded-xl border border-indigo-100/50 dark:border-slate-800 text-[10px] font-black tracking-wider outline-none cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236366f1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.4c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:8px_8px] bg-[right_0.5rem_center] bg-no-repeat transition-all hover:border-indigo-300 dark:hover:border-indigo-850 flex-shrink-0"
-                >
-                  <option value="AM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">AM</option>
-                  <option value="PM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">PM</option>
-                </select>
+                      setIsEndAmPmOpen(!isEndAmPmOpen);
+                    }}
+                    className="flex items-center gap-1.5 bg-indigo-50/50 dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 pl-3 pr-2 py-1.5 rounded-xl border border-indigo-100/50 dark:border-slate-800 text-[10px] font-black tracking-wider outline-none cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-850 transition-all"
+                  >
+                    <span>{endAmPm}</span>
+                    <ChevronDown className={`h-3 w-3 text-indigo-500 transition-transform duration-200 ${isEndAmPmOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isEndAmPmOpen && (
+                    <div className={`absolute left-0 ${endAmPmDir === "up" ? "bottom-full mb-1" : "top-full mt-1"} w-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg z-50 py-1`}>
+                      {(["AM", "PM"] as const).map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            setEndAmPm(opt);
+                            setIsEndAmPmOpen(false);
+                            if (endTimeInput) {
+                              const parsed = parseHHMMAmPm(endTimeInput, opt);
+                              if (parsed) {
+                                setEndTimeStr(parsed);
+                                setFieldErrors(prev => ({ ...prev, endTime: "" }));
+                              }
+                            }
+                          }}
+                          className={`w-full px-2.5 py-1.5 text-left text-[10px] font-bold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${endAmPm === opt ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
+                        >
+                          <span>{opt}</span>
+                          {endAmPm === opt && <Check className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Dropdown chevron — pushed to the far right edge of the wrapper */}
               <button
                 type="button"
-                onClick={() => setIsEndTimeOpen(!isEndTimeOpen)}
+                onClick={() => {
+                  if (!isEndTimeOpen && endTimeRef.current) {
+                    const rect = endTimeRef.current.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    setEndTimeDir(spaceBelow < 280 ? "up" : "down");
+                  }
+                  setIsEndTimeOpen(!isEndTimeOpen);
+                }}
                 className="ml-auto p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500"
               >
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isEndTimeOpen ? 'rotate-180' : ''}`} />
               </button>
+
+              {isEndTimeOpen && (
+                <div className={`absolute left-0 right-0 ${endTimeDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
+                  {timeOptions.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setEndTimeStr(opt.value);
+                        setIsEndTimeOpen(false);
+                        setFieldErrors(prev => ({ ...prev, endTime: "" }));
+                      }}
+                      className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${endTimeStr === opt.value ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
+                    >
+                      <span>{opt.label}</span>
+                      {endTimeStr === opt.value && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <InputError message={fieldErrors.endTime} />
-            {isEndTimeOpen && (
-              <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar">
-                {timeOptions.map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => {
-                      setEndTimeStr(opt.value);
-                      setIsEndTimeOpen(false);
-                      setFieldErrors(prev => ({ ...prev, endTime: "" }));
-                    }}
-                    className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${endTimeStr === opt.value ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
-                  >
-                    <span>{opt.label}</span>
-                    {endTimeStr === opt.value && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -1087,7 +1370,14 @@ export function ManualBooking({
             <div className="space-y-4 relative" ref={customerDropdownRef}>
               <button 
                 type="button"
-                onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
+                onClick={() => {
+                  if (!isCustomerDropdownOpen && customerDropdownRef.current) {
+                    const rect = customerDropdownRef.current.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    setCustomerDir(spaceBelow < 280 ? "up" : "down");
+                  }
+                  setIsCustomerDropdownOpen(!isCustomerDropdownOpen);
+                }}
                 className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${customerInfo.name ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.customer ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
               >
                 <span>{customerInfo.name || `Select ${labels.customer}`}</span>
@@ -1098,7 +1388,7 @@ export function ManualBooking({
               {isCustomerDropdownOpen && (
                 <div 
                   onScroll={handleDropdownScroll}
-                  className="relative w-full mt-2 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-inner z-10 max-h-60 overflow-y-auto py-1 premium-scrollbar"
+                  className={`absolute left-0 right-0 ${customerDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}
                 >
                   <div className="px-3 py-2 border-b-2 border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
