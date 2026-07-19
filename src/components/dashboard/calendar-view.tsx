@@ -539,7 +539,7 @@ export function CalendarView({
 
     if (isPastEvent) {
       return {
-        className: baseClass + "bg-slate-200/90 dark:bg-slate-900/60 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600 shadow-sm border-l-4",
+        className: baseClass + "bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700 shadow-sm border-l-4",
         style: { borderLeftColor: event.color || "#6366f1" }
       };
     }
@@ -659,7 +659,7 @@ export function CalendarView({
              </div>
            )}
 
-           <div className="flex flex-col">
+            <div className="flex flex-col relative z-0">
               {visibleSlots.map((slot, slotIdx) => {
                   const currentSlotTime = slot.time;
 
@@ -710,12 +710,12 @@ export function CalendarView({
                                        } else {
                                          onScheduleToggle?.(subSlotTime, 'block', singleStaffParam);
                                        }
-                                     } else if (!isClosed && !isPastSlot) {
+                                     } else if (!isPastSlot) {
                                        onSlotClick?.(subSlotTime, singleStaffParam);
                                      }
                                    }}
                                  >
-                                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 scale-95 group-hover:scale-100">
+                                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 ${mode === 'booking' ? 'hidden' : 'opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100'}`}>
                                        {mode === "schedule" ? (
                                          (() => {
                                            const willMakeAvailable = (existing?.type === 'blocked') || (!existing && isClosed);
@@ -772,55 +772,57 @@ export function CalendarView({
               })}
            </div>
 
-            {getPositionedEvents(dayEvents.filter(e => e.type === 'booking')).map(({ event, left, width }) => {
-              const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
-              if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
+            <div className="absolute inset-0 z-10 pointer-events-none">
+              {getPositionedEvents(dayEvents.filter(e => e.type === 'booking')).map(({ event, left, width }) => {
+                const startTotalMinutes = event.start.getHours() * 60 + event.start.getMinutes();
+                if (startTotalMinutes < displayRange.start || startTotalMinutes >= displayRange.end) return null;
 
-              const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
-              const top = (startTotalMinutes - displayRange.start) * pixelsPerMinute;
-              const height = duration * pixelsPerMinute;
-              const styleData = getEventStyle(event);
-              const isPastEvent = isPast(event.end);
+                const duration = (event.end.getTime() - event.start.getTime()) / (1000 * 60);
+                const top = (startTotalMinutes - displayRange.start) * pixelsPerMinute;
+                const height = duration * pixelsPerMinute;
+                const styleData = getEventStyle(event);
+                const isPastEvent = isPast(event.end);
 
-              return (
-                <div 
-                  key={event.id} 
-                  draggable={event.type !== 'blocked'} 
-                  onDragStart={(e) => handleDragStart(e, event.id)} 
-                  onDragEnd={handleDragEnd} 
-                  onClick={() => {
-                    if (mode === "schedule" && event.type === 'blocked') {
-                      onScheduleToggle?.(event.start, 'remove-block');
-                    }
-                  }}
-                  className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 px-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
-                  style={{ 
-                    top: `${top}px`, 
-                    height: `${height}px`, 
+                return (
+                  <div 
+                    key={event.id} 
+                    draggable={event.type !== 'blocked'} 
+                    onDragStart={(e) => handleDragStart(e, event.id)} 
+                    onDragEnd={handleDragEnd} 
+                    onClick={() => {
+                      if (mode === "schedule" && event.type === 'blocked') {
+                        onScheduleToggle?.(event.start, 'remove-block');
+                      }
+                    }}
+                    className={`absolute pointer-events-auto ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 px-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                    style={{ 
+                      top: `${top}px`, 
+                      height: `${height}px`, 
                     minHeight: '20px', 
-                    left: `calc(80px + (100% - 80px) * ${left / 100})`,
-                    width: `calc((100% - 80px) * ${width / 100})`,
-                    ...(typeof styleData === 'object' ? styleData.style : {}) 
-                  }}
-                  onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
-                  onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
-                >
-                  {event.type !== 'blocked' && (
-                    duration >= 60 ? (
-                      <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
-                        <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                        <span className="text-xs font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center truncate h-full w-full">
-                        <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                        <span className="text-xs font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
-                      </div>
-                    )
-                  )}
-                </div>
-              );
-           })}
+                      left: `calc(80px + (100% - 80px) * ${left / 100})`,
+                      width: `calc((100% - 80px) * ${width / 100})`,
+                      ...(typeof styleData === 'object' ? styleData.style : {}) 
+                    }}
+                    onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                    onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
+                  >
+                    {event.type !== 'blocked' && (
+                      duration >= 60 ? (
+                        <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
+                          <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
+                          <span className="text-xs font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center truncate h-full w-full">
+                          <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                          <span className="text-xs font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                );
+              })}
+            </div>
         </div>
       </div>
     );
@@ -1015,7 +1017,7 @@ export function CalendarView({
                                           } else {
                                             onScheduleToggle?.(subSlotTime, 'block', activeStaffParam);
                                           }
-                                        } else if (!isClosed && !isPastSlot) {
+                                        } else if (!isPastSlot) {
                                           onSlotClick?.(subSlotTime, activeStaffParam);
                                         }
                                       }}
@@ -1040,7 +1042,7 @@ export function CalendarView({
                                                 </>
                                               );
                                             })()
-                                          ) : isClosed ? (
+                                          ) : (isClosed && mode !== "booking") ? (
                                             (() => {
                                               const blockEvent = events.find(e => 
                                                 e.type === 'blocked' && 
@@ -1077,7 +1079,7 @@ export function CalendarView({
                       <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top: `${(now.getHours() * 60 + now.getMinutes() - displayRange.start) * pixelsPerMinute}px` }}>
                          <div className="h-0.5 bg-indigo-600 relative">
                             {(!isSplit || staffIdx === 0) && (
-                              <div className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse shadow-indigo-500" />
+                              <div className="absolute left-0 -top-1 h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse shadow-indigo-500" />
                             )}
                          </div>
                       </div>
@@ -1278,12 +1280,12 @@ export function CalendarView({
                                          } else {
                                            onScheduleToggle?.(subSlotTime, 'block', staff.id);
                                          }
-                                       } else if (!isClosed && !isPastSlot) {
+                                       } else if (!isPastSlot) {
                                          onSlotClick?.(subSlotTime, staff.id);
                                        }
                                      }}
                                    >
-                                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 scale-95 group-hover:scale-100">
+                                      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 ${mode === 'booking' ? 'hidden' : 'opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100'}`}>
                                          {mode === "schedule" ? (
                                            (() => {
                                              const willMakeAvailable = (existing?.type === 'blocked') || (!existing && isClosed);
@@ -1303,7 +1305,7 @@ export function CalendarView({
                                                 </>
                                               );
                                            })()
-                                         ) : isClosed ? (
+                                         ) : (isClosed && mode !== "booking") ? (
                                              (() => {
                                                const blockEvent = events.find(e => 
                                                  e.type === 'blocked' && 
@@ -1340,7 +1342,7 @@ export function CalendarView({
                      <div className="absolute left-0 right-0 z-30 pointer-events-none" style={{ top: `${(now.getHours() * 60 + now.getMinutes() - displayRange.start) * pixelsPerMinute}px` }}>
                         <div className="h-0.5 bg-indigo-600 relative">
                            {staffIdx === 0 && (
-                             <div className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse shadow-indigo-500"></div>
+                              <div className="absolute left-0 -top-1 h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse shadow-indigo-500"></div>
                            )}
                         </div>
                      </div>
@@ -1405,7 +1407,6 @@ export function CalendarView({
     const TOOLTIP_GAP = 8;
     const rawXPos = tooltipInfo.x - TOOLTIP_WIDTH - TOOLTIP_GAP;
     const xPos = Math.max(8, rawXPos);
-    const caretOffset = tooltipInfo.x - TOOLTIP_GAP - (xPos + TOOLTIP_WIDTH);
     const treatmentColor = tooltipInfo.event.color || '#6366f1';
     
     // Detect dark mode reactively using next-themes
@@ -1442,11 +1443,16 @@ export function CalendarView({
     const lightBg = blendColors(treatmentColor, baseBg, isDark ? 0.25 : 0.15);
     const borderBg = blendColors(treatmentColor, baseBg, isDark ? 0.55 : 0.45);
 
+    const TOOLTIP_HEIGHT_ESTIMATE = 130; // generous estimate for max tooltip height
+    const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const rawYPos = tooltipInfo.y;
+    const yPos = Math.min(Math.max(8, rawYPos), viewportH - TOOLTIP_HEIGHT_ESTIMATE - 8);
+
     return (
       <div
         className="fixed z-[200000] flex flex-col p-3 rounded-xl text-xs shadow-2xl backdrop-blur-sm pointer-events-auto border"
         style={{ 
-          top: tooltipInfo.y, 
+          top: yPos, 
           left: xPos, 
           width: TOOLTIP_WIDTH,
           backgroundColor: lightBg,
@@ -1455,24 +1461,7 @@ export function CalendarView({
         onMouseEnter={cancelTooltipHide}
         onMouseLeave={hideTooltip}
       >
-        {/* Caret border line (behind caret) */}
-        <div 
-          className="absolute border-8 border-transparent" 
-          style={{ 
-            borderLeftColor: borderBg,
-            right: -(17 + caretOffset), 
-            top: 12 
-          }} 
-        />
-        {/* Caret fill */}
-        <div 
-          className="absolute border-8 border-transparent" 
-          style={{ 
-            borderLeftColor: lightBg,
-            right: -(16 + caretOffset), 
-            top: 12 
-          }} 
-        />
+
         <p className={`font-bold truncate text-sm mb-0.5 ${boldTextColorClass}`}>
           {tooltipInfo.event.title.split(" - ")[0]}
         </p>

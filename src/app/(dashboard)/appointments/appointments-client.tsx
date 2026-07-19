@@ -15,7 +15,12 @@ import {
   X,
   Ban,
   Check,
-  Calendar
+  Calendar,
+  ChevronDown,
+  Info,
+  Save,
+  Loader2,
+  Building
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
@@ -68,6 +73,88 @@ interface AppointmentsClientProps {
   tenant: Tenant | null;
 }
 
+const startTimes = (() => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ["00", "30"]) {
+      const hourStr = h.toString().padStart(2, "0");
+      const timeStr = `${hourStr}:${m}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
+      options.push({ value: timeStr, label });
+    }
+  }
+  return options;
+})();
+
+const endTimes = (() => {
+  const options = [];
+  for (let h = 0; h < 24; h++) {
+    for (const m of ["00", "30"]) {
+      if (h === 0 && m === "00") continue;
+      const hourStr = h.toString().padStart(2, "0");
+      const timeStr = `${hourStr}:${m}`;
+      const period = h < 12 ? "AM" : "PM";
+      const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${displayHour}:${m} ${period}${h === 12 && m === "00" ? " (Noon)" : ""}`;
+      options.push({ value: timeStr, label });
+    }
+  }
+  options.push({ value: "24:00", label: "12:00 AM (Midnight)" });
+  return options;
+})();
+
+function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
+  if (!hoursJson) return [];
+  let hours: any = hoursJson;
+  if (typeof hours === "string") {
+    try { hours = JSON.parse(hours); } catch { return []; }
+  }
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return [];
+
+  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return "";
+    const [hStr, mStr] = timeStr.split(":");
+    const h = parseInt(hStr, 10);
+    if (isNaN(h)) return timeStr;
+    if (timeFormat === "24h") return timeStr;
+    const period = h < 12 ? "AM" : "PM";
+    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${displayHour}:${mStr} ${period}`;
+  };
+
+  const dayLabels = {
+    monday: "Mon",
+    tuesday: "Tue",
+    wednesday: "Wed",
+    thursday: "Thu",
+    friday: "Fri",
+    saturday: "Sat",
+    sunday: "Sun"
+  };
+
+  const formattedDays: string[] = [];
+  
+  DAYS.forEach(day => {
+    const val = hours[day] || hours[day.charAt(0).toUpperCase() + day.slice(1)];
+    const shifts = Array.isArray(val) ? val : (val ? [val] : []);
+    if (shifts.length === 0) {
+      formattedDays.push(`${dayLabels[day as keyof typeof dayLabels]}: Closed`);
+    } else {
+      const shiftStrings = shifts.map((s: any) => {
+        if (!s.start || !s.end) return "Closed";
+        return `${formatTime(s.start)} - ${formatTime(s.end)}`;
+      });
+      formattedDays.push(`${dayLabels[day as keyof typeof dayLabels]}: ${shiftStrings.join(", ")}`);
+    }
+  });
+
+  return formattedDays;
+}
+
 export function AppointmentsClient({ 
   bookings: initialBookings, 
   blockedSlots: initialBlockedSlots, 
@@ -97,16 +184,126 @@ export function AppointmentsClient({
   const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
   const staffDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Click outside to close staff dropdown
+  // Schedule view visible hours range
+  const [showScheduleViewModal, setShowScheduleViewModal] = useState(false);
+  const [viewStart, setViewStart] = useState(() => {
+    try {
+      const parsed = typeof tenant?.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant?.businessHoursJson;
+      return parsed?.scheduleView?.start || parsed?.monday?.[0]?.start || "09:00";
+    } catch {
+      return "09:00";
+    }
+  });
+  const [viewEnd, setViewEnd] = useState(() => {
+    try {
+      const parsed = typeof tenant?.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant?.businessHoursJson;
+      const val = parsed?.scheduleView?.end || parsed?.monday?.[0]?.end || "17:00";
+      return val === "00:00" ? "24:00" : val;
+    } catch {
+      return "17:00";
+    }
+  });
+  const [tempViewStart, setTempViewStart] = useState(viewStart);
+  const [tempViewEnd, setTempViewEnd] = useState(viewEnd);
+  const [saveViewLoading, setSaveViewLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [isStartOpen, setIsStartOpen] = useState(false);
+  const [isEndOpen, setIsEndOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
+  const startDropdownRef = useRef<HTMLDivElement>(null);
+  const endDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    try {
+      const parsed = typeof tenant?.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : tenant?.businessHoursJson;
+      const start = parsed?.scheduleView?.start || parsed?.monday?.[0]?.start || "09:00";
+      const endVal = parsed?.scheduleView?.end || parsed?.monday?.[0]?.end || "17:00";
+      setViewStart(start);
+      setViewEnd(endVal === "00:00" ? "24:00" : endVal);
+      setTempViewStart(start);
+      setTempViewEnd(endVal === "00:00" ? "24:00" : endVal);
+    } catch {
+      setViewStart("09:00");
+      setViewEnd("17:00");
+      setTempViewStart("09:00");
+      setTempViewEnd("17:00");
+    }
+  }, [tenant?.businessHoursJson]);
+
+  useEffect(() => {
+    if (showScheduleViewModal) {
+      setTempViewStart(viewStart);
+      setTempViewEnd(viewEnd);
+      setErrorMsg(null);
+    }
+  }, [showScheduleViewModal, viewStart, viewEnd]);
+
+  // Click outside to close staff/start/end dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
       if (staffDropdownRef.current && !staffDropdownRef.current.contains(event.target as Node)) {
         setIsStaffFilterOpen(false);
       }
+      if (startDropdownRef.current && !startDropdownRef.current.contains(event.target as Node)) {
+        setIsStartOpen(false);
+      }
+      if (endDropdownRef.current && !endDropdownRef.current.contains(event.target as Node)) {
+        setIsEndOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
+
+  const handleSaveScheduleView = async () => {
+    const startMins = (() => {
+      const [h, m] = tempViewStart.split(":").map(Number);
+      return h * 60 + m;
+    })();
+    const endMins = (() => {
+      if (tempViewEnd === "24:00") return 1440;
+      const [h, m] = tempViewEnd.split(":").map(Number);
+      return h * 60 + m;
+    })();
+
+    if (endMins - startMins < 120) {
+      setErrorMsg("Invalid range: Visible schedule view must span at least 2 hours.");
+      return;
+    }
+    setErrorMsg(null);
+
+    setSaveViewLoading(true);
+    try {
+      const parsed = typeof tenant?.businessHoursJson === 'string' ? JSON.parse(tenant.businessHoursJson) : (tenant?.businessHoursJson || {});
+      const updated = {
+        ...parsed,
+        scheduleView: {
+          start: tempViewStart,
+          end: tempViewEnd === "24:00" ? "00:00" : tempViewEnd
+        }
+      };
+      const { updateBusinessHours } = await import("@/app/actions/dashboard");
+      const result = await updateBusinessHours(updated);
+      if (result.success) {
+        setViewStart(tempViewStart);
+        setViewEnd(tempViewEnd);
+        toast.success("Schedule view updated successfully!");
+        setShowScheduleViewModal(false);
+        router.refresh();
+      } else {
+        toast.error(result.error || "Failed to save schedule view");
+      }
+    } catch (e) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setSaveViewLoading(false);
+    }
+  };
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -403,10 +600,48 @@ export function AppointmentsClient({
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
-          <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Booking Calendar</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Booking Calendar</h2>
+            {(() => {
+              const formattedHours = formatBusinessHours(tenant?.businessHoursJson, tenant?.timeFormat || "12h");
+              if (formattedHours.length === 0) return null;
+              return (
+                <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700">
+                  <Building className="h-3.5 w-3.5 text-indigo-500" />
+                  <span className="group-hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Venue Hours</span>
+                  <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
+                      <div className="space-y-2">
+                        {formattedHours.map((fh, idx) => {
+                          const [day, hoursText] = fh.split(": ");
+                          return (
+                            <div key={idx} className="flex justify-between text-[11px] font-bold">
+                              <span className="text-slate-400">{day}</span>
+                              <span className="text-slate-700 dark:text-slate-200">{hoursText}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
+          {userRole === "ADMIN" && (
+            <button 
+              onClick={() => setShowScheduleViewModal(true)}
+              className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
+            >
+              <Clock className="h-4 w-4" />
+              Schedule View
+            </button>
+          )}
+
           <ManualBooking 
             tenantId={tenant?.id || ""} 
             services={services} 
@@ -620,7 +855,6 @@ export function AppointmentsClient({
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
-              onClick={() => setDeleteConfirmId(null)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 space-y-6 text-center">
@@ -638,7 +872,7 @@ export function AppointmentsClient({
                 <div className="flex gap-4 pt-2">
                   <button 
                     onClick={() => setDeleteConfirmId(null)}
-                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -648,7 +882,7 @@ export function AppointmentsClient({
                       setDeleteConfirmId(null);
                       if (id) await handleDelete(id);
                     }}
-                    className="flex-1 py-3 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 shadow-md active:scale-95 transition-all"
+                    className="flex-1 py-3 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 shadow-md active:scale-95 transition-all cursor-pointer"
                   >
                     Delete
                   </button>
@@ -802,18 +1036,18 @@ export function AppointmentsClient({
                                       <button 
                                         onClick={() => handleStatusUpdate(booking.id, "COMPLETED")}
                                         disabled={processingId === booking.id}
-                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50"
+                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                       >
-                                        <CheckCircle2 className="h-5 w-5" />
+                                        <CheckCircle2 className="h-[18px] w-[18px]" />
                                       </button>
                                     </Tooltip>
                                     <Tooltip content="Delete" position="bottom">
                                       <button 
                                         onClick={() => setDeleteConfirmId(booking.id)}
                                         disabled={processingId === booking.id}
-                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50"
+                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                       >
-                                        <Trash2 className="h-5 w-5" />
+                                        <Trash2 className="h-[18px] w-[18px]" />
                                       </button>
                                     </Tooltip>
                                   </>
@@ -901,12 +1135,165 @@ export function AppointmentsClient({
               onViewChange={setViewMode as any}
               onSlotDurationChange={setSlotDuration}
               staffFilter={currentStaffFilter}
-              scheduleViewStart={scheduleView?.start}
-              scheduleViewEnd={scheduleView?.end}
+              scheduleViewStart={viewStart}
+              scheduleViewEnd={viewEnd}
             />
           )}
         </div>
       </div>
+
+      {/* Schedule View Modal */}
+      {showScheduleViewModal && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse animate-none"
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
+              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-black dark:text-white">Schedule View</h3>
+                    <p className="text-xs text-black dark:text-white font-normal opacity-60">Sets the visible hours on all calendars.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowScheduleViewModal(false)}
+                  className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all cursor-pointer animate-none"
+                >
+                  <X className="h-5 w-5 text-slate-400" />
+                </button>
+              </div>
+              
+              <div className="p-8 space-y-6 bg-white dark:bg-slate-900 rounded-b-[2.5rem]">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0 space-y-2" ref={startDropdownRef}>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Start Time</label>
+                    <div className="relative group">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          setOpenUpward(spaceBelow < 250);
+                          setIsStartOpen(!isStartOpen);
+                        }}
+                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group cursor-pointer animate-none"
+                      >
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                          <Clock className="h-4 w-4" />
+                        </div>
+                        <span className="truncate w-full pr-2">
+                          {startTimes.find(t => t.value === tempViewStart)?.label || tempViewStart}
+                        </span>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isStartOpen ? "rotate-180 text-indigo-500" : ""}`} />
+                        </div>
+                      </button>
+
+                      {isStartOpen && (
+                        <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
+                          <div className="max-h-60 overflow-y-auto pr-1">
+                            {startTimes.map((t) => (
+                              <button
+                                key={t.value}
+                                type="button"
+                                onClick={() => {
+                                  setTempViewStart(t.value);
+                                  setIsStartOpen(false);
+                                }}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer animate-none ${tempViewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                              >
+                                {t.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-2" ref={endDropdownRef}>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">End Time</label>
+                    <div className="relative group">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          setOpenUpward(spaceBelow < 250);
+                          setIsEndOpen(!isEndOpen);
+                        }}
+                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group cursor-pointer animate-none"
+                      >
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                          <Clock className="h-4 w-4" />
+                        </div>
+                        <span className="truncate w-full pr-2">
+                          {endTimes.find(t => t.value === tempViewEnd)?.label || tempViewEnd}
+                        </span>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isEndOpen ? "rotate-180 text-indigo-500" : ""}`} />
+                        </div>
+                      </button>
+
+                      {isEndOpen && (
+                        <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
+                          <div className="max-h-60 overflow-y-auto pr-1">
+                            {endTimes.map((t) => (
+                              <button
+                                key={t.value}
+                                type="button"
+                                onClick={() => {
+                                  setTempViewEnd(t.value);
+                                  setIsEndOpen(false);
+                                }}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer animate-none ${tempViewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                              >
+                                {t.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {errorMsg && (
+                  <div className="p-4 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-2xl flex items-center gap-2 border border-rose-100 dark:border-rose-950/50 animate-fade-in animate-none">
+                    <Info className="h-4 w-4 shrink-0 animate-pulse" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <button 
+                    onClick={() => setShowScheduleViewModal(false)}
+                    className="px-6 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer animate-none"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveScheduleView}
+                    disabled={saveViewLoading}
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer animate-none"
+                  >
+                    {saveViewLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Save View
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 }

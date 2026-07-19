@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight, Search, Landmark } from "lucide-react";
 import { AddServiceForm } from "@/components/dashboard/add-service-form";
 import { updateService, deleteService } from "@/app/actions/dashboard";
@@ -66,6 +66,43 @@ export function ServicesClient({
       tableElement.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  const pageNumbersRange = useMemo(() => {
+    const pageNumbers: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+
+      if (currentPage > 3) {
+        pageNumbers.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      let adjustedStart = start;
+      let adjustedEnd = end;
+      if (currentPage <= 3) {
+        adjustedEnd = 4;
+      } else if (currentPage >= totalPages - 2) {
+        adjustedStart = totalPages - 3;
+      }
+
+      for (let i = adjustedStart; i <= adjustedEnd; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+    return pageNumbers;
+  }, [totalPages, currentPage]);
 
   const [editingService, setEditingService] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -230,24 +267,24 @@ export function ServicesClient({
                          <td className="px-8 py-5 whitespace-nowrap text-right">
                             {userRole === "ADMIN" && (
                               <div className="flex items-center justify-end gap-2">
-                                <Tooltip content="Delete" position="bottom">
-                                  <button 
-                                    onClick={() => setDeletingService(service)}
-                                    className="p-2.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm border border-rose-100 rounded-xl"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </Tooltip>
-
                                 <Tooltip content="Edit" position="bottom">
                                   <button 
                                     onClick={() => {
                                       setFieldErrors({});
                                       setEditingService(service);
                                     }}
-                                    className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-100 dark:border-slate-600 shadow-sm"
+                                    className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
                                   >
-                                    <Pencil className="h-4 w-4" />
+                                    <Pencil className="h-[18px] w-[18px]" />
+                                  </button>
+                                </Tooltip>
+
+                                <Tooltip content="Delete" position="bottom">
+                                  <button 
+                                    onClick={() => setDeletingService(service)}
+                                    className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                                  >
+                                    <Trash2 className="h-[18px] w-[18px]" />
                                   </button>
                                 </Tooltip>
                               </div>
@@ -263,37 +300,58 @@ export function ServicesClient({
         </div>
 
         {/* Pagination Footer - At bottom of main card */}
-        {services.length > itemsPerPage && (
-          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, services.length)}</span> of <span className="text-slate-900 dark:text-white">{services.length}</span> {labels.serviceLower}s
+        {filteredServices.length > itemsPerPage && (
+          <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
+              Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, filteredServices.length)}</span> of <span className="text-black dark:text-white">{filteredServices.length}</span> {labels.serviceLower}s
             </p>
             
-            <div className="flex items-center gap-2">
-              <Tooltip content="Previous Page" position="top">
-                <button
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              </Tooltip>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
 
-              <div className="flex items-center gap-1 px-3">
-                <span className="text-[10px] font-black text-slate-900 dark:text-white">PAGE {currentPage}</span>
-                <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+              <div className="flex items-center gap-1.5 px-2">
+                {pageNumbersRange.map((pageNum, idx) => {
+                  if (pageNum === "...") {
+                    return (
+                      <span 
+                        key={`ellipsis-${idx}`} 
+                        className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400 dark:text-slate-500 select-none"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  const isActive = currentPage === pageNum;
+                  return (
+                    <button
+                      key={`page-${pageNum}`}
+                      onClick={() => paginate(pageNum as number)}
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
 
-              <Tooltip content="Next Page" position="top">
-                <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </Tooltip>
+              <button
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}

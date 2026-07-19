@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Users, 
   Plus, 
@@ -90,6 +90,43 @@ export function CustomersClient({
       tableElement.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  const pageNumbersRange = useMemo(() => {
+    const pageNumbers: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+
+      if (currentPage > 3) {
+        pageNumbers.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      let adjustedStart = start;
+      let adjustedEnd = end;
+      if (currentPage <= 3) {
+        adjustedEnd = 4;
+      } else if (currentPage >= totalPages - 2) {
+        adjustedStart = totalPages - 3;
+      }
+
+      for (let i = adjustedStart; i <= adjustedEnd; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+    return pageNumbers;
+  }, [totalPages, currentPage]);
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -242,38 +279,38 @@ export function CustomersClient({
                         )}
                         <td className="px-8 py-5 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2 transition-opacity">
+                            <Tooltip content="Edit" position="bottom">
+                              <button 
+                                onClick={() => setEditingCustomer(customer)}
+                                className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                              >
+                                <Pencil className="h-[18px] w-[18px]" />
+                              </button>
+                            </Tooltip>
+
                             {customer.status === 'ACTIVE' ? (
-                                <Tooltip content="Inactivate" position="bottom">
-                                  <button 
-                                    onClick={() => userRole === "ADMIN" ? handleToggleStatus(customer.id, 'ACTIVE') : setArchivingCustomer(customer)}
-                                    disabled={processingId === customer.id}
-                                    className="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-100 rounded-xl"
-                                  >
-                                    <UserMinus className="h-4 w-4" />
-                                  </button>
-                                </Tooltip>
+                              <Tooltip content="Inactivate" position="bottom">
+                                <button 
+                                  onClick={() => userRole === "ADMIN" ? handleToggleStatus(customer.id, 'ACTIVE') : setArchivingCustomer(customer)}
+                                  disabled={processingId === customer.id}
+                                  className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                >
+                                  <UserMinus className="h-[18px] w-[18px]" />
+                                </button>
+                              </Tooltip>
                             ) : (
                               userRole === "ADMIN" && (
                                 <Tooltip content="Activate" position="bottom">
                                   <button 
                                     onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
                                     disabled={processingId === customer.id}
-                                    className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100 rounded-xl"
+                                    className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                   >
-                                    <UserCheck className="h-4 w-4" />
+                                    <UserCheck className="h-[18px] w-[18px]" />
                                   </button>
                                 </Tooltip>
                               )
                             )}
-
-                            <Tooltip content="Edit" position="bottom">
-                              <button 
-                                onClick={() => setEditingCustomer(customer)}
-                                className="p-2.5 bg-white dark:bg-slate-700 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all border border-slate-100 dark:border-slate-800 shadow-sm"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -287,36 +324,57 @@ export function CustomersClient({
 
         {/* Pagination Footer */}
         {filteredCustomers.length > itemsPerPage && (
-          <div className="px-10 py-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Showing <span className="text-slate-900 dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(indexOfLastItem, filteredCustomers.length)}</span> of <span className="text-slate-900 dark:text-white">{filteredCustomers.length}</span> {labels.customerLower}s
+          <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
+              Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, filteredCustomers.length)}</span> of <span className="text-black dark:text-white">{filteredCustomers.length}</span> {labels.customerLower}s
             </p>
             
-            <div className="flex items-center gap-2">
-              <Tooltip content="Previous Page" position="top">
-                <button
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              </Tooltip>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
 
-              <div className="flex items-center gap-1 px-3">
-                <span className="text-[10px] font-black text-slate-900 dark:text-white">PAGE {currentPage}</span>
-                <span className="text-[10px] font-black text-slate-400">/ {totalPages}</span>
+              <div className="flex items-center gap-1.5 px-2">
+                {pageNumbersRange.map((pageNum, idx) => {
+                  if (pageNum === "...") {
+                    return (
+                      <span 
+                        key={`ellipsis-${idx}`} 
+                        className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400 dark:text-slate-500 select-none"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  const isActive = currentPage === pageNum;
+                  return (
+                    <button
+                      key={`page-${pageNum}`}
+                      onClick={() => paginate(pageNum as number)}
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
 
-              <Tooltip content="Next Page" position="top">
-                <button
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </Tooltip>
+              <button
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}
