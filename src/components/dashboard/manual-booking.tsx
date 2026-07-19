@@ -1004,10 +1004,18 @@ export function ManualBooking({
           <button 
             type="button"
             onClick={() => {
-              if (!isServiceOpen && serviceRef.current) {
-                const rect = serviceRef.current.getBoundingClientRect();
-                const spaceBelow = window.innerHeight - rect.bottom;
-                setServiceDir(spaceBelow < 280 ? "up" : "down");
+              if (!isServiceOpen) {
+                setIsStaffOpen(false);
+                setIsStartTimeOpen(false);
+                setIsEndTimeOpen(false);
+                setIsCustomerDropdownOpen(false);
+                setIsStartAmPmOpen(false);
+                setIsEndAmPmOpen(false);
+                if (serviceRef.current) {
+                  const rect = serviceRef.current.getBoundingClientRect();
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  setServiceDir(spaceBelow < 280 ? "up" : "down");
+                }
               }
               setIsServiceOpen(!isServiceOpen);
             }}
@@ -1059,10 +1067,18 @@ export function ManualBooking({
           <button 
             type="button"
             onClick={() => {
-              if (!isStaffOpen && staffRef.current) {
-                const rect = staffRef.current.getBoundingClientRect();
-                const spaceBelow = window.innerHeight - rect.bottom;
-                setStaffDir(spaceBelow < 280 ? "up" : "down");
+              if (!isStaffOpen) {
+                setIsServiceOpen(false);
+                setIsStartTimeOpen(false);
+                setIsEndTimeOpen(false);
+                setIsCustomerDropdownOpen(false);
+                setIsStartAmPmOpen(false);
+                setIsEndAmPmOpen(false);
+                if (staffRef.current) {
+                  const rect = staffRef.current.getBoundingClientRect();
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  setStaffDir(spaceBelow < 280 ? "up" : "down");
+                }
               }
               setIsStaffOpen(!isStaffOpen);
             }}
@@ -1118,8 +1134,26 @@ export function ManualBooking({
           {/* Start Time Selector */}
           <div className="space-y-2 relative" ref={startTimeRef}>
             <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Start Time <span className="text-rose-500">*</span></label>
-            <div className={`relative flex items-center w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl shadow-sm transition-all px-4 py-2.5 gap-2 ${fieldErrors.startTime ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus-within:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'}`}>
-              <div className="relative w-14 flex-shrink-0">
+            <div 
+              onClick={() => {
+                if (!isStartTimeOpen) {
+                  setIsServiceOpen(false);
+                  setIsStaffOpen(false);
+                  setIsEndTimeOpen(false);
+                  setIsCustomerDropdownOpen(false);
+                  setIsStartAmPmOpen(false);
+                  setIsEndAmPmOpen(false);
+                  if (startTimeRef.current) {
+                    const rect = startTimeRef.current.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    setStartTimeDir(spaceBelow < 280 ? "up" : "down");
+                  }
+                }
+                setIsStartTimeOpen(!isStartTimeOpen);
+              }}
+              className={`relative flex items-center w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl shadow-sm transition-all px-4 py-2.5 gap-2 cursor-pointer ${fieldErrors.startTime ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus-within:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+            >
+              <div className="relative w-14 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                 {/* Ghost overlay — always visible showing untyped positions */}
                 <span
                   aria-hidden="true"
@@ -1133,7 +1167,10 @@ export function ManualBooking({
                   inputMode="numeric"
                   value={startTimeInput}
                   onChange={(e) => handleTimeInputChange(e.target.value, startTimeInput, setStartTimeInput, startAmPm, setStartAmPm)}
-                  onFocus={() => setIsStartTimeFocused(true)}
+                  onFocus={() => {
+                    setIsStartTimeFocused(true);
+                    setIsStartTimeOpen(false);
+                  }}
                   onBlur={handleStartTimeBlur}
                   maxLength={5}
                   placeholder=""
@@ -1143,14 +1180,22 @@ export function ManualBooking({
               
               {/* AM/PM Custom Select Dropdown — only shown in 12h mode, placed directly next to input */}
               {timeFormat !== "24h" && (
-                <div className="relative flex-shrink-0" ref={startAmPmRef}>
+                <div className="relative flex-shrink-0" ref={startAmPmRef} onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isStartAmPmOpen && startAmPmRef.current) {
-                        const rect = startAmPmRef.current.getBoundingClientRect();
-                        const spaceBelow = window.innerHeight - rect.bottom;
-                        setStartAmPmDir(spaceBelow < 120 ? "up" : "down");
+                      if (!isStartAmPmOpen) {
+                        setIsServiceOpen(false);
+                        setIsStaffOpen(false);
+                        setIsStartTimeOpen(false);
+                        setIsEndTimeOpen(false);
+                        setIsCustomerDropdownOpen(false);
+                        setIsEndAmPmOpen(false);
+                        if (startAmPmRef.current) {
+                          const rect = startAmPmRef.current.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          setStartAmPmDir(spaceBelow < 120 ? "up" : "down");
+                        }
                       }
                       setIsStartAmPmOpen(!isStartAmPmOpen);
                     }}
@@ -1190,23 +1235,12 @@ export function ManualBooking({
               )}
 
               {/* Dropdown chevron — pushed to the far right edge of the wrapper */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isStartTimeOpen && startTimeRef.current) {
-                    const rect = startTimeRef.current.getBoundingClientRect();
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    setStartTimeDir(spaceBelow < 280 ? "up" : "down");
-                  }
-                  setIsStartTimeOpen(!isStartTimeOpen);
-                }}
-                className="ml-auto p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500"
-              >
+              <div className="ml-auto p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500">
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isStartTimeOpen ? 'rotate-180' : ''}`} />
-              </button>
+              </div>
 
               {isStartTimeOpen && (
-                <div className={`absolute left-0 right-0 ${startTimeDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
+                <div className={`absolute left-0 right-0 ${startTimeDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`} onClick={(e) => e.stopPropagation()}>
                   {timeOptions.map(opt => (
                     <button
                       key={opt.value}
@@ -1231,8 +1265,26 @@ export function ManualBooking({
           {/* End Time Selector */}
           <div className="space-y-2 relative" ref={endTimeRef}>
             <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">End Time <span className="text-rose-500">*</span></label>
-            <div className={`relative flex items-center w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl shadow-sm transition-all px-4 py-2.5 gap-2 ${fieldErrors.endTime ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus-within:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'}`}>
-              <div className="relative w-14 flex-shrink-0">
+            <div 
+              onClick={() => {
+                if (!isEndTimeOpen) {
+                  setIsServiceOpen(false);
+                  setIsStaffOpen(false);
+                  setIsStartTimeOpen(false);
+                  setIsCustomerDropdownOpen(false);
+                  setIsStartAmPmOpen(false);
+                  setIsEndAmPmOpen(false);
+                  if (endTimeRef.current) {
+                    const rect = endTimeRef.current.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    setEndTimeDir(spaceBelow < 280 ? "up" : "down");
+                  }
+                }
+                setIsEndTimeOpen(!isEndTimeOpen);
+              }}
+              className={`relative flex items-center w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl shadow-sm transition-all px-4 py-2.5 gap-2 cursor-pointer ${fieldErrors.endTime ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus-within:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+            >
+              <div className="relative w-14 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                 <span
                   aria-hidden="true"
                   className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold"
@@ -1245,7 +1297,10 @@ export function ManualBooking({
                   inputMode="numeric"
                   value={endTimeInput}
                   onChange={(e) => handleTimeInputChange(e.target.value, endTimeInput, setEndTimeInput, endAmPm, setEndAmPm)}
-                  onFocus={() => setIsEndTimeFocused(true)}
+                  onFocus={() => {
+                    setIsEndTimeFocused(true);
+                    setIsEndTimeOpen(false);
+                  }}
                   onBlur={handleEndTimeBlur}
                   maxLength={5}
                   placeholder=""
@@ -1255,14 +1310,22 @@ export function ManualBooking({
               
               {/* AM/PM Custom Select Dropdown — only shown in 12h mode, placed directly next to input */}
               {timeFormat !== "24h" && (
-                <div className="relative flex-shrink-0" ref={endAmPmRef}>
+                <div className="relative flex-shrink-0" ref={endAmPmRef} onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isEndAmPmOpen && endAmPmRef.current) {
-                        const rect = endAmPmRef.current.getBoundingClientRect();
-                        const spaceBelow = window.innerHeight - rect.bottom;
-                        setEndAmPmDir(spaceBelow < 120 ? "up" : "down");
+                      if (!isEndAmPmOpen) {
+                        setIsServiceOpen(false);
+                        setIsStaffOpen(false);
+                        setIsStartTimeOpen(false);
+                        setIsEndTimeOpen(false);
+                        setIsCustomerDropdownOpen(false);
+                        setIsStartAmPmOpen(false);
+                        if (endAmPmRef.current) {
+                          const rect = endAmPmRef.current.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          setEndAmPmDir(spaceBelow < 120 ? "up" : "down");
+                        }
                       }
                       setIsEndAmPmOpen(!isEndAmPmOpen);
                     }}
@@ -1301,23 +1364,12 @@ export function ManualBooking({
               )}
 
               {/* Dropdown chevron — pushed to the far right edge of the wrapper */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isEndTimeOpen && endTimeRef.current) {
-                    const rect = endTimeRef.current.getBoundingClientRect();
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    setEndTimeDir(spaceBelow < 280 ? "up" : "down");
-                  }
-                  setIsEndTimeOpen(!isEndTimeOpen);
-                }}
-                className="ml-auto p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500"
-              >
+              <div className="ml-auto p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500">
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isEndTimeOpen ? 'rotate-180' : ''}`} />
-              </button>
+              </div>
 
               {isEndTimeOpen && (
-                <div className={`absolute left-0 right-0 ${endTimeDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
+                <div className={`absolute left-0 right-0 ${endTimeDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`} onClick={(e) => e.stopPropagation()}>
                   {timeOptions.map(opt => (
                     <button
                       key={opt.value}
@@ -1371,10 +1423,18 @@ export function ManualBooking({
               <button 
                 type="button"
                 onClick={() => {
-                  if (!isCustomerDropdownOpen && customerDropdownRef.current) {
-                    const rect = customerDropdownRef.current.getBoundingClientRect();
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    setCustomerDir(spaceBelow < 280 ? "up" : "down");
+                  if (!isCustomerDropdownOpen) {
+                    setIsServiceOpen(false);
+                    setIsStaffOpen(false);
+                    setIsStartTimeOpen(false);
+                    setIsEndTimeOpen(false);
+                    setIsStartAmPmOpen(false);
+                    setIsEndAmPmOpen(false);
+                    if (customerDropdownRef.current) {
+                      const rect = customerDropdownRef.current.getBoundingClientRect();
+                      const spaceBelow = window.innerHeight - rect.bottom;
+                      setCustomerDir(spaceBelow < 280 ? "up" : "down");
+                    }
                   }
                   setIsCustomerDropdownOpen(!isCustomerDropdownOpen);
                 }}
