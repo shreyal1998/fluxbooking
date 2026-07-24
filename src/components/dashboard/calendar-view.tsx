@@ -149,6 +149,30 @@ function getPositionedEvents(columnEvents: Event[]): PositionedEvent[] {
   return result;
 }
 
+// Helper to blend treatment color with background
+const blendColors = (colorHex: string, bgHex: string, opacity: number): string => {
+  try {
+    const cHex = colorHex.replace('#', '');
+    const bHex = bgHex.replace('#', '');
+    
+    const r = parseInt(cHex.substring(0, 2), 16);
+    const g = parseInt(cHex.substring(2, 4), 16);
+    const b = parseInt(cHex.substring(4, 6), 16);
+    
+    const br = parseInt(bHex.substring(0, 2), 16);
+    const bg = parseInt(bHex.substring(2, 4), 16);
+    const bb = parseInt(bHex.substring(4, 6), 16);
+    
+    const blendR = Math.round(r * opacity + br * (1 - opacity));
+    const blendG = Math.round(g * opacity + bg * (1 - opacity));
+    const blendB = Math.round(b * opacity + bb * (1 - opacity));
+    
+    return `#${blendR.toString(16).padStart(2, '0')}${blendG.toString(16).padStart(2, '0')}${blendB.toString(16).padStart(2, '0')}`;
+  } catch (e) {
+    return colorHex;
+  }
+};
+
 export function CalendarView({
   initialEvents,
   userRole,
@@ -217,7 +241,7 @@ export function CalendarView({
     }
   }, []);
 
-  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm";
 
   // Sync state when props change
   useEffect(() => {
@@ -538,15 +562,26 @@ export function CalendarView({
     }
 
     if (isPastEvent) {
+      const isDark = resolvedTheme === 'dark';
       return {
-        className: baseClass + "bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700 shadow-sm border-l-4",
-        style: { borderLeftColor: event.color || "#6366f1" }
+        className: baseClass + "text-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700 shadow-sm border-l-4",
+        style: { 
+          borderLeftColor: event.color || "#6366f1",
+          backgroundColor: isDark ? '#27272a' : '#e2e8f0'
+        }
       };
     }
 
+    const isDark = resolvedTheme === 'dark';
+    const baseBg = isDark ? '#1e293b' : '#ffffff';
+    const blendedBg = blendColors(event.color || "#6366f1", baseBg, isDark ? 0.25 : 0.15);
+
     return {
-      className: baseClass + "bg-white dark:bg-slate-800 text-black dark:text-white border-slate-300 dark:border-slate-600 shadow-sm border-l-4",
-      style: { borderLeftColor: event.color || "#6366f1" }
+      className: baseClass + "text-black dark:text-white border-slate-300 dark:border-slate-600 shadow-sm border-l-4",
+      style: { 
+        borderLeftColor: event.color || "#6366f1",
+        backgroundColor: blendedBg
+      }
     };
   };
 
@@ -659,7 +694,7 @@ export function CalendarView({
              </div>
            )}
 
-            <div className="flex flex-col relative z-0">
+            <div className="flex flex-col relative">
               {visibleSlots.map((slot, slotIdx) => {
                   const currentSlotTime = slot.time;
 
@@ -669,9 +704,9 @@ export function CalendarView({
                       className={`flex border-slate-300 dark:border-slate-600 transition-colors ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`}
                       style={{ height: `${slotHeight}px` }}
                     >
-                        <span className="w-[80px] h-full p-2 pl-4 text-xs flex items-center justify-start border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-black dark:text-white">
+                        <span className="w-[80px] h-full p-2 text-[13px] font-normal flex items-center justify-center border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-slate-800 dark:text-slate-300 tabular-nums">
                           {currentSlotTime.getMinutes() !== 0 ? (
-                            <span className="text-xs font-normal text-slate-500 dark:text-slate-400 pl-3 tabular-nums">
+                            <span className="text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
                               {currentSlotTime.getMinutes()}
                             </span>
                           ) : (
@@ -701,7 +736,7 @@ export function CalendarView({
                               return (
                                  <div 
                                    key={subIdx}
-                                   className={`flex-1 relative group transition-colors hover:z-40 ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5]' : ''}`}
+                                   className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                    style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                    onDragOver={handleDragOver}
                                    onDrop={(e) => handleDrop(e, subSlotTime, singleStaffParam)}
@@ -721,7 +756,7 @@ export function CalendarView({
                                      }
                                    }}
                                  >
-                                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 ${mode === 'booking' ? 'hidden' : 'opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100'}`}>
+                                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100`}>
                                        {mode === "schedule" ? (
                                          (() => {
                                            const willMakeAvailable = (existing?.type === 'blocked') || (!existing && isClosed);
@@ -741,7 +776,7 @@ export function CalendarView({
                                                 </>
                                               );
                                          })()
-                                       ) : isClosed ? (
+                                       ) : (isClosed && mode !== "booking") ? (
                                           (() => {
                                             const blockEvent = events.find(e => 
                                               e.type === 'blocked' && 
@@ -759,12 +794,12 @@ export function CalendarView({
                                             );
                                           })()
                                         ) : isPastSlot ? (
-                                         <div className="flex items-center justify-center h-6 px-2.5 py-0.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                           <span className="text-[11px] font-bold text-white uppercase tracking-tight">{format(subSlotTime, timeDisplayFormat)}</span>
+                                         <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
+                                           <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
                                          </div>
                                        ) : (
-                                         <div className="flex items-center justify-center h-6 px-2.5 py-0.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                           <span className="text-[11px] font-bold text-white uppercase tracking-tight">{format(subSlotTime, timeDisplayFormat)}</span>
+                                         <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
+                                           <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
                                          </div>
                                        )}
                                    </div>
@@ -816,12 +851,12 @@ export function CalendarView({
                       duration >= 60 ? (
                         <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
                           <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                          <span className="text-xs font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                          <span className="text-xs font-normal opacity-70 block w-full">{format(event.start, timeDisplayFormat)}</span>
                         </div>
                       ) : (
                         <div className="flex items-center truncate h-full w-full">
                           <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                          <span className="text-xs font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                          <span className="text-xs font-normal opacity-70 shrink">, {format(event.start, timeDisplayFormat)}</span>
                         </div>
                       )
                     )}
@@ -885,15 +920,15 @@ export function CalendarView({
             className="sticky top-0 z-40 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex flex-col items-start justify-center p-4 pl-4 shrink-0"
             style={{ height: `${headerHeight}px` }}
           >
-            <p className="text-[10px] font-bold text-black dark:text-white uppercase tracking-widest mb-0.5">Week</p>
+            <p className="text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Week</p>
             <p className="text-base font-bold text-indigo-600 dark:text-indigo-400">{getWeek(startDate)}</p>
           </div>
           {/* Time Labels */}
           <div className="bg-white/95 dark:bg-slate-950/95">
              {visibleSlots.map((slot, slotIdx) => (
-                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 pl-4 text-xs flex items-center justify-start text-black dark:text-white ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 text-[13px] font-normal flex items-center justify-center text-slate-800 dark:text-slate-300 tabular-nums ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
                  {slot.time.getMinutes() !== 0 ? (
-                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400 pl-3 tabular-nums">
+                    <span className="text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
                       {slot.time.getMinutes()}
                     </span>
                   ) : (
@@ -982,7 +1017,7 @@ export function CalendarView({
                       height: `${visibleSlots.length * slotHeight}px`
                     }}
                   >
-                    <div className={`absolute inset-0 z-0 border-slate-300 dark:border-slate-600 ${isLastColumn ? 'border-r-0' : 'border-r'}`}>
+                    <div className={`absolute inset-0 border-slate-300 dark:border-slate-600 ${isLastColumn ? 'border-r-0' : 'border-r'}`}>
                       {visibleSlots.map((slot, slotIdx) => {
                         const currentSlotTime = parse(`${Math.floor(slot.minutes / 60)}:${slot.minutes % 60}`, "H:m", dayRefDate);
 
@@ -1014,7 +1049,7 @@ export function CalendarView({
                                  return (
                                     <div 
                                       key={subIdx}
-                                      className={`flex-1 relative group transition-colors hover:z-40 ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5]' : ''}`}
+                                      className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                       style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                       onDragOver={handleDragOver}
                                       onDrop={(e) => handleDrop(e, subSlotTime, activeStaffParam)}
@@ -1070,12 +1105,12 @@ export function CalendarView({
                                               );
                                             })()
                                           ) : isPastSlot ? (
-                                            <div className="flex items-center justify-center h-6 px-2.5 py-0.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                              <span className="text-[11px] font-bold text-white uppercase tracking-tight">{format(subSlotTime, timeDisplayFormat)}</span>
+                                            <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
+                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
                                             </div>
                                           ) : (
-                                            <div className="flex items-center justify-center h-6 px-2.5 py-0.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                              <span className="text-[11px] font-bold text-white uppercase tracking-tight">{format(subSlotTime, timeDisplayFormat)}</span>
+                                            <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
+                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
                                             </div>
                                           )}
                                        </div>
@@ -1125,12 +1160,12 @@ export function CalendarView({
                                duration >= 60 ? (
                                  <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
                                    <span className="text-[10px] font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                                   <span className="text-[9px] font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                                   <span className="text-[9px] font-normal opacity-70 block w-full">{format(event.start, timeDisplayFormat)}</span>
                                  </div>
                                ) : (
                                  <div className="flex items-center truncate h-full w-full">
                                    <span className="text-[10px] font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                                   <span className="text-[9px] font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                                   <span className="text-[9px] font-normal opacity-70 shrink">, {format(event.start, timeDisplayFormat)}</span>
                                  </div>
                                )
                              )}
@@ -1174,14 +1209,14 @@ export function CalendarView({
         <div className="w-[80px] shrink-0 border-r border-slate-300 dark:border-slate-600 bg-slate-50/95 dark:bg-slate-900/95 z-20 flex flex-col">
           {/* Team Corner Header */}
           <div className="sticky top-0 z-40 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex items-center justify-start p-4 pl-4 h-[76px] shrink-0">
-             <span className="text-[10px] font-bold uppercase tracking-widest text-black dark:text-white">Team</span>
+             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-300">Team</span>
           </div>
           {/* Time Labels */}
           <div className="bg-white/95 dark:bg-slate-950/95">
              {visibleSlots.map((slot, slotIdx) => (
-                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 pl-4 text-xs flex items-center justify-start text-black dark:text-white ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 text-[13px] font-normal flex items-center justify-center text-slate-800 dark:text-slate-300 tabular-nums ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
                  {slot.time.getMinutes() !== 0 ? (
-                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400 pl-3 tabular-nums">
+                    <span className="text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
                       {slot.time.getMinutes()}
                     </span>
                   ) : (
@@ -1226,7 +1261,7 @@ export function CalendarView({
             {/* Empty Slots Body when no staff (Row 2) */}
             {activeStaffList.length === 0 && (
               <div className="relative bg-white dark:bg-slate-900 col-start-1 row-start-2">
-                 <div className="absolute inset-0 z-0">
+                 <div className="absolute inset-0">
                    {visibleSlots.map((slot, slotIdx) => (
                      <div 
                        key={slotIdx} 
@@ -1253,7 +1288,7 @@ export function CalendarView({
                      height: `${visibleSlots.length * slotHeight}px`
                    }}
                  >
-                    <div className={`absolute inset-0 z-0 border-slate-300 dark:border-slate-600 ${isLastColumn ? 'border-r-0' : 'border-r'}`}>
+                    <div className={`absolute inset-0 border-slate-300 dark:border-slate-600 ${isLastColumn ? 'border-r-0' : 'border-r'}`}>
                      {visibleSlots.map((slot, slotIdx) => {
                        const currentSlotTime = parse(`${Math.floor(slot.minutes / 60)}:${slot.minutes % 60}`, "H:m", refDate);
 
@@ -1283,7 +1318,7 @@ export function CalendarView({
                                  return (
                                     <div 
                                       key={subIdx}
-                                       className={`flex-1 relative group transition-colors hover:z-40 ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'} ${isPastSlot ? 'grayscale-[0.5]' : ''}`}
+                                       className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                      style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                      onDragOver={handleDragOver}
                                      onDrop={(e) => handleDrop(e, subSlotTime, staff.id)}
@@ -1303,7 +1338,7 @@ export function CalendarView({
                                        }
                                      }}
                                    >
-                                      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 ${mode === 'booking' ? 'hidden' : 'opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100'}`}>
+                                      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none gap-2 z-50 transition-all duration-200 opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100`}>
                                          {mode === "schedule" ? (
                                            (() => {
                                              const willMakeAvailable = (existing?.type === 'blocked') || (!existing && isClosed);
@@ -1339,12 +1374,12 @@ export function CalendarView({
                                                );
                                              })()
                                            ) : isPastSlot ? (
-                                           <div className="flex items-center justify-center h-6 px-2.5 py-0.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                             <span className="text-[11px] font-bold text-white uppercase tracking-tight">{format(subSlotTime, timeDisplayFormat)}</span>
+                                           <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
                                            </div>
                                          ) : (
-                                           <div className="flex items-center justify-center h-6 px-2.5 py-0.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                             <span className="text-[11px] font-bold text-white uppercase tracking-tight">{format(subSlotTime, timeDisplayFormat)}</span>
+                                           <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
                                            </div>
                                          )}
                                       </div>
@@ -1398,12 +1433,12 @@ export function CalendarView({
                               duration >= 60 ? (
                                 <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
                                   <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                                  <span className="text-xs font-normal opacity-75 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                                  <span className="text-xs font-normal opacity-70 block w-full">{format(event.start, timeDisplayFormat)}</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center truncate h-full w-full">
                                   <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                                  <span className="text-xs font-normal opacity-75 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                                  <span className="text-xs font-normal opacity-70 shrink">, {format(event.start, timeDisplayFormat)}</span>
                                 </div>
                               )
                             )}
@@ -1434,29 +1469,7 @@ export function CalendarView({
     const boldTextColorClass = isDark ? 'text-white' : 'text-black';
     const iconColorClass = isDark ? 'text-white' : 'text-black';
 
-    // Blend helper to blend treatment color with background (white for light, slate-900 for dark)
-    const blendColors = (colorHex: string, bgHex: string, opacity: number): string => {
-      try {
-        const cHex = colorHex.replace('#', '');
-        const bHex = bgHex.replace('#', '');
-        
-        const r = parseInt(cHex.substring(0, 2), 16);
-        const g = parseInt(cHex.substring(2, 4), 16);
-        const b = parseInt(cHex.substring(4, 6), 16);
-        
-        const br = parseInt(bHex.substring(0, 2), 16);
-        const bg = parseInt(bHex.substring(2, 4), 16);
-        const bb = parseInt(bHex.substring(4, 6), 16);
-        
-        const blendR = Math.round(r * opacity + br * (1 - opacity));
-        const blendG = Math.round(g * opacity + bg * (1 - opacity));
-        const blendB = Math.round(b * opacity + bb * (1 - opacity));
-        
-        return `#${blendR.toString(16).padStart(2, '0')}${blendG.toString(16).padStart(2, '0')}${blendB.toString(16).padStart(2, '0')}`;
-      } catch (e) {
-        return colorHex;
-      }
-    };
+
 
     const lightBg = blendColors(treatmentColor, baseBg, isDark ? 0.25 : 0.15);
     const borderBg = blendColors(treatmentColor, baseBg, isDark ? 0.55 : 0.45);

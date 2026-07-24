@@ -24,7 +24,6 @@ export function AddStaffForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
-  const [showPasswordField, setShowPasswordField] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -47,27 +46,11 @@ export function AddStaffForm({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // User Account State
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [userSearch, setUserSearch] = useState("");
-  const userDropdownRef = useRef<HTMLDivElement>(null);
-  const userSearchInputRef = useRef<HTMLInputElement>(null);
-
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(userSearch.toLowerCase()) || 
-    u.email.toLowerCase().includes(userSearch.toLowerCase())
-  );
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenDropdown(false);
         setCountrySearch("");
-      }
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
-        setUserDropdownOpen(false);
-        setUserSearch("");
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -79,12 +62,6 @@ export function AddStaffForm({
       searchInputRef.current.focus();
     }
   }, [openDropdown]);
-
-  useEffect(() => {
-    if (userDropdownOpen && userSearchInputRef.current) {
-      userSearchInputRef.current.focus();
-    }
-  }, [userDropdownOpen]);
 
   const filteredCountries = COUNTRIES.filter(c => 
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
@@ -116,7 +93,6 @@ export function AddStaffForm({
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
-    const userId = formData.get("userId") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
@@ -124,16 +100,14 @@ export function AddStaffForm({
     const errors: Record<string, string> = {};
     if (!name) errors.name = `${labels.staff} name is required`;
     
-    if (!userId) {
-      if (!email) errors.email = "Email is required for new account";
-      if (!password) errors.password = "Password is required";
-      else if (password.length < 6) errors.password = "Password must be at least 6 characters";
-      
-      if (!confirmPassword) {
-        errors.confirmPassword = "Please confirm your password";
-      } else if (password && password !== confirmPassword) {
-        errors.confirmPassword = "Passwords do not match";
-      }
+    if (!email) errors.email = "Email is required";
+    if (!password) errors.password = "Password is required";
+    else if (password.length < 6) errors.password = "Password must be at least 6 characters";
+    
+    if (!confirmPassword) {
+      errors.confirmPassword = "Please confirm your password";
+    } else if (password && password !== confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -156,7 +130,6 @@ export function AddStaffForm({
       (e.target as HTMLFormElement).reset();
       setFieldErrors({});
       setGeneralError(null);
-      setShowPasswordField(true);
       setShowPassword(false);
       setShowConfirmPassword(false);
       setSelectedServices([]);
@@ -197,96 +170,10 @@ export function AddStaffForm({
           <InputError message={fieldErrors.name} />
         </div>
         
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-            User Account <span className="text-rose-500">*</span>
-          </label>
-          <div className="relative" ref={userDropdownRef}>
-            <input type="hidden" name="userId" value={selectedUserId} />
-            <button
-              type="button"
-              onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
-                userDropdownOpen 
-                  ? "border-indigo-600 bg-white dark:bg-slate-900 shadow-lg shadow-indigo-500/10" 
-                  : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600"
-              }`}
-            >
-              <span className={!selectedUserId ? "text-slate-400 dark:text-slate-500 font-medium" : "text-slate-900 dark:text-white font-bold"}>
-                {selectedUserId 
-                  ? `Use existing: ${users.find(u => u.id === selectedUserId)?.name || ""}` 
-                  : "Create new login account"}
-              </span>
-              <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {userDropdownOpen && (
-              <div className="absolute z-[120] left-0 mt-2 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-indigo-100/50 dark:border-slate-800 py-2 max-h-60 flex flex-col animate-in fade-in zoom-in duration-200">
-                <div className="px-3 pb-2 border-b-2 border-indigo-100/50 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900">
-                  <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <input 
-                      ref={userSearchInputRef}
-                      type="text"
-                      placeholder="Search users..."
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-indigo-50/30 dark:bg-slate-900 border-2 border-indigo-100/50 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-500/5 dark:text-white transition-all focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500/40 shadow-sm"
-                    />
-                  </div>
-                </div>
-                <div className="overflow-y-auto flex-1 text-left custom-scrollbar">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedUserId("");
-                      setShowPasswordField(true);
-                      setUserDropdownOpen(false);
-                      setUserSearch("");
-                      clearFieldError("userId");
-                    }}
-                    className={`flex items-center justify-between w-full px-5 py-3 text-xs font-bold transition-colors ${
-                      selectedUserId === "" ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    Create new login account
-                  </button>
-                  {filteredUsers.map((user) => (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedUserId(user.id);
-                        setShowPasswordField(false);
-                        setUserDropdownOpen(false);
-                        setUserSearch("");
-                        setFieldErrors({}); // Clear errors when selecting existing user
-                        setGeneralError(null);
-                      }}
-                      className={`flex flex-col items-start w-full px-5 py-3 transition-colors ${
-                        selectedUserId === user.id ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <span className="truncate text-xs font-bold">{user.name}</span>
-                      <span className={`text-xs font-medium mt-0.5 ${selectedUserId === user.id ? 'text-indigo-400 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{user.email}</span>
-                    </button>
-                  ))}
-                  {filteredUsers.length === 0 && (
-                    <div className="px-5 py-4 text-xs font-bold text-slate-400 italic text-center">
-                      No users found.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {showPasswordField && (
-          <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/30">
-               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Login Credentials</p>
-               <div className="space-y-3">
+        <div className="space-y-4 pt-2">
+           <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/30">
+             <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Login Credentials</p>
+             <div className="space-y-3">
                   <div>
                     <input
                       name="email"
@@ -405,8 +292,7 @@ export function AddStaffForm({
                     </div>
                </div>
              </div>
-          </div>
-        )}
+        </div>
 
         {/* Service Selection */}
         <div>

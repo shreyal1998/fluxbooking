@@ -206,3 +206,83 @@ export async function saveLastSelectedStaff(staffId: string) {
     return { error: "Failed to save selected practitioner" };
   }
 }
+
+export async function saveCalendarViewMode(viewMode: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { calendarViewMode: viewMode }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Save calendar view mode error:", error);
+    return { error: "Failed to save calendar view mode" };
+  }
+}
+
+export async function saveScheduleViewMode(viewMode: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { scheduleViewMode: viewMode }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Save schedule view mode error:", error);
+    return { error: "Failed to save schedule view mode" };
+  }
+}
+
+export async function saveCalendarSlotDuration(duration: number) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { calendarSlotDuration: duration }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Save calendar slot duration error:", error);
+    return { error: "Failed to save slot duration" };
+  }
+}
+
+export async function saveScheduleSlotDuration(duration: number) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { scheduleSlotDuration: duration }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Save schedule slot duration error:", error);
+    return { error: "Failed to save slot duration" };
+  }
+}
+
+export async function saveUserTheme(theme: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { theme }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Save user theme error:", error);
+    return { error: "Failed to save theme preference" };
+  }
+}

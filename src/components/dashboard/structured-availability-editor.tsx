@@ -14,9 +14,9 @@ const startTimes = (() => {
     for (const m of ["00", "30"]) {
       const hourStr = h.toString().padStart(2, "0");
       const timeStr = `${hourStr}:${m}`;
-      const period = h < 12 ? "AM" : "PM";
       const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
+      const displayHourStr = displayHour.toString().padStart(2, "0");
+      const label = `${displayHourStr}:${m}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
       options.push({ value: timeStr, label });
     }
   }
@@ -27,16 +27,14 @@ const endTimes = (() => {
   const options = [];
   for (let h = 0; h < 24; h++) {
     for (const m of ["00", "30"]) {
-      if (h === 0 && m === "00") continue;
       const hourStr = h.toString().padStart(2, "0");
       const timeStr = `${hourStr}:${m}`;
-      const period = h < 12 ? "AM" : "PM";
       const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const label = `${displayHour}:${m} ${period}${h === 12 && m === "00" ? " (Noon)" : ""}`;
+      const displayHourStr = displayHour.toString().padStart(2, "0");
+      const label = `${displayHourStr}:${m}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
       options.push({ value: timeStr, label });
     }
   }
-  options.push({ value: "24:00", label: "12:00 AM (Midnight)" });
   return options;
 })();
 
@@ -72,13 +70,34 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
 
   const formatTimeStr = (timeVal: string) => {
     if (!timeVal) return "";
+    let normalized = timeVal;
+    if (timeVal.includes(":")) {
+      const parts = timeVal.split(":");
+      normalized = `${parts[0].padStart(2, "0")}:${parts[1]}`;
+    }
     const is12h = tenant?.timeFormat === "12h" || !tenant?.timeFormat;
-    if (!is12h) return timeVal;
-    const matched = startTimes.find(t => t.value === timeVal) || endTimes.find(t => t.value === timeVal);
+    if (!is12h) return normalized === "24:00" ? "00:00" : normalized;
+    const matched = startTimes.find(t => t.value === normalized) || endTimes.find(t => t.value === normalized);
     if (matched) {
       return matched.label.replace(/\s*\(.*?\)/g, "");
     }
-    return timeVal;
+    return normalized;
+  };
+
+  const formatOptionLabel = (timeVal: string) => {
+    if (!timeVal) return "";
+    let normalized = timeVal;
+    if (timeVal.includes(":")) {
+      const parts = timeVal.split(":");
+      normalized = `${parts[0].padStart(2, "0")}:${parts[1]}`;
+    }
+    const is12h = tenant?.timeFormat === "12h" || !tenant?.timeFormat;
+    const matched = startTimes.find(t => t.value === normalized) || endTimes.find(t => t.value === normalized);
+    if (is12h) {
+      return matched ? matched.label : normalized;
+    }
+    if (normalized === "24:00") return "00:00";
+    return normalized;
   };
   
   // Custom dropdown states
@@ -522,13 +541,13 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                       setOpenUpward(spaceBelow < 250);
                       setOpenDropdown(prev => prev?.index === index && prev?.field === "start" ? null : { index, field: "start" });
                     }}
-                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white transition-all shadow-sm min-h-[46px] text-left relative"
+                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm min-h-[46px] text-left relative"
                   >
                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                       <Clock className="h-4 w-4" />
                     </div>
                     <span className="truncate w-full pr-2">
-                      {startTimes.find(t => t.value === shift.start)?.label || shift.start}
+                      {formatOptionLabel(shift.start)}
                     </span>
                     <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                       <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openDropdown?.index === index && openDropdown?.field === "start" ? "rotate-180 text-indigo-500" : ""}`} />
@@ -537,7 +556,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
 
                   {openDropdown?.index === index && openDropdown?.field === "start" && (
                     <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
-                      <div className="max-h-60 overflow-y-auto pr-1">
+                      <div className="max-h-60 overflow-y-auto pr-1 premium-scrollbar">
                         {startTimes.map((t) => (
                           <button
                             key={t.value}
@@ -548,7 +567,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                             }}
                             className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${shift.start === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                           >
-                            {t.label}
+                            {formatOptionLabel(t.value)}
                           </button>
                         ))}
                       </div>
@@ -568,13 +587,13 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                       setOpenUpward(spaceBelow < 250);
                       setOpenDropdown(prev => prev?.index === index && prev?.field === "end" ? null : { index, field: "end" });
                     }}
-                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white transition-all shadow-sm min-h-[46px] text-left relative"
+                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm min-h-[46px] text-left relative"
                   >
                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                       <Clock className="h-4 w-4" />
                     </div>
                     <span className="truncate w-full pr-2">
-                      {endTimes.find(t => t.value === (shift.end === "00:00" ? "24:00" : shift.end))?.label || shift.end}
+                      {formatOptionLabel(shift.end === "00:00" ? "24:00" : shift.end)}
                     </span>
                     <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                       <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${openDropdown?.index === index && openDropdown?.field === "end" ? "rotate-180 text-indigo-500" : ""}`} />
@@ -583,7 +602,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
 
                   {openDropdown?.index === index && openDropdown?.field === "end" && (
                     <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
-                      <div className="max-h-60 overflow-y-auto pr-1">
+                      <div className="max-h-60 overflow-y-auto pr-1 premium-scrollbar">
                         {endTimes.map((t) => (
                           <button
                             key={t.value}
@@ -594,7 +613,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                             }}
                             className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${(shift.end === "00:00" ? "24:00" : shift.end) === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                           >
-                            {t.label}
+                            {formatOptionLabel(t.value)}
                           </button>
                         ))}
                       </div>

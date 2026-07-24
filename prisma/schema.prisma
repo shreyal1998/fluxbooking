@@ -159,6 +159,11 @@ model User {
   image         String?
   role          UserRole  @default(STAFF)
   lastSelectedStaffId String?
+  calendarViewMode   String?   @default("week")
+  scheduleViewMode   String?   @default("week")
+  calendarSlotDuration Int?      @default(60)
+  scheduleSlotDuration Int?      @default(60)
+  theme              String?   @default("light")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

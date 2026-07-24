@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
-import { toggleSlotStatus, saveLastSelectedStaff } from "@/app/actions/schedule";
+import { toggleSlotStatus, saveLastSelectedStaff, saveScheduleViewMode, saveScheduleSlotDuration } from "@/app/actions/schedule";
 import { toast } from "sonner";
 import { 
   addMinutes, 
@@ -43,13 +43,16 @@ function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
   
   const formatTime = (timeStr: string) => {
     if (!timeStr) return "";
+    if (timeStr === "24:00" || timeStr === "24:00:00") {
+      return timeFormat === "24h" ? "00:00" : "12:00";
+    }
     const [hStr, mStr] = timeStr.split(":");
     const h = parseInt(hStr, 10);
     if (isNaN(h)) return timeStr;
     if (timeFormat === "24h") return timeStr;
-    const period = h < 12 ? "AM" : "PM";
-    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${displayHour}:${mStr} ${period}`;
+    const displayHour = h === 0 || h === 24 ? 12 : h > 12 ? h - 12 : h;
+    const displayHourStr = displayHour.toString().padStart(2, "0");
+    return `${displayHourStr}:${mStr}`;
   };
 
   const dayLabels = {
@@ -89,9 +92,9 @@ const startTimes = (() => {
     for (const m of ["00", "30"]) {
       const hourStr = h.toString().padStart(2, "0");
       const timeStr = `${hourStr}:${m}`;
-      const period = h < 12 ? "AM" : "PM";
       const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
+      const displayHourStr = displayHour.toString().padStart(2, "0");
+      const label = `${displayHourStr}:${m}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
       options.push({ value: timeStr, label });
     }
   }
@@ -102,24 +105,30 @@ const endTimes = (() => {
   const options = [];
   for (let h = 0; h < 24; h++) {
     for (const m of ["00", "30"]) {
-      if (h === 0 && m === "00") continue;
       const hourStr = h.toString().padStart(2, "0");
       const timeStr = `${hourStr}:${m}`;
-      const period = h < 12 ? "AM" : "PM";
       const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const label = `${displayHour}:${m} ${period}${h === 12 && m === "00" ? " (Noon)" : ""}`;
+      const displayHourStr = displayHour.toString().padStart(2, "0");
+      const label = `${displayHourStr}:${m}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
       options.push({ value: timeStr, label });
     }
   }
-  options.push({ value: "24:00", label: "12:00 AM (Midnight)" });
   return options;
 })();
 
 let lastSelectedStaffFilter = "";
 
-export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<any>("week");
+export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaultView = "week", serverDateIso, defaultSlotDuration = 60 }: any) {
+  const [view, setView] = useState<any>(defaultView);
+
+  // Save view mode to database whenever it changes
+  useEffect(() => {
+    if (view && view !== defaultView) {
+      saveScheduleViewMode(view);
+    }
+  }, [view, defaultView]);
+
+  const [currentDate, setCurrentDate] = useState(() => serverDateIso ? new Date(serverDateIso) : new Date());
 
   const getHeaderText = () => {
     if (view === "month") return format(currentDate, "MMMM yyyy");
@@ -133,7 +142,14 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
     }
     return `${format(start, "d MMM")} - ${format(end, "d MMM yyyy")}`;
   };
-  const [slotDuration, setSlotDuration] = useState<any>(60);
+  const [slotDuration, setSlotDuration] = useState<any>(defaultSlotDuration);
+
+  // Save slot duration to database whenever it changes
+  useEffect(() => {
+    if (slotDuration && slotDuration !== defaultSlotDuration) {
+      saveScheduleSlotDuration(slotDuration);
+    }
+  }, [slotDuration, defaultSlotDuration]);
   const [staffFilter, setStaffFilter] = useState(defaultStaffId || lastSelectedStaffFilter);
   const [showHoursModal, setShowHoursModal] = useState(false);
   const [modalKey, setModalKey] = useState(0);
@@ -163,6 +179,22 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
   });
   const [tempViewStart, setTempViewStart] = useState(viewStart);
   const [tempViewEnd, setTempViewEnd] = useState(viewEnd);
+
+  const formatOptionLabel = (timeVal: string) => {
+    if (!timeVal) return "";
+    let normalized = timeVal;
+    if (timeVal.includes(":")) {
+      const parts = timeVal.split(":");
+      normalized = `${parts[0].padStart(2, "0")}:${parts[1]}`;
+    }
+    const is12h = tenant?.timeFormat === "12h" || !tenant?.timeFormat;
+    const matched = startTimes.find(t => t.value === normalized) || endTimes.find(t => t.value === normalized);
+    if (is12h) {
+      return matched ? matched.label : normalized;
+    }
+    if (normalized === "24:00") return "00:00";
+    return normalized;
+  };
   const [saveViewLoading, setSaveViewLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -382,6 +414,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
     }
   };
 
+
+
   return (
     <div className="flex-1 flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
@@ -423,7 +457,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
             <>
               <button 
                 onClick={() => setShowScheduleViewModal(true)}
-                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm"
+                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm"
               >
                 <Clock className="h-4 w-4" />
                 Schedule View
@@ -572,6 +606,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
           onScheduleToggle={handleScheduleToggle}
           scheduleViewStart={viewStart}
           scheduleViewEnd={viewEnd}
+          timeFormat={tenant.timeFormat || "12h"}
         />
       </div>
       </div>
@@ -662,7 +697,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                           <Clock className="h-4 w-4" />
                         </div>
                         <span className="truncate w-full pr-2">
-                          {startTimes.find(t => t.value === tempViewStart)?.label || tempViewStart}
+                          {formatOptionLabel(tempViewStart)}
                         </span>
                         <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                           <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isStartOpen ? "rotate-180 text-indigo-500" : ""}`} />
@@ -671,7 +706,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
 
                       {isStartOpen && (
                         <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
-                          <div className="max-h-60 overflow-y-auto pr-1">
+                          <div className="max-h-60 overflow-y-auto pr-1 premium-scrollbar">
                             {startTimes.map((t) => (
                               <button
                                 key={t.value}
@@ -682,7 +717,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                                 }}
                                 className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${tempViewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                               >
-                                {t.label}
+                                {formatOptionLabel(t.value)}
                               </button>
                             ))}
                           </div>
@@ -707,7 +742,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                           <Clock className="h-4 w-4" />
                         </div>
                         <span className="truncate w-full pr-2">
-                          {endTimes.find(t => t.value === tempViewEnd)?.label || tempViewEnd}
+                          {formatOptionLabel(tempViewEnd)}
                         </span>
                         <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                           <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isEndOpen ? "rotate-180 text-indigo-500" : ""}`} />
@@ -716,7 +751,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
 
                       {isEndOpen && (
                         <div className={`absolute left-0 w-full bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden py-1 ${openUpward ? "bottom-full mb-2" : "mt-2"}`}>
-                          <div className="max-h-60 overflow-y-auto pr-1">
+                          <div className="max-h-60 overflow-y-auto pr-1 premium-scrollbar">
                             {endTimes.map((t) => (
                               <button
                                 key={t.value}
@@ -727,7 +762,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId }: any)
                                 }}
                                 className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${tempViewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                               >
-                                {t.label}
+                                {formatOptionLabel(t.value)}
                               </button>
                             ))}
                           </div>

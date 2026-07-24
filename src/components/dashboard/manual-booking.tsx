@@ -46,9 +46,9 @@ const timeOptions = (() => {
     for (const m of ["00", "15", "30", "45"]) {
       const hourStr = h.toString().padStart(2, "0");
       const timeStr = `${hourStr}:${m}`;
-      const period = h < 12 ? "AM" : "PM";
       const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      const label = `${displayHour}:${m} ${period}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
+      const displayHourStr = displayHour.toString().padStart(2, "0");
+      const label = `${displayHourStr}:${m}${h === 0 && m === "00" ? " (Midnight)" : h === 12 && m === "00" ? " (Noon)" : ""}`;
       options.push({ value: timeStr, label });
     }
   }
@@ -136,6 +136,23 @@ export function ManualBooking({
 }: ManualBookingProps) {
   const router = useRouter();
   const labels = getLabels(businessType);
+
+  const formatOptionLabel = (timeVal: string) => {
+    if (!timeVal) return "";
+    let normalized = timeVal;
+    if (timeVal.includes(":")) {
+      const parts = timeVal.split(":");
+      normalized = `${parts[0].padStart(2, "0")}:${parts[1]}`;
+    }
+    const is12h = timeFormat === "12h" || !timeFormat;
+    const matched = timeOptions.find(t => t.value === normalized);
+    if (is12h) {
+      return matched ? matched.label : normalized;
+    }
+    if (normalized === "24:00") return "00:00";
+    return normalized;
+  };
+
   const [isOpen, setIsOpen] = useState(mode === "edit" || inline);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -242,6 +259,9 @@ export function ManualBooking({
     if (initialData?.startTime) {
       const h = parseInt(format(new Date(initialData.startTime), "HH"), 10);
       const m = format(new Date(initialData.startTime), "mm");
+      if (timeFormat === "24h") {
+        return `${h.toString().padStart(2, "0")}:${m}`;
+      }
       const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
       return `${h12.toString().padStart(2, "0")}:${m}`;
     }
@@ -252,6 +272,9 @@ export function ManualBooking({
     if (initialData?.endTime) {
       const h = parseInt(format(new Date(initialData.endTime), "HH"), 10);
       const m = format(new Date(initialData.endTime), "mm");
+      if (timeFormat === "24h") {
+        return `${h.toString().padStart(2, "0")}:${m}`;
+      }
       const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
       return `${h12.toString().padStart(2, "0")}:${m}`;
     }
@@ -420,13 +443,13 @@ export function ManualBooking({
       setIsEndTimeFocused(false);
       if (initialData?.startTime) {
         const parsedTime = format(new Date(initialData.startTime), "HH:mm");
-        setStartTimeInput(timeOptions.find(o => o.value === parsedTime)?.label || parsedTime);
+        setStartTimeInput(formatOptionLabel(parsedTime));
       } else {
         setStartTimeInput("");
       }
       if (initialData?.endTime) {
         const parsedTime = format(new Date(initialData.endTime), "HH:mm");
-        setEndTimeInput(timeOptions.find(o => o.value === parsedTime)?.label || parsedTime);
+        setEndTimeInput(formatOptionLabel(parsedTime));
       } else {
         setEndTimeInput("");
       }
@@ -499,26 +522,34 @@ export function ManualBooking({
       const h = parseInt(startTimeStr.split(":")[0], 10);
       const m = startTimeStr.split(":")[1] || "00";
       const period: "AM" | "PM" = h >= 12 ? "PM" : "AM";
-      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      setStartTimeInput(`${h12.toString().padStart(2, "0")}:${m}`);
+      if (timeFormat === "24h") {
+        setStartTimeInput(`${h.toString().padStart(2, "0")}:${m}`);
+      } else {
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        setStartTimeInput(`${h12.toString().padStart(2, "0")}:${m}`);
+      }
       setStartAmPm(period);
     } else {
       setStartTimeInput("");
     }
-  }, [startTimeStr]);
+  }, [startTimeStr, timeFormat]);
 
   useEffect(() => {
     if (endTimeStr) {
       const h = parseInt(endTimeStr.split(":")[0], 10);
       const m = endTimeStr.split(":")[1] || "00";
       const period: "AM" | "PM" = h >= 12 ? "PM" : "AM";
-      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-      setEndTimeInput(`${h12.toString().padStart(2, "0")}:${m}`);
+      if (timeFormat === "24h") {
+        setEndTimeInput(`${h.toString().padStart(2, "0")}:${m}`);
+      } else {
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        setEndTimeInput(`${h12.toString().padStart(2, "0")}:${m}`);
+      }
       setEndAmPm(period);
     } else {
       setEndTimeInput("");
     }
-  }, [endTimeStr]);
+  }, [endTimeStr, timeFormat]);
 
   // Keep custom price synced with service default price
   useEffect(() => {
@@ -1252,7 +1283,7 @@ export function ManualBooking({
                       }}
                       className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${startTimeStr === opt.value ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
                     >
-                      <span>{opt.label}</span>
+                      <span>{formatOptionLabel(opt.value)}</span>
                       {startTimeStr === opt.value && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
                     </button>
                   ))}
@@ -1381,7 +1412,7 @@ export function ManualBooking({
                       }}
                       className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${endTimeStr === opt.value ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
                     >
-                      <span>{opt.label}</span>
+                      <span>{formatOptionLabel(opt.value)}</span>
                       {endTimeStr === opt.value && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
                     </button>
                   ))}

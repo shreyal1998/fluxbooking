@@ -48,7 +48,7 @@ export function Logo({
           <Calendar className={`text-white ${iconSizeClasses[size]}`} />
         </div>
       )}
-      <span className={`font-bold tracking-tight text-slate-900 ${sizeClasses[size]} ${textClassName}`}>
+      <span className={`font-bold tracking-tight text-slate-900 dark:text-white ${sizeClasses[size]} ${textClassName}`}>
         FluxBooking
       </span>
     </div>

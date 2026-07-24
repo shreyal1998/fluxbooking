@@ -20,13 +20,13 @@ export default function PublicLayout({
       <ReadingProgress />
       <ThemeCleaner />
       {/* Global SaaS Header */}
-      <header className="fixed top-0 w-full z-50 glass border-b border-slate-100/50">
+      <header className="fixed top-0 w-full z-50 bg-white/80 dark:bg-white/80 backdrop-blur-xl border-b border-slate-100/50 dark:border-slate-100/50">
         <div className="max-w-7xl mx-auto px-6 md:px-12 h-20 flex items-center justify-between">
           <Link 
             href="/"
             className="cursor-pointer relative -top-0.5 left-2"
           >
-            <Logo />
+            <Logo textClassName="!text-slate-900 dark:!text-slate-900" />
           </Link>
           <nav className="hidden md:flex items-center gap-10">
             <Link 

@@ -37,8 +37,8 @@ export function QuickBlockForm({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
-  const dateDisplayFormat = timeFormat === "24h" ? "MMM d, HH:mm" : "MMM d, h:mm a";
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm";
+  const dateDisplayFormat = timeFormat === "24h" ? "MMM d, HH:mm" : "MMM d, hh:mm";
 
   // Reset errors when data changes
   useEffect(() => {

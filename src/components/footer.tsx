@@ -29,7 +29,7 @@ export function Footer() {
               onClick={scrollToTop} 
               className="outline-none cursor-pointer"
             >
-              <Logo textClassName="text-white" />
+              <Logo textClassName="!text-white dark:!text-white" />
             </button>
             <p className="text-slate-400 text-sm max-w-sm font-medium leading-relaxed">
               The world's most versatile booking platform for growing businesses. Built for performance, designed for conversion, and engineered for privacy.

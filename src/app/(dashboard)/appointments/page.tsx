@@ -12,6 +12,17 @@ export default async function AppointmentsPage() {
   const userRole = (session.user as any).role;
   const userId = (session.user as any).id;
 
+  const userPrefs = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { 
+      calendarViewMode: true,
+      calendarSlotDuration: true
+    }
+  });
+  const defaultViewMode = userPrefs?.calendarViewMode || "week";
+  const defaultSlotDuration = userPrefs?.calendarSlotDuration || 60;
+  const serverDateIso = new Date().toISOString();
+
   // Filter logic for staff: only see their own appointments
   const bookingQuery: any = { tenantId };
   const blockedQuery: any = { tenantId };
@@ -103,6 +114,9 @@ export default async function AppointmentsPage() {
       tenantId={tenantId}
       userRole={userRole}
       tenant={updatedTenant}
+      defaultViewMode={defaultViewMode as any}
+      serverDateIso={serverDateIso}
+      defaultSlotDuration={defaultSlotDuration}
     />
   );
 }

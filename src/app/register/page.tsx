@@ -169,19 +169,19 @@ function RegisterContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-indigo-50/40 px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
+    <div className="flex min-h-screen items-center justify-center bg-indigo-50/40 dark:bg-slate-950 px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
       <ThemeCleaner />
-      <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(99,102,241,0.12)] border border-slate-100">
+      <div className="w-full max-w-md space-y-8 bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(99,102,241,0.12)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-slate-100 dark:border-slate-800">
         <div className="flex flex-col items-center">
           <Link href="/" className="mb-6 outline-none">
             <Logo size="xl" />
           </Link>
-          <h2 className="text-center text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-center text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Join FluxBooking
           </h2>
-          <p className="mt-2 text-center text-sm font-medium text-slate-500">
+          <p className="mt-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-indigo-600 hover:text-indigo-500 underline-offset-4 hover:underline">
+            <Link href="/login" className="font-bold text-indigo-600 dark:text-indigo-400 underline-offset-4 hover:underline">
               Log in
             </Link>
           </p>
@@ -189,7 +189,7 @@ function RegisterContent() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
           {generalError && (
-            <div className="bg-rose-50 text-rose-600 p-4 rounded-2xl text-sm font-bold border border-rose-100">
+            <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 p-4 rounded-2xl text-sm font-bold border border-rose-100 dark:border-rose-900/30">
               {generalError}
             </div>
           )}
@@ -483,7 +483,7 @@ function RegisterContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-base shadow-2xl shadow-slate-200 transition-all hover:bg-slate-800 hover:scale-[1.02] active:scale-95 disabled:bg-slate-300 flex items-center justify-center gap-3"
+              className="w-full h-14 bg-slate-900 dark:bg-indigo-600 text-white rounded-2xl font-black text-base shadow-2xl shadow-slate-200 dark:shadow-none transition-all hover:bg-slate-800 dark:hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 disabled:bg-slate-300 dark:disabled:bg-slate-800 flex items-center justify-center gap-3"
             >
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

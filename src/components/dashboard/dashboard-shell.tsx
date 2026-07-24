@@ -23,6 +23,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { getLabels } from "@/lib/labels";
 import { Logo } from "../logo";
 import { TrialBadge } from "./trial-badge";
+import { useTheme } from "next-themes";
 import { CompactThemeToggle } from "./compact-theme-toggle";
 import { Portal } from "../ui/portal";
 import { searchGlobal } from "@/app/actions/dashboard";
@@ -32,15 +33,27 @@ import { Tooltip } from "@/components/ui/tooltip";
 export function DashboardShell({ 
   children,
   session,
-  tenant
+  tenant,
+  dbTheme
 }: { 
   children: React.ReactNode,
   session: any,
-  tenant: any
+  tenant: any,
+  dbTheme?: string
 }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const { theme, setTheme } = useTheme();
+  const [hasSyncedTheme, setHasSyncedTheme] = useState(false);
+
+  useEffect(() => {
+    if (dbTheme && !hasSyncedTheme) {
+      setTheme(dbTheme);
+      setHasSyncedTheme(true);
+    }
+  }, [dbTheme, hasSyncedTheme, setTheme]);
 
   const labels = getLabels(tenant?.businessType);
   const user = session?.user;

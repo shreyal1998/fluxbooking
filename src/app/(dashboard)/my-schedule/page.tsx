@@ -68,7 +68,7 @@ export default async function MySchedulePage() {
   }
 
   const labels = getLabels(tenant?.businessType);
-  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "h:mm a";
+  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm";
 
   // Calculate total weekly hours
   const availability = typeof staffProfile.availabilityJson === 'string' 

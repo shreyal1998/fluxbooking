@@ -69,7 +69,7 @@ export function HomeClient() {
     <>
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-32 pb-8 lg:pt-48 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50 via-white to-white">
-        <div className="bg-grid absolute inset-0 opacity-[0.4] pointer-events-none"></div>
+        <div className="bg-grid-light absolute inset-0 opacity-[0.4] pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 mb-8">

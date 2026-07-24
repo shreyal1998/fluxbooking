@@ -23,9 +23,15 @@ export default async function DashboardLayout({
 
   if (!tenant) redirect("/login");
 
+  const user = await prisma.user.findUnique({
+    where: { id: (session?.user as any)?.id },
+    select: { theme: true }
+  });
+  const dbTheme = user?.theme || "light";
+
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col">
-      <DashboardShell session={session} tenant={tenant}>{children}</DashboardShell>
+      <DashboardShell session={session} tenant={tenant} dbTheme={dbTheme}>{children}</DashboardShell>
       <InactivityTimeout />
     </div>
   );

@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     }
   });
   const labels = getLabels(tenant?.businessType);
-  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "h:mm a";
+  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm";
 
   // For staff, we need their staff profile ID
   const staffProfile = userRole === "STAFF" 

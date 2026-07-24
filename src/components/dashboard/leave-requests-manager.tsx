@@ -12,7 +12,7 @@ export function LeaveRequestsManager({ initialRequests, timeFormat = "12h" }: { 
   const [requests, setRequests] = useState(initialRequests);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "h:mm a";
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm";
 
   // Sync state when props change (after router.refresh())
   useEffect(() => {

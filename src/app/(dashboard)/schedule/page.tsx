@@ -35,8 +35,16 @@ export default async function SchedulePage() {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { lastSelectedStaffId: true }
+    select: { 
+      lastSelectedStaffId: true,
+      scheduleViewMode: true,
+      scheduleSlotDuration: true
+    }
   });
+  
+  const defaultView = user?.scheduleViewMode || "week";
+  const defaultSlotDuration = user?.scheduleSlotDuration || 60;
+  const serverDateIso = new Date().toISOString();
 
   return (
     <Suspense fallback={null}>
@@ -45,6 +53,9 @@ export default async function SchedulePage() {
         tenant={tenant as any}
         userRole={userRole}
         defaultStaffId={user?.lastSelectedStaffId || undefined}
+        defaultView={defaultView}
+        serverDateIso={serverDateIso}
+        defaultSlotDuration={defaultSlotDuration}
       />
     </Suspense>
   );
