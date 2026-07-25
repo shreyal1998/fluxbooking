@@ -66,13 +66,13 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
                <ShieldCheck className="h-4 w-4" />
                <span className="text-[10px] font-black uppercase tracking-widest">Verified Booking</span>
              </div>
-             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">Manage Your <span className="text-indigo-600">Appointment</span></h1>
+             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">Manage Your <span className="text-indigo-600">Booking</span></h1>
              <p className="text-slate-500 font-medium leading-relaxed max-w-md mx-auto">
                You can instantly reschedule to a new time or browse the full calendar for more options.
              </p>
           </div>
 
-          {/* Current Appointment Card */}
+          {/* Current Booking Card */}
           <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-indigo-500/5 overflow-hidden">
             <div className="p-8 lg:p-12 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -107,14 +107,14 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
                 />
               ) : (
                 <div className="p-6 rounded-2xl bg-amber-50 border border-amber-100 text-center">
-                   <p className="text-sm font-bold text-amber-700">This appointment has already passed and cannot be modified.</p>
+                   <p className="text-sm font-bold text-amber-700">This booking has already passed and cannot be modified.</p>
                 </div>
               )}
             </div>
             
             <div className="p-6 bg-slate-50 border-t border-slate-100 text-center">
               <Link href={`/b/${slug}`} className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline transition-all">
-                 Book a new appointment with {booking.tenant.name}
+                 Book a new service with {booking.tenant.name}
               </Link>
             </div>
           </div>

@@ -74,7 +74,7 @@ export function BookingForm({
   const rescheduleId = searchParams.get("reschedule");
   const isRescheduling = !!rescheduleId;
 
-  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm";
+  const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm a";
 
   // Calculate "today" based on the business timezone
   const getTodayAtVenue = () => {

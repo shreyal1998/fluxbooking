@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     }
   });
   const labels = getLabels(tenant?.businessType);
-  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm";
+  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
 
   // For staff, we need their staff profile ID
   const staffProfile = userRole === "STAFF" 
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
             </div>
             <div className="relative z-10">
               <h3 className="text-2xl font-medium mb-2">Complete Your Setup</h3>
-              <p className="text-indigo-100 font-normal max-w-md mb-6">Verify your working hours and availability to ensure customers can book appointments with you correctly.</p>
+              <p className="text-indigo-100 font-normal max-w-md mb-6">Verify your working hours and availability to ensure customers can schedule bookings with you correctly.</p>
               <Link 
                 href="/my-schedule" 
                 className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-2xl font-medium text-xs uppercase tracking-widest hover:bg-indigo-50 transition-colors"

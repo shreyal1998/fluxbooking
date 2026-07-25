@@ -47,10 +47,10 @@ export async function POST(req: Request) {
         planId = SubscriptionPlan.PRO;
         interval = SubscriptionInterval.MONTH;
       } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_YEARLY) {
-        planId = SubscriptionPlan.TEAM; // Map Starter to TEAM in Prisma
+        planId = SubscriptionPlan.STARTER;
         interval = SubscriptionInterval.YEAR;
       } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_MONTHLY) {
-        planId = SubscriptionPlan.TEAM;
+        planId = SubscriptionPlan.STARTER;
         interval = SubscriptionInterval.MONTH;
       }
 

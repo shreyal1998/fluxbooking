@@ -31,7 +31,7 @@ export function ManageActions({ bookingId, slug, suggestions }: ManageActionsPro
     
     if (result.success) {
       setStatus("success");
-      toast.success("Appointment moved successfully!");
+      toast.success("Booking moved successfully!");
     } else {
       toast.error(result.error || "Failed to reschedule");
       setLoading(null);
@@ -39,14 +39,14 @@ export function ManageActions({ bookingId, slug, suggestions }: ManageActionsPro
   };
 
   const handleCancel = async () => {
-    if (!confirm("Are you sure you want to cancel this appointment? This cannot be undone.")) return;
+    if (!confirm("Are you sure you want to cancel this booking? This cannot be undone.")) return;
     
     setLoading("cancel");
     const result = await cancelBookingByCustomer(bookingId);
     
     if (result.success) {
       setStatus("cancelled");
-      toast.success("Appointment cancelled.");
+      toast.success("Booking cancelled.");
     } else {
       toast.error(result.error || "Failed to cancel");
       setLoading(null);
@@ -87,7 +87,7 @@ export function ManageActions({ bookingId, slug, suggestions }: ManageActionsPro
           <XCircle className="h-10 w-10 text-rose-500" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-3xl font-black text-slate-900">Appointment Cancelled</h3>
+          <h3 className="text-3xl font-black text-slate-900">Booking Cancelled</h3>
           <p className="text-slate-500 font-medium">Your slot has been released. We hope to see you again soon!</p>
         </div>
         <Link 
@@ -150,7 +150,7 @@ export function ManageActions({ bookingId, slug, suggestions }: ManageActionsPro
           className="flex-1 h-16 bg-white text-rose-600 border-2 border-rose-100 rounded-2xl flex items-center justify-center gap-2 font-black transition-all hover:bg-rose-50 hover:border-rose-200 disabled:opacity-50"
         >
           {loading === "cancel" ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
-          Cancel Appointment
+          Cancel Booking
         </button>
       </div>
     </div>

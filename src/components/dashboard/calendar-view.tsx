@@ -37,6 +37,9 @@ import {
   Minus,
   Hand,
   Sparkles,
+  CheckCircle2,
+  Undo,
+  X
 } from "lucide-react";
 import { rescheduleBooking } from "@/app/actions/booking";
 import { toast } from "sonner";
@@ -55,6 +58,7 @@ interface Event {
   resourceName?: string;
   staffId?: string;
   status?: string;
+  serviceDuration?: number;
 }
 
 interface DaySchedule {
@@ -191,7 +195,9 @@ export function CalendarView({
   mode = "booking",
   onScheduleToggle,
   scheduleViewStart,
-  scheduleViewEnd
+  scheduleViewEnd,
+  onEventClick,
+  onStatusUpdate
 }: {
   initialEvents: Event[],
   userRole: string,
@@ -210,11 +216,18 @@ export function CalendarView({
   mode?: "booking" | "schedule",
   onScheduleToggle?: (date: Date, type: 'block' | 'override' | 'remove-block' | 'remove-override', staffId?: string) => void,
   scheduleViewStart?: string,
-  scheduleViewEnd?: string
+  scheduleViewEnd?: string,
+  onEventClick?: (event: Event) => void,
+  onStatusUpdate?: (id: string, status: string) => Promise<void>
 }) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [tooltipInfo, setTooltipInfo] = useState<{ event: Event; x: number; cardRight: number; y: number } | null>(null);
   const [now, setNow] = useState<Date | null>(null);
   const closeTimeoutRef = useRef<any>(null);
@@ -242,6 +255,7 @@ export function CalendarView({
   }, []);
 
   const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm";
+  const bookingTimeFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm a";
 
   // Sync state when props change
   useEffect(() => {
@@ -564,7 +578,7 @@ export function CalendarView({
     if (isPastEvent) {
       const isDark = resolvedTheme === 'dark';
       return {
-        className: baseClass + "text-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700 shadow-sm border-l-4",
+        className: baseClass + "text-slate-950 dark:text-slate-400 border-slate-300 dark:border-slate-700 shadow-sm border-l-4",
         style: { 
           borderLeftColor: event.color || "#6366f1",
           backgroundColor: isDark ? '#27272a' : '#e2e8f0'
@@ -577,7 +591,7 @@ export function CalendarView({
     const blendedBg = blendColors(event.color || "#6366f1", baseBg, isDark ? 0.25 : 0.15);
 
     return {
-      className: baseClass + "text-black dark:text-white border-slate-300 dark:border-slate-600 shadow-sm border-l-4",
+      className: baseClass + "text-slate-950 dark:text-slate-50 border-slate-300 dark:border-slate-600 shadow-sm border-l-4",
       style: { 
         borderLeftColor: event.color || "#6366f1",
         backgroundColor: blendedBg
@@ -794,14 +808,14 @@ export function CalendarView({
                                             );
                                           })()
                                         ) : isPastSlot ? (
-                                         <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                           <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
-                                         </div>
-                                       ) : (
-                                         <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                           <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
-                                         </div>
-                                       )}
+                                          <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
+                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
+                                          </div>
+                                        )}
                                    </div>
                                 </div>
                               );
@@ -833,13 +847,15 @@ export function CalendarView({
                     onClick={() => {
                       if (mode === "schedule" && event.type === 'blocked') {
                         onScheduleToggle?.(event.start, 'remove-block');
+                      } else if (mode === "booking" && event.type === 'booking') {
+                        onEventClick?.(event);
                       }
                     }}
-                    className={`absolute pointer-events-auto ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 px-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                    className={`absolute pointer-events-auto ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
                     style={{ 
                       top: `${top}px`, 
                       height: `${height}px`, 
-                    minHeight: '20px', 
+                      minHeight: '4px', 
                       left: `calc(80px + (100% - 80px) * ${left / 100})`,
                       width: `calc((100% - 80px) * ${width / 100})`,
                       ...(typeof styleData === 'object' ? styleData.style : {}) 
@@ -849,14 +865,14 @@ export function CalendarView({
                   >
                     {event.type !== 'blocked' && (
                       duration >= 60 ? (
-                        <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
-                          <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                          <span className="text-xs font-normal opacity-70 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                        <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.title.split(" - ")[0]}</span>
+                          <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center truncate h-full w-full">
-                          <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                          <span className="text-xs font-normal opacity-70 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                        <div className="flex items-center truncate h-full w-full py-0.5">
+                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                          <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
                         </div>
                       )
                     )}
@@ -1106,11 +1122,11 @@ export function CalendarView({
                                             })()
                                           ) : isPastSlot ? (
                                             <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
+                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
                                             </div>
                                           ) : (
                                             <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
+                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
                                             </div>
                                           )}
                                        </div>
@@ -1144,11 +1160,16 @@ export function CalendarView({
 
                         return (
                           <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd}
-                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden'} border ${mode === 'booking' ? 'py-0.5 px-1.5' : 'p-2'} shadow-sm z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                            onClick={() => {
+                               if (mode === "booking" && event.type === 'booking') {
+                                 onEventClick?.(event);
+                               }
+                            }}
+                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-1.5' : 'p-2'} shadow-sm z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
                             style={{ 
                               top: `${top}px`, 
                               height: `${height}px`, 
-                              minHeight: '20px', 
+                              minHeight: '4px', 
                               left: `${left}%`,
                               width: `${width}%`,
                               ...(typeof styleData === 'object' ? styleData.style : {}) 
@@ -1158,14 +1179,14 @@ export function CalendarView({
                           >
                              {event.type !== 'blocked' && (
                                duration >= 60 ? (
-                                 <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
-                                   <span className="text-[10px] font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                                   <span className="text-[9px] font-normal opacity-70 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                                 <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.title.split(" - ")[0]}</span>
+                                   <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
                                  </div>
                                ) : (
-                                 <div className="flex items-center truncate h-full w-full">
-                                   <span className="text-[10px] font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                                   <span className="text-[9px] font-normal opacity-70 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                                 <div className="flex items-center truncate h-full w-full py-0.5">
+                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                                   <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
                                  </div>
                                )
                              )}
@@ -1375,11 +1396,11 @@ export function CalendarView({
                                              })()
                                            ) : isPastSlot ? (
                                            <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
                                            </div>
                                          ) : (
                                            <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, timeDisplayFormat)}</span>
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
                                            </div>
                                          )}
                                       </div>
@@ -1417,11 +1438,16 @@ export function CalendarView({
                             draggable={event.type !== 'blocked'} 
                             onDragStart={(e) => handleDragStart(e, event.id)} 
                             onDragEnd={handleDragEnd} 
-                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 px-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                            onClick={() => {
+                              if (mode === "booking" && event.type === 'booking') {
+                                onEventClick?.(event);
+                              }
+                            }}
+                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
                             style={{ 
                               top: `${top}px`, 
                               height: `${height}px`, 
-                              minHeight: '20px', 
+                              minHeight: '4px', 
                               left: `${left}%`,
                               width: `${width}%`,
                               ...(typeof styleData === 'object' ? styleData.style : {}) 
@@ -1431,14 +1457,14 @@ export function CalendarView({
                           >
                             {event.type !== 'blocked' && (
                               duration >= 60 ? (
-                                <div className="flex flex-col justify-center h-full w-full py-0.5 leading-tight">
-                                  <span className="text-sm font-semibold truncate block w-full">{event.title.split(" - ")[0]}</span>
-                                  <span className="text-xs font-normal opacity-70 block w-full">{format(event.start, timeDisplayFormat)}</span>
+                                <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.title.split(" - ")[0]}</span>
+                                  <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
                                 </div>
                               ) : (
-                                <div className="flex items-center truncate h-full w-full">
-                                  <span className="text-sm font-semibold truncate shrink-0">{event.title.split(" - ")[0]}</span>
-                                  <span className="text-xs font-normal opacity-70 shrink">, {format(event.start, timeDisplayFormat)}</span>
+                                <div className="flex items-center truncate h-full w-full py-0.5">
+                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                                  <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
                                 </div>
                               )
                             )}
@@ -1474,7 +1500,7 @@ export function CalendarView({
     const lightBg = blendColors(treatmentColor, baseBg, isDark ? 0.25 : 0.15);
     const borderBg = blendColors(treatmentColor, baseBg, isDark ? 0.55 : 0.45);
 
-    const TOOLTIP_HEIGHT_ESTIMATE = 130; // generous estimate for max tooltip height
+    const TOOLTIP_HEIGHT_ESTIMATE = 165; // generous estimate for max tooltip height
     const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800;
     const rawYPos = tooltipInfo.y;
     const yPos = Math.min(Math.max(8, rawYPos), viewportH - TOOLTIP_HEIGHT_ESTIMATE - 8);
@@ -1508,7 +1534,7 @@ export function CalendarView({
             <span>{format(tooltipInfo.event.start, "EEEE, MMMM d")}</span>
           </div>
           <div className="flex items-center gap-1.5 font-normal">
-            <span>{format(tooltipInfo.event.start, timeDisplayFormat)} – {format(tooltipInfo.event.end, timeDisplayFormat)}</span>
+            <span>{format(tooltipInfo.event.start, bookingTimeFormat)} – {format(tooltipInfo.event.end, bookingTimeFormat)}</span>
           </div>
           {tooltipInfo.event.resourceName && (
             <div className="flex items-center gap-1.5">
@@ -1517,9 +1543,73 @@ export function CalendarView({
             </div>
           )}
         </div>
+
+        {/* Inline status update action buttons inside tooltip popover */}
+        {tooltipInfo.event.type === "booking" && onStatusUpdate && (
+          <div className="mt-3 pt-2.5 border-t border-black/15 dark:border-white/15 flex items-center justify-end gap-2">
+            {/* Status Display Pill */}
+            <span className={`mr-auto text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+              tooltipInfo.event.status === "COMPLETED"
+                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                : tooltipInfo.event.status === "CANCELLED"
+                  ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+            }`}>
+              {tooltipInfo.event.status === "CONFIRMED" ? "PENDING" : tooltipInfo.event.status}
+            </span>
+
+            {/* Action Icons */}
+            {(tooltipInfo.event.status === "CANCELLED" || tooltipInfo.event.status === "COMPLETED") && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await onStatusUpdate(tooltipInfo.event.id, "PENDING");
+                  hideTooltip();
+                }}
+                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+              >
+                <Undo className="h-3.5 w-3.5" />
+              </button>
+            )}
+
+            {tooltipInfo.event.status !== "COMPLETED" && tooltipInfo.event.status !== "CANCELLED" && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await onStatusUpdate(tooltipInfo.event.id, "COMPLETED");
+                  hideTooltip();
+                }}
+                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-emerald-600 dark:text-emerald-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+
+            {tooltipInfo.event.status !== "CANCELLED" && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await onStatusUpdate(tooltipInfo.event.id, "CANCELLED");
+                  hideTooltip();
+                }}
+                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   })() : null;
+
+  if (!mounted) {
+    return (
+      <div className="w-full flex items-center justify-center min-h-[400px]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <>

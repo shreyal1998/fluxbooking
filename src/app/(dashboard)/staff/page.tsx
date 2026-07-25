@@ -54,7 +54,7 @@ export default async function StaffPage() {
     })
   ]);
 
-  const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
+  const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
   const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
 
   // Check if trial is active

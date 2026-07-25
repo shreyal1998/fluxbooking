@@ -44,7 +44,7 @@ function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
   const formatTime = (timeStr: string) => {
     if (!timeStr) return "";
     if (timeStr === "24:00" || timeStr === "24:00:00") {
-      return timeFormat === "24h" ? "00:00" : "12:00";
+      return timeFormat === "24h" ? "00:00" : "12:00 AM";
     }
     const [hStr, mStr] = timeStr.split(":");
     const h = parseInt(hStr, 10);
@@ -52,7 +52,8 @@ function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
     if (timeFormat === "24h") return timeStr;
     const displayHour = h === 0 || h === 24 ? 12 : h > 12 ? h - 12 : h;
     const displayHourStr = displayHour.toString().padStart(2, "0");
-    return `${displayHourStr}:${mStr}`;
+    const period = h >= 12 && h < 24 ? "PM" : "AM";
+    return `${displayHourStr}:${mStr} ${period}`;
   };
 
   const dayLabels = {
@@ -439,7 +440,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                           return (
                             <div key={idx} className="flex justify-between text-[11px] font-bold">
                               <span className="text-slate-400">{day}</span>
-                              <span className="text-slate-700 dark:text-slate-200">{hoursText}</span>
+                              <span className="text-slate-700 dark:text-slate-200 tabular-nums">{hoursText}</span>
                             </div>
                           );
                         })}

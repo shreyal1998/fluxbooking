@@ -149,14 +149,18 @@ export function DashboardShell({
   };
 
   const bgClass = getPageBackground(pathname);
-
   // Helper to determine if a link is active (normalized)
   const isLinkActive = (href: string) => {
     const currentPath = pathname.replace(/\/$/, "") || "/";
     const targetPath = href.replace(/\/$/, "") || "/";
-    return currentPath === targetPath;
+    if (targetPath === "/overview") {
+      return currentPath === "/overview";
+    }
+    if (targetPath.startsWith("/settings")) {
+      return currentPath.startsWith("/settings");
+    }
+    return currentPath === targetPath || currentPath.startsWith(targetPath + "/");
   };
-
   return (
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
       <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
@@ -238,7 +242,7 @@ export function DashboardShell({
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
              )}
              <input 
-              placeholder="Search appointments, customers..."
+              placeholder={`Search ${labels.appointmentLower}s, ${labels.customerLower}s...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/5 shadow-sm"

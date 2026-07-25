@@ -532,7 +532,7 @@ export function SettingsClient({
                   </div>
                   <h4 className="text-rose-900 dark:text-rose-400 font-black uppercase tracking-tight">Danger Zone</h4>
                 </div>
-                <p className="text-rose-700 dark:text-rose-400/80 text-sm mb-8 leading-relaxed">Warning: Deleting your business will remove all data, including appointments and staff lists. This action is irreversible.</p>
+                <p className="text-rose-700 dark:text-rose-400/80 text-sm mb-8 leading-relaxed">Warning: Deleting your business will remove all data, including bookings and staff lists. This action is irreversible.</p>
                 <button className="bg-rose-600 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-200 dark:shadow-none">
                   Delete Business
                 </button>

@@ -28,7 +28,7 @@ export async function addStaff(formData: FormData) {
       include: { staff: true }
     });
 
-    const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
+    const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
     const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
 
     // Check if trial is active
@@ -388,6 +388,7 @@ export async function updateStaffAvailability(staffId: string, availability: any
     revalidatePath("/schedule");
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -436,6 +437,7 @@ export async function addBlockedSlot(formData: FormData) {
     revalidatePath("/schedule");
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -461,6 +463,7 @@ export async function removeBlockedSlot(slotId: string) {
     revalidatePath("/schedule");
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -610,6 +613,7 @@ export async function approveLeaveRequest(requestId: string) {
     revalidatePath("/schedule");
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -633,6 +637,7 @@ export async function rejectLeaveRequest(requestId: string) {
     revalidatePath("/schedule");
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };

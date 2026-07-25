@@ -2,9 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { AppointmentsClient } from "./appointments-client";
+import { BookingsClient } from "./bookings-client";
 
-export default async function AppointmentsPage() {
+export default async function BookingsPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
@@ -105,7 +105,7 @@ export default async function AppointmentsPage() {
   }));
 
   return (
-    <AppointmentsClient 
+    <BookingsClient 
       bookings={serializedBookings as any}
       blockedSlots={blockedSlots}
       availabilityOverrides={availabilityOverrides}

@@ -50,7 +50,7 @@ const labelsMap: Record<BusinessType, BusinessLabels> = {
     customerSlug: "clients",
     appointment: "Booking",
     appointmentLower: "booking",
-    appointmentSlug: "bookings",
+    appointmentSlug: "booking",
   },
   GYM: {
     businessTypeName: "Fitness & Gym",
@@ -92,7 +92,7 @@ const labelsMap: Record<BusinessType, BusinessLabels> = {
     customerSlug: "patients",
     appointment: "Booking",
     appointmentLower: "booking",
-    appointmentSlug: "bookings",
+    appointmentSlug: "booking",
   },
 };
 

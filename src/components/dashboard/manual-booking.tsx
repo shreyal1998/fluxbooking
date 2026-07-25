@@ -119,6 +119,8 @@ interface ManualBookingProps {
   currency?: string;
   timeFormat?: string;
   timezone?: string;
+  triggerIconOnly?: boolean;
+  triggerClassName?: string;
 }
 
 export function ManualBooking({ 
@@ -132,7 +134,9 @@ export function ManualBooking({
   businessType,
   currency = "USD",
   timeFormat = "12h",
-  timezone = "UTC"
+  timezone = "UTC",
+  triggerIconOnly = false,
+  triggerClassName
 }: ManualBookingProps) {
   const router = useRouter();
   const labels = getLabels(businessType);
@@ -153,7 +157,7 @@ export function ManualBooking({
     return normalized;
   };
 
-  const [isOpen, setIsOpen] = useState(mode === "edit" || inline);
+  const [isOpen, setIsOpen] = useState(inline);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -1642,6 +1646,19 @@ export function ManualBooking({
         >
           <Plus className="h-4 w-4" />
           Add
+        </button>
+      )}
+
+      {mode === "edit" && (
+        <button 
+          onClick={() => setIsOpen(true)}
+          className={triggerClassName || (triggerIconOnly 
+            ? "h-8 w-8 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
+            : "flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
+          )}
+        >
+          <Pencil className="h-4 w-4" />
+          {!triggerIconOnly && "Edit Booking"}
         </button>
       )}
 

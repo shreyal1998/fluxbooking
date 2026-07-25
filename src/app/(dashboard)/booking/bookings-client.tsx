@@ -20,7 +20,8 @@ import {
   Info,
   Save,
   Loader2,
-  Building
+  Building,
+  Undo
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
@@ -63,7 +64,7 @@ type SerializedBooking = Omit<Booking, "service"> & {
   staff: Staff;
 };
 
-interface AppointmentsClientProps {
+interface BookingsClientProps {
   bookings: SerializedBooking[];
   blockedSlots: BlockedSlotWithRelations[];
   availabilityOverrides: any[];
@@ -120,7 +121,7 @@ function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
   const formatTime = (timeStr: string) => {
     if (!timeStr) return "";
     if (timeStr === "24:00" || timeStr === "24:00:00") {
-      return timeFormat === "24h" ? "00:00" : "12:00";
+      return timeFormat === "24h" ? "00:00" : "12:00 AM";
     }
     const [hStr, mStr] = timeStr.split(":");
     const h = parseInt(hStr, 10);
@@ -128,7 +129,8 @@ function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
     if (timeFormat === "24h") return timeStr;
     const displayHour = h === 0 || h === 24 ? 12 : h > 12 ? h - 12 : h;
     const displayHourStr = displayHour.toString().padStart(2, "0");
-    return `${displayHourStr}:${mStr}`;
+    const period = h >= 12 && h < 24 ? "PM" : "AM";
+    return `${displayHourStr}:${mStr} ${period}`;
   };
 
   const dayLabels = {
@@ -160,7 +162,7 @@ function formatBusinessHours(hoursJson: any, timeFormat: string = "12h") {
   return formattedDays;
 }
 
-export function AppointmentsClient({ 
+export function BookingsClient({ 
   bookings: initialBookings, 
   blockedSlots: initialBlockedSlots, 
   availabilityOverrides,
@@ -172,7 +174,7 @@ export function AppointmentsClient({
   defaultViewMode = "week",
   serverDateIso,
   defaultSlotDuration = 60
-}: AppointmentsClientProps) {
+}: BookingsClientProps) {
   const router = useRouter();
   const labels = getLabels(tenant?.businessType);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">(defaultViewMode as any);
@@ -544,7 +546,8 @@ export function AppointmentsClient({
         staffId: b.staffId,
         resourceName: b.staff.name,
         status: b.status,
-        color: b.service.color
+        color: b.service.color,
+        serviceDuration: b.service.durationMinutes
       })) || []),
       ...(filteredBlocked?.map((s) => ({
         id: s.id,
@@ -631,8 +634,8 @@ export function AppointmentsClient({
           ? (staff.find((s) => s.id === currentStaffFilter[0])?.name || "Select Staff")
           : `${currentStaffFilter.length} Staff Selected`));
 
-  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm";
-  const listTimeFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm";
+  const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
+  const listTimeFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
 
 
 
@@ -659,7 +662,7 @@ export function AppointmentsClient({
                           return (
                             <div key={idx} className="flex justify-between text-[11px] font-bold">
                               <span className="text-slate-400">{day}</span>
-                              <span className="text-slate-700 dark:text-slate-200">{hoursText}</span>
+                              <span className="text-slate-700 dark:text-slate-200 tabular-nums">{hoursText}</span>
                             </div>
                           );
                         })}
@@ -905,16 +908,16 @@ export function AppointmentsClient({
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Delete Appointment?</h3>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-450">
-                    Are you sure you want to permanently delete this appointment? This action cannot be undone.
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Delete Booking?</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Are you sure you want to permanently delete this booking? This action cannot be undone.
                   </p>
                 </div>
 
                 <div className="flex gap-4 pt-2">
                   <button 
                     onClick={() => setDeleteConfirmId(null)}
-                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -1030,12 +1033,16 @@ export function AppointmentsClient({
                           <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
                           <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.staff}</th>
                           <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Status</th>
-                          <th className="px-10 py-5 text-right text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Actions</th>
+                          <th className="px-4 py-5 text-right text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {currentListItems.map((booking) => (
-                          <tr key={booking.id} className="hover:bg-indigo-50/50 dark:hover:bg-slate-800/30 transition-all group">
+                           <tr 
+                             key={booking.id} 
+                             onClick={() => router.push(`/${labels.appointmentSlug}/${booking.id}`)}
+                             className="hover:bg-indigo-50/50 dark:hover:bg-slate-800/30 transition-all group cursor-pointer"
+                           >
                             <td className="px-10 py-6 whitespace-nowrap">
                               <div className="text-sm font-normal text-black dark:text-white">{formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", "MMM d, yyyy")}</div>
                               <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
@@ -1066,30 +1073,94 @@ export function AppointmentsClient({
                               </div>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-normal tracking-wider border ${getStatusStyle(booking.status)}`}>
-                                {booking.status}
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-normal tracking-wider border ${getStatusStyle(booking.status === "CONFIRMED" ? "PENDING" : booking.status)}`}>
+                                {booking.status === "CONFIRMED" ? "PENDING" : booking.status}
                               </span>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-2 transition-all">
-                                {(booking.status === "PENDING" || booking.status === "CONFIRMED") && (
+                            <td className="px-4 py-6 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-1 transition-all">
+                                {(booking.status === "PENDING" || booking.status === "CONFIRMED" || booking.status === "COMPLETED" || booking.status === "CANCELLED") && (
                                   <>
-                                    <Tooltip content="Complete Booking" position="bottom">
-                                      <button 
-                                        onClick={() => handleStatusUpdate(booking.id, "COMPLETED")}
-                                        disabled={processingId === booking.id}
-                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
-                                      >
-                                        <CheckCircle2 className="h-[18px] w-[18px]" />
-                                      </button>
-                                    </Tooltip>
+                                    {/* Restore to Pending: CANCELLED or COMPLETED */}
+                                    {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
+                                      <Tooltip content="Restore to Pending" position="bottom">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusUpdate(booking.id, "PENDING");
+                                          }}
+                                          disabled={processingId === booking.id}
+                                          className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <Undo className="h-4 w-4" />
+                                        </button>
+                                      </Tooltip>
+                                    )}
+
+                                    {/* Edit Booking: PENDING, CONFIRMED, COMPLETED */}
+                                    {booking.status !== "CANCELLED" && (
+                                      <Tooltip content="Edit Booking" position="bottom">
+                                        <div onClick={(e) => e.stopPropagation()}>
+                                          <ManualBooking 
+                                            tenantId={tenant?.id || ""} 
+                                            services={services} 
+                                            staff={staff} 
+                                            mode="edit"
+                                            initialData={booking}
+                                            businessType={tenant?.businessType}
+                                            currency={tenant?.currency}
+                                            timeFormat={tenant?.timeFormat || "12h"}
+                                            timezone={tenant?.timezone || "UTC"}
+                                            triggerIconOnly={true}
+                                            triggerClassName="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center"
+                                          />
+                                        </div>
+                                      </Tooltip>
+                                    )}
+
+                                    {/* Complete Booking: PENDING, CONFIRMED */}
+                                    {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
+                                      <Tooltip content="Complete Booking" position="bottom">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusUpdate(booking.id, "COMPLETED");
+                                          }}
+                                          disabled={processingId === booking.id}
+                                          className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <CheckCircle2 className="h-4 w-4" />
+                                        </button>
+                                      </Tooltip>
+                                    )}
+
+                                    {/* Cancel Booking: PENDING, CONFIRMED, COMPLETED */}
+                                    {booking.status !== "CANCELLED" && (
+                                      <Tooltip content="Cancel Booking" position="bottom">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusUpdate(booking.id, "CANCELLED");
+                                          }}
+                                          disabled={processingId === booking.id}
+                                          className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </Tooltip>
+                                    )}
+
+                                    {/* Delete Booking: Always */}
                                     <Tooltip content="Delete" position="bottom">
                                       <button 
-                                        onClick={() => setDeleteConfirmId(booking.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDeleteConfirmId(booking.id);
+                                        }}
                                         disabled={processingId === booking.id}
-                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                       >
-                                        <Trash2 className="h-[18px] w-[18px]" />
+                                        <Trash2 className="h-4 w-4" />
                                       </button>
                                     </Tooltip>
                                   </>
@@ -1179,6 +1250,12 @@ export function AppointmentsClient({
               staffFilter={currentStaffFilter}
               scheduleViewStart={viewStart}
               scheduleViewEnd={viewEnd}
+              onEventClick={(event) => {
+                if (event.type === 'booking') {
+                  router.push(`/${labels.appointmentSlug}/${event.id}`);
+                }
+              }}
+              onStatusUpdate={handleStatusUpdate}
             />
           )}
         </div>

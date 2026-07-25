@@ -81,7 +81,7 @@ export async function getAvailableSlots(
     orderBy: { createdAt: "asc" }
   });
 
-  const limits = { FREE: 1, TEAM: 5, PRO: 1000000 };
+  const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
   let currentLimit = limits[tenant?.plan as keyof typeof limits] || 1;
   if (tenant?.planStatus === "TRIALING" && currentLimit < 5) currentLimit = 5;
 
@@ -329,7 +329,7 @@ export async function createBooking(formData: FormData) {
   const nowAtVenue = getInTimezone(new Date(), businessTimezone);
   if (startTime < nowAtVenue) {
     if (!session || (session.user.role !== "ADMIN" && session.user.role !== "STAFF")) {
-      return { error: "Cannot book appointments in the past." };
+      return { error: "Cannot schedule bookings in the past." };
     }
   }
 
@@ -420,6 +420,7 @@ export async function createBooking(formData: FormData) {
     
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/customers");
     revalidatePath("/patients");
@@ -457,7 +458,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
     if (userRole === "STAFF") {
       const staffProfile = await prisma.staff.findUnique({ where: { userId } });
       if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
-      if (staffId && staffId !== staffProfile.id) return { error: "Staff members can only reschedule their own appointments." };
+      if (staffId && staffId !== staffProfile.id) return { error: "Staff members can only reschedule their own bookings." };
     }
 
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -512,6 +513,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
 
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/customers");
     revalidatePath("/patients");
@@ -541,7 +543,7 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
     if (userRole === "STAFF") {
       const staffProfile = await prisma.staff.findUnique({ where: { userId } });
       if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
-      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) return { error: "Staff members can only reschedule their own appointments." };
+      if (typeof newStaffId !== 'undefined' && newStaffId !== staffProfile.id) return { error: "Staff members can only reschedule their own bookings." };
     }
 
     const duration = booking.service.durationMinutes;
@@ -559,7 +561,7 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
       }
     });
 
-    if (conflict) return { error: "This slot overlaps with an existing appointment." };
+    if (conflict) return { error: "This slot overlaps with an existing booking." };
 
     await prisma.booking.update({
       where: { id: bookingId },
@@ -589,6 +591,7 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
 
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -647,6 +650,7 @@ export async function rescheduleBookingByCustomer(bookingId: string, newDateStr:
 
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -750,6 +754,7 @@ export async function deleteBooking(bookingId: string) {
 
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };
@@ -782,6 +787,7 @@ export async function updateBookingStatus(bookingId: string, status: string) {
 
     revalidatePath("/appointments");
     revalidatePath("/bookings");
+    revalidatePath("/booking");
     revalidatePath("/sessions");
     revalidatePath("/b/[slug]", "layout");
     return { success: true };

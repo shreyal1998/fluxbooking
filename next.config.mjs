@@ -18,7 +18,12 @@ const nextConfig = {
       { source: '/patients', destination: '/customers' },
 
       // Bookings / Sessions / Appointments
-      { source: '/bookings', destination: '/appointments' },
+      { source: '/appointments/:id', destination: '/booking/:id' },
+      { source: '/bookings/:id', destination: '/booking/:id' },
+      { source: '/sessions/:id', destination: '/booking/:id' },
+      { source: '/appointments', destination: '/booking' },
+      { source: '/bookings', destination: '/booking' },
+      { source: '/sessions', destination: '/booking' },
     ];
   },
 };

@@ -120,7 +120,7 @@ export function HomeClient() {
                   </div>
                   <div className="bg-slate-50 rounded-lg px-6 py-2 text-[10px] font-bold text-slate-400 font-mono tracking-tight flex items-center gap-2">
                     <Shield className="h-3 w-3" />
-                    fluxbooking.com/appointments
+                    fluxbooking.com/bookings
                   </div>
                   <div className="w-12"></div>
                 </div>
@@ -130,7 +130,7 @@ export function HomeClient() {
                      <div className="space-y-4">
                        <div className="h-10 w-full bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 flex items-center px-4 gap-3">
                           <Calendar className="h-4.5 w-4.5" />
-                          <span className="text-xs font-black">Appointments</span>
+                          <span className="text-xs font-black">Bookings</span>
                        </div>
                        <div className="h-10 w-full bg-slate-50 rounded-xl flex items-center px-4 gap-3">
                           <Users className="h-4.5 w-4.5 text-slate-300" />

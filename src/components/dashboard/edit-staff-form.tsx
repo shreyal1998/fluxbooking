@@ -208,7 +208,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                       } ${
                         fieldErrors.password 
                           ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                          : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-850 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                          : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                       }`}
                     />
                     <button
@@ -234,7 +234,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                       } ${
                         fieldErrors.confirmPassword 
                           ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                          : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-850 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                          : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                       }`}
                     />
                     <button
