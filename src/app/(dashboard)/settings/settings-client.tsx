@@ -481,6 +481,10 @@ export function SettingsClient({
               <BillingSettings 
                 currentPlan={tenant?.plan || "FREE"} 
                 planInterval={tenant?.planInterval || "MONTH"} 
+                planStatus={tenant?.planStatus}
+                subscriptionId={tenant?.lemonSqueezySubscriptionId}
+                subscriptionEndsAt={tenant?.subscriptionEndsAt}
+                trialEndsAt={tenant?.trialEndsAt}
               />
             )}
           </div>

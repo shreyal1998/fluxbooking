@@ -4,13 +4,15 @@ import { Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface TrialBadgeProps {
   planStatus: string | null;
   trialEndsAt: Date | null;
+  plan: string | null;
 }
 
-export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
+export function TrialBadge({ planStatus, trialEndsAt, plan }: TrialBadgeProps) {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState<boolean>(false);
   const TRIAL_DURATION = 14; // Standard 14-day trial
@@ -36,13 +38,19 @@ export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
 
   const isCritical = daysRemaining <= 3 || isExpired;
 
+  const planName = plan ? plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase() : "Starter";
+
   return (
     <Link 
       href="/settings/billing"
       className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-2xl bg-white/50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 transition-all hover:scale-[1.02] active:scale-95 group shadow-sm"
     >
-      {/* Circular Progress SVG */}
-      <div className="relative h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center shrink-0">
+      {/* Circular Progress SVG with Tooltip */}
+      <Tooltip 
+        content={isExpired ? "Your trial has expired. Click to view billing plans." : `You are on the ${planName} Plan Trial (${daysRemaining} days remaining). Click to manage billing.`} 
+        position="bottom"
+      >
+        <div className="relative h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center shrink-0">
         <svg viewBox="0 0 40 40" className="transform -rotate-90 h-full w-full">
           <circle
             cx="20"
@@ -74,14 +82,15 @@ export function TrialBadge({ planStatus, trialEndsAt }: TrialBadgeProps) {
           {daysRemaining}
         </span>
       </div>
+      </Tooltip>
 
       {/* Info Text - Hidden on smallest mobile, shown from 'sm' breakpoint up */}
-      <div className="hidden sm:flex flex-col leading-none">
+      <div className={`hidden sm:flex flex-col leading-none ${daysRemaining === 0 ? "items-center" : "items-start"}`}>
         <div className="flex items-center gap-1 mb-0.5">
           <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-tight ${
             isCritical ? "text-rose-600 dark:text-rose-400" : "text-slate-700 dark:text-slate-200"
           }`}>
-            {isExpired ? "EXPIRED" : "TRIAL DAYS"}
+            {isExpired ? "EXPIRED" : daysRemaining === 0 ? "TRIAL ENDS TODAY" : "TRIAL DAYS"}
           </span>
           <Zap className={`h-2 w-2 sm:h-2.5 sm:w-2.5 ${isCritical ? "text-rose-500 fill-rose-500" : "text-indigo-500 fill-indigo-500"} group-hover:animate-bounce`} />
         </div>

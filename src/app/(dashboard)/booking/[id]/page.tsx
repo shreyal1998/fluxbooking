@@ -47,6 +47,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
     prisma.service.findMany({ where: { tenantId: tenantId || "" } }),
     prisma.staff.findMany({ 
       where: { tenantId: tenantId || "" },
+      orderBy: { createdAt: "asc" },
       include: { services: true }
     }),
     prisma.tenant.findUnique({

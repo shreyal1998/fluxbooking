@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { toggleSlotStatus, saveLastSelectedStaff, saveScheduleViewMode, saveScheduleSlotDuration } from "@/app/actions/schedule";
 import { toast } from "sonner";
@@ -26,7 +26,8 @@ import {
   Filter,
   Check,
   Save,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 import { StructuredAvailabilityEditor } from "@/components/dashboard/structured-availability-editor";
 import { Portal } from "@/components/ui/portal";
@@ -120,6 +121,11 @@ const endTimes = (() => {
 let lastSelectedStaffFilter = "";
 
 export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaultView = "week", serverDateIso, defaultSlotDuration = 60 }: any) {
+  const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
+  const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
+  const isTrialActive = tenant?.planStatus === "TRIALING" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) > new Date(serverDateIso);
+  const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
+
   const [view, setView] = useState<any>(defaultView);
 
   // Save view mode to database whenever it changes
@@ -129,7 +135,26 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     }
   }, [view, defaultView]);
 
-  const [currentDate, setCurrentDate] = useState(() => serverDateIso ? new Date(serverDateIso) : new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => serverDateIso ? new Date(serverDateIso) : new Date());
+
+  const updateCurrentDate = useCallback((dateOrFn: Date | ((prev: Date) => Date)) => {
+    setCurrentDate((prev) => {
+      const next = typeof dateOrFn === "function" ? dateOrFn(prev) : dateOrFn;
+      sessionStorage.setItem("schedule_current_date", next.toISOString());
+      return next;
+    });
+  }, []);
+
+  // Hydration-safe mount load
+  useEffect(() => {
+    const saved = sessionStorage.getItem("schedule_current_date");
+    if (saved) {
+      const parsed = new Date(saved);
+      if (!isNaN(parsed.getTime())) {
+        setCurrentDate(parsed);
+      }
+    }
+  }, []);
 
   const getHeaderText = () => {
     if (view === "month") return format(currentDate, "MMMM yyyy");
@@ -316,15 +341,17 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     if (staff.length > 0) {
       const urlId = searchParams.get("staffId");
       const isValidUrlId = urlId && staff.some((s: any) => s.id === urlId);
+      
+      const isUrlIdActive = isValidUrlId && staff.findIndex((s: any) => s.id === urlId) < currentLimit;
 
-      if (isValidUrlId) {
+      if (isUrlIdActive) {
         if (staffFilter !== urlId) {
           setStaffFilter(urlId!);
           lastSelectedStaffFilter = urlId!;
         }
       } else {
-        const isValidDefaultId = defaultStaffId && staff.some((s: any) => s.id === defaultStaffId);
-        const isValidGlobalId = lastSelectedStaffFilter && staff.some((s: any) => s.id === lastSelectedStaffFilter);
+        const isValidDefaultId = defaultStaffId && staff.some((s: any) => s.id === defaultStaffId) && staff.findIndex((s: any) => s.id === defaultStaffId) < currentLimit;
+        const isValidGlobalId = lastSelectedStaffFilter && staff.some((s: any) => s.id === lastSelectedStaffFilter) && staff.findIndex((s: any) => s.id === lastSelectedStaffFilter) < currentLimit;
         
         const targetId = isValidDefaultId 
           ? defaultStaffId 
@@ -339,9 +366,10 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
         }
       }
     }
-  }, [staff, staffFilter, searchParams, pathname, router, defaultStaffId]);
+  }, [staff, staffFilter, searchParams, pathname, router, defaultStaffId, currentLimit]);
 
   const selectedStaffName = staff.find((s: any) => s.id === staffFilter)?.name || "Select Team Member";
+  const activeStaff = useMemo(() => staff.slice(0, currentLimit), [staff, currentLimit]);
 
   const events = useMemo(() => {
     const allEvents: any[] = [];
@@ -350,7 +378,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     // If in team view, we want to see everyone. Otherwise use staffFilter.
     const effectiveFilter = view === "team" ? "all" : staffFilter;
 
-    staff.forEach((s: any) => {
+    activeStaff.forEach((s: any) => {
       // If we are filtering by staff, only show their items
       if (effectiveFilter !== "all" && s.id !== effectiveFilter) return;
       
@@ -496,30 +524,47 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                     <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                   </div>
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
-                    {staff.map((s: any) => (
-                      <button
-                        key={s.id}
-                        onClick={async () => { 
-                          setStaffFilter(s.id); 
-                          lastSelectedStaffFilter = s.id;
-                          const params = new URLSearchParams(searchParams.toString());
-                          params.set("staffId", s.id);
-                          router.replace(`${pathname}?${params.toString()}`);
-                          setIsStaffFilterOpen(false); 
-                          // Save to database in background
-                          await saveLastSelectedStaff(s.id);
-                        }}
-                        className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: s.color }}>
-                            {s.name.substring(0, 2).toUpperCase()}
+                    {staff.map((s: any, idx: number) => {
+                      const isLocked = idx >= currentLimit;
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={async () => { 
+                            if (isLocked) {
+                              toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
+                              return;
+                            }
+                            setStaffFilter(s.id); 
+                            lastSelectedStaffFilter = s.id;
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set("staffId", s.id);
+                            router.replace(`${pathname}?${params.toString()}`);
+                            setIsStaffFilterOpen(false); 
+                            // Save to database in background
+                            await saveLastSelectedStaff(s.id);
+                          }}
+                          className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${
+                            isLocked 
+                              ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
+                              : staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
+                              {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <span className={`text-xs font-semibold ${isLocked ? 'text-slate-500 dark:text-slate-400' : staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
+                              {s.name} {isLocked && "(Locked)"}
+                            </span>
                           </div>
-                          <span className={`text-xs font-medium ${staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>{s.name}</span>
-                        </div>
-                        {staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />}
-                      </button>
-                    ))}
+                          {isLocked ? (
+                            <Lock className="h-3.5 w-3.5 text-slate-400" />
+                          ) : (
+                            staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -534,17 +579,17 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
            <div className="flex items-center gap-4">
               <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                <button 
+                 <button 
                   onClick={() => {
                     const next = view === 'week' ? addMinutes(currentDate, -10080) : addMinutes(currentDate, -1440);
-                    setCurrentDate(next);
+                    updateCurrentDate(next);
                   }}
                   className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button 
-                  onClick={() => setCurrentDate(new Date())} 
+                  onClick={() => updateCurrentDate(new Date())} 
                   className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
                 >
                   Today
@@ -552,7 +597,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                 <button 
                   onClick={() => {
                     const next = view === 'week' ? addMinutes(currentDate, 10080) : addMinutes(currentDate, 1440);
-                    setCurrentDate(next);
+                    updateCurrentDate(next);
                   }}
                   className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
                 >
@@ -594,12 +639,12 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
         <CalendarView 
           initialEvents={events}
           userRole={userRole}
-          staffList={staff}
+          staffList={activeStaff}
           businessHours={tenant.businessHoursJson}
           currentDate={currentDate}
           view={view}
           slotDuration={slotDuration}
-          onDateChange={setCurrentDate}
+          onDateChange={updateCurrentDate}
           onViewChange={setView}
           onSlotDurationChange={setSlotDuration}
           staffFilter={view === "team" ? "all" : staffFilter}

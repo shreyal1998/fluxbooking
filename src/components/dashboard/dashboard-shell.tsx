@@ -27,8 +27,10 @@ import { useTheme } from "next-themes";
 import { CompactThemeToggle } from "./compact-theme-toggle";
 import { Portal } from "../ui/portal";
 import { searchGlobal } from "@/app/actions/dashboard";
-import { Loader2, User, Calendar as CalendarIcon, Users as UsersIcon } from "lucide-react";
+import { Loader2, User, Calendar as CalendarIcon, Users as UsersIcon, AlertCircle, Sparkles } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { checkStaffLockStatus } from "@/app/actions/auth";
+import { LockedStaffScreen } from "./locked-staff-screen";
 
 export function DashboardShell({ 
   children,
@@ -44,6 +46,29 @@ export function DashboardShell({
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLockedClient, setIsLockedClient] = useState(false);
+
+  useEffect(() => {
+    // Only check if user is a staff member
+    if (session?.user?.role !== "STAFF") return;
+
+    const checkLock = async () => {
+      try {
+        const res = await checkStaffLockStatus();
+        if (res.isLocked) {
+          setIsLockedClient(true);
+        }
+      } catch (e) {
+        console.error("Failed to check lock status:", e);
+      }
+    };
+
+    checkLock();
+
+    // Periodically verify lock status in background every 30 seconds
+    const interval = setInterval(checkLock, 30000);
+    return () => clearInterval(interval);
+  }, [pathname, session]);
 
   const { theme, setTheme } = useTheme();
   const [hasSyncedTheme, setHasSyncedTheme] = useState(false);
@@ -161,6 +186,11 @@ export function DashboardShell({
     }
     return currentPath === targetPath || currentPath.startsWith(targetPath + "/");
   };
+
+  if (isLockedClient) {
+    return <LockedStaffScreen tenantName={tenant?.name || "Business"} />;
+  }
+
   return (
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
       <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
@@ -303,7 +333,46 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 lg:gap-6">
-            <TrialBadge planStatus={tenant?.planStatus} trialEndsAt={tenant?.trialEndsAt} />
+            {tenant?.plan !== "FREE" && (
+              <TrialBadge planStatus={tenant?.planStatus} trialEndsAt={tenant?.trialEndsAt} plan={tenant?.plan} />
+            )}
+            {tenant?.plan !== "FREE" && tenant?.planStatus !== "TRIALING" && (
+              <Link 
+                href="/settings/billing"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-amber-600 dark:text-amber-400 transition-all active:scale-95 group shadow-sm shrink-0"
+              >
+                <Tooltip 
+                  content={
+                    tenant?.plan === "PRO" 
+                      ? "You have unlimited practitioners and full access to all features." 
+                      : "Upgrade your plan to unlock more practitioners. Go to Settings › Billing."
+                  } 
+                  position="bottom"
+                >
+                  {tenant?.plan === "PRO" ? (
+                    <Sparkles className="h-3.5 w-3.5 text-current" />
+                  ) : (
+                    <AlertCircle className="h-3.5 w-3.5 text-current" />
+                  )}
+                </Tooltip>
+                <span className="text-[9px] font-black uppercase tracking-wider hidden sm:inline">
+                  {tenant?.plan === "PRO" ? "Pro Plan" : "Starter Plan"}
+                </span>
+              </Link>
+            )}
+            {tenant?.plan === "FREE" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) < new Date() && (
+              <Link 
+                href="/settings/billing"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 transition-all active:scale-95 group shadow-sm text-amber-600 dark:text-amber-400 shrink-0"
+              >
+                <Tooltip content="Upgrade your plan to unlock more practitioners. Go to Settings › Billing." position="bottom">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                </Tooltip>
+                <span className="text-[9px] font-black uppercase tracking-wider hidden sm:inline">
+                  Trial Ended ({tenant.plan.charAt(0).toUpperCase() + tenant.plan.slice(1).toLowerCase()} Plan)
+                </span>
+              </Link>
+            )}
             <CompactThemeToggle />
             <button className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-white transition-all relative shadow-sm">
               <Bell className="h-4.5 w-4.5" />

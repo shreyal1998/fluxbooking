@@ -216,7 +216,12 @@ export function CustomersClient({
           {filteredCustomers.length === 0 ? (
             <div className="bg-indigo-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center">
               <UserCircle className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
-              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">No {labels.customerLower}s found matching your criteria.</p>
+              <h3 className="text-slate-900 dark:text-white font-bold text-lg">
+                {search ? `No ${labels.customerLower}s found` : `No ${labels.customerLower}s added yet`}
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mt-2 font-medium">
+                {search ? "Try adjusting your search or add a new one." : `Add a new ${labels.customerLower} to get started.`}
+              </p>
             </div>
           ) : (
             <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -234,7 +239,7 @@ export function CustomersClient({
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {currentItems.map((customer) => (
-                      <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
+                      <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 group">
                         <td className="px-8 py-5 whitespace-nowrap">
                           <div className="flex items-center gap-4">
                             <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs transition-colors ${

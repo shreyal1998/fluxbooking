@@ -39,7 +39,8 @@ import {
   Sparkles,
   CheckCircle2,
   Undo,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { rescheduleBooking } from "@/app/actions/booking";
 import { toast } from "sonner";
@@ -197,7 +198,8 @@ export function CalendarView({
   scheduleViewStart,
   scheduleViewEnd,
   onEventClick,
-  onStatusUpdate
+  onStatusUpdate,
+  onDeleteBooking
 }: {
   initialEvents: Event[],
   userRole: string,
@@ -218,7 +220,8 @@ export function CalendarView({
   scheduleViewStart?: string,
   scheduleViewEnd?: string,
   onEventClick?: (event: Event) => void,
-  onStatusUpdate?: (id: string, status: string) => Promise<void>
+  onStatusUpdate?: (id: string, status: string) => Promise<void>,
+  onDeleteBooking?: (id: string) => void
 }) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
@@ -260,6 +263,7 @@ export function CalendarView({
   // Sync state when props change
   useEffect(() => {
     setEvents(initialEvents);
+    setTooltipInfo(null);
   }, [initialEvents]);
 
   // Close tooltip on scroll to prevent alignment issues
@@ -644,7 +648,18 @@ export function CalendarView({
                     return (
                       <div
                         key={event.id}
-                        className={`text-[10px] px-2 py-0.5 rounded-md border truncate font-normal flex-shrink-0 ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (mode === "booking") {
+                            onEventClick?.(event);
+                          }
+                        }}
+                        onMouseEnter={mode === 'booking' ? (e) => {
+                          const r = e.currentTarget.getBoundingClientRect();
+                          showTooltip(event, r.left, r.right, r.top);
+                        } : undefined}
+                        onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
+                        className={`text-[10px] px-2 py-0.5 rounded-md border truncate font-normal flex-shrink-0 cursor-pointer transition-all active:scale-95 ${typeof styleData === 'string' ? styleData : styleData.className}`}
                         style={typeof styleData === 'object' ? styleData.style : {}}
                       >
                         {format(event.start, timeDisplayFormat)} {event.title.split(" - ")[0]}
@@ -1563,8 +1578,8 @@ export function CalendarView({
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
+                  setTooltipInfo(null);
                   await onStatusUpdate(tooltipInfo.event.id, "PENDING");
-                  hideTooltip();
                 }}
                 className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
               >
@@ -1576,8 +1591,8 @@ export function CalendarView({
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
+                  setTooltipInfo(null);
                   await onStatusUpdate(tooltipInfo.event.id, "COMPLETED");
-                  hideTooltip();
                 }}
                 className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-emerald-600 dark:text-emerald-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
               >
@@ -1589,12 +1604,25 @@ export function CalendarView({
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
+                  setTooltipInfo(null);
                   await onStatusUpdate(tooltipInfo.event.id, "CANCELLED");
-                  hideTooltip();
                 }}
                 className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
               >
                 <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+
+            {onDeleteBooking && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTooltipInfo(null);
+                  onDeleteBooking(tooltipInfo.event.id);
+                }}
+                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
             )}
           </div>

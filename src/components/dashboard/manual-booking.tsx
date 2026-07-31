@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect, useMemo } from "react";
 import { format, addMinutes, parse } from "date-fns";
 import { 
   Calendar as CalendarIcon, 
@@ -111,6 +111,7 @@ interface ManualBookingProps {
   tenantId: string;
   services: any[];
   staff: any[];
+  tenant?: any;
   mode?: "create" | "edit";
   initialData?: any;
   onClose?: () => void;
@@ -127,6 +128,7 @@ export function ManualBooking({
   tenantId, 
   services, 
   staff, 
+  tenant,
   mode = "create", 
   initialData = null,
   onClose,
@@ -236,6 +238,14 @@ export function ManualBooking({
   const [selectedStaffId, setSelectedStaffId] = useState<string>(
     initialData?.staffId || ""
   );
+
+  const currentLimit = useMemo(() => {
+    if (!tenant) return 1;
+    const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
+    const baseLimit = limits[tenant.plan as keyof typeof limits] || 1;
+    const isTrialActive = tenant.planStatus === "TRIALING" && tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date();
+    return isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
+  }, [tenant]);
 
   const [selectedDateStr, setSelectedDateStr] = useState<string>(
     initialData?.startTime 
@@ -1119,30 +1129,44 @@ export function ManualBooking({
             }}
             className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedStaffId ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.staff ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
           >
-            <span>{staff.find(st => st.id === selectedStaffId)?.name || "Select Practitioner"}</span>
+            {(() => {
+              const selectedStaff = staff.find(st => st.id === selectedStaffId);
+              const isSelectedStaffLocked = selectedStaff ? (staff.indexOf(selectedStaff) >= currentLimit) : false;
+              return (
+                <span>
+                  {selectedStaff 
+                    ? `${selectedStaff.name}${isSelectedStaffLocked ? " (Locked)" : ""}` 
+                    : "Select Practitioner"
+                  }
+                </span>
+              );
+            })()}
             <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`} />
           </button>
           <InputError message={fieldErrors.staff} />
           {isStaffOpen && (
             <div className={`absolute left-0 right-0 ${staffDir === "up" ? "bottom-full mb-2" : "top-full mt-2"} bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto py-1 premium-scrollbar`}>
-              {(selectedService 
-                ? staff.filter(st => st.services && st.services.some((srv: any) => srv.id === selectedService.id))
-                : staff
-              )?.map(st => (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedStaffId(st.id);
-                    setIsStaffOpen(false);
-                    setFieldErrors(prev => ({ ...prev, staff: "" }));
-                  }}
-                  className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${selectedStaffId === st.id ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
-                >
-                  <span>{st.name}</span>
-                  {selectedStaffId === st.id && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
-                </button>
-              ))}
+              {(() => {
+                const activeStaffOptions = staff.slice(0, currentLimit);
+                const filteredOptions = (mode === "edit" || !selectedService)
+                  ? activeStaffOptions
+                  : activeStaffOptions.filter(st => st.services && st.services.some((srv: any) => srv.id === selectedService.id));
+                return filteredOptions.map(st => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedStaffId(st.id);
+                      setIsStaffOpen(false);
+                      setFieldErrors(prev => ({ ...prev, staff: "" }));
+                    }}
+                    className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${selectedStaffId === st.id ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
+                  >
+                    <span>{st.name}</span>
+                    {selectedStaffId === st.id && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+                  </button>
+                ));
+              })()}
             </div>
           )}
         </div>

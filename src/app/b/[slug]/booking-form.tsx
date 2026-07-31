@@ -14,7 +14,8 @@ import {
   ArrowRight,
   AlertCircle,
   Users,
-  RefreshCcw
+  RefreshCcw,
+  User
 } from "lucide-react";
 import { createBooking, rescheduleBookingByCustomer } from "@/app/actions/booking";
 import { toast } from "sonner";
@@ -336,27 +337,35 @@ export function BookingForm({
               </div>
 
               {/* Staff Preference Selector */}
-              <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl">
-                 <button 
-                  onClick={() => setSelectedStaffId("any")}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    selectedStaffId === "any" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  }`}
-                 >
-                   Any {labels.staff}
-                 </button>
-                 {filteredStaff.map(s => (
+              {filteredStaff.length === 1 && (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-600 uppercase tracking-widest shadow-sm">
+                  <User className="h-3.5 w-3.5" />
+                  <span>With {filteredStaff[0].name}</span>
+                </div>
+              )}
+              {filteredStaff.length > 1 && (
+                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl">
                    <button 
-                    key={s.id}
-                    onClick={() => setSelectedStaffId(s.id)}
+                    onClick={() => setSelectedStaffId("any")}
                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      selectedStaffId === s.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      selectedStaffId === "any" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                     }`}
                    >
-                     {s.name.split(' ')[0]}
+                     Any {labels.staff}
                    </button>
-                 ))}
-              </div>
+                   {filteredStaff.map(s => (
+                     <button 
+                      key={s.id}
+                      onClick={() => setSelectedStaffId(s.id)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        selectedStaffId === s.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                      }`}
+                     >
+                       {s.name.split(' ')[0]}
+                     </button>
+                   ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
@@ -439,7 +448,9 @@ export function BookingForm({
               </div>
             ) : (
               <div className="p-10 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-300">
-                <p className="text-slate-500 font-medium">No slots available for this day. Try another date or {labels.staffLower} member!</p>
+                <p className="text-slate-500 font-medium">
+                  No slots available for this day. Try another date{filteredStaff.length > 1 ? ` or ${labels.staffLower} member!` : "!"}
+                </p>
               </div>
             )}
           </div>

@@ -21,7 +21,8 @@ import {
   Save,
   Loader2,
   Building,
-  Undo
+  Undo,
+  Lock
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
@@ -175,6 +176,12 @@ export function BookingsClient({
   serverDateIso,
   defaultSlotDuration = 60
 }: BookingsClientProps) {
+  const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
+  const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
+  const isTrialActive = tenant?.planStatus === "TRIALING" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) > new Date(serverDateIso || new Date());
+  const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
+  const activeStaff = useMemo(() => staff.slice(0, currentLimit), [staff, currentLimit]);
+
   const router = useRouter();
   const labels = getLabels(tenant?.businessType);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">(defaultViewMode as any);
@@ -187,6 +194,15 @@ export function BookingsClient({
   }, [viewMode, defaultViewMode]);
 
   const [currentDate, setCurrentDate] = useState<Date>(() => serverDateIso ? new Date(serverDateIso) : new Date());
+
+  const updateCurrentDate = useCallback((dateOrFn: Date | ((prev: Date) => Date)) => {
+    setCurrentDate((prev) => {
+      const next = typeof dateOrFn === "function" ? dateOrFn(prev) : dateOrFn;
+      sessionStorage.setItem("calendar_current_date", next.toISOString());
+      return next;
+    });
+  }, []);
+
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>((defaultSlotDuration || 60) as any);
 
   // Save slot duration to database whenever it changes
@@ -203,6 +219,24 @@ export function BookingsClient({
 
   // Pagination State for List View
   const [currentPage, setCurrentPage] = useState(1);
+  const isInitialPageLoadedRef = useRef(false);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("calendar_list_current_page");
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        setCurrentPage(parsed);
+      }
+    }
+    isInitialPageLoadedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (isInitialPageLoadedRef.current) {
+      sessionStorage.setItem("calendar_list_current_page", currentPage.toString());
+    }
+  }, [currentPage]);
   const itemsPerPage = 10;
 
   // Custom Staff Dropdown State
@@ -355,15 +389,35 @@ export function BookingsClient({
         if (Array.isArray(parsed)) {
           const validIds = parsed.filter(id => id === "all" || id === "none" || staff.some(s => s.id === id));
           if (validIds.length > 0) {
-            setCurrentStaffFilter(validIds);
+            let finalIds = validIds;
+            // Only clamp individual staff selections, do not clamp "all" or "none"
+            if (!validIds.includes("all") && !validIds.includes("none")) {
+              const activeSelectedIds = validIds.filter(id => {
+                const idx = staff.findIndex(s => s.id === id);
+                return idx !== -1 && idx < currentLimit;
+              });
+              if (activeSelectedIds.length > 0) {
+                // Limit selections to current limit (e.g. 1 on FREE plan)
+                finalIds = activeSelectedIds.slice(0, currentLimit);
+              } else {
+                // Fallback to the active staff members if none are active
+                finalIds = staff.slice(0, currentLimit).map(s => s.id);
+              }
+            }
+            setCurrentStaffFilter(finalIds);
           }
         }
       } catch (e) {
         // ignore parsing errors
       }
+    } else {
+      // Default fallback if no filter is stored
+      if (currentLimit === 1 && staff.length > 0) {
+        setCurrentStaffFilter([staff[0].id]);
+      }
     }
     setIsFilterLoaded(true);
-  }, [staff]);
+  }, [staff, currentLimit]);
 
   // Save to localStorage when changed
   useEffect(() => {
@@ -388,8 +442,16 @@ export function BookingsClient({
   const [selectedSlotInfo, setSelectedSlotInfo] = useState<{ date: Date, staffId?: string } | null>(null);
   const [actionType, setActionType] = useState<"book" | "block" | null>(null);
 
-  // Initialize date on client only to avoid hydration mismatch
+  // Initialize date on client only to avoid hydration mismatch, checking sessionStorage first
   useEffect(() => {
+    const saved = sessionStorage.getItem("calendar_current_date");
+    if (saved) {
+      const parsed = new Date(saved);
+      if (!isNaN(parsed.getTime())) {
+        setCurrentDate(parsed);
+        return;
+      }
+    }
     const venueDate = getVenueDate();
     setCurrentDate(venueDate);
   }, [getVenueDate]);
@@ -412,7 +474,7 @@ export function BookingsClient({
   };
 
   const nextDate = () => {
-    setCurrentDate((prev) => {
+    updateCurrentDate((prev) => {
       if (viewMode === "month") return addMonths(prev, 1);
       if (viewMode === "week") return addWeeks(prev, 1);
       return addDays(prev, 1);
@@ -420,7 +482,7 @@ export function BookingsClient({
   };
 
   const prevDate = () => {
-    setCurrentDate((prev) => {
+    updateCurrentDate((prev) => {
       if (viewMode === "month") return subMonths(prev, 1);
       if (viewMode === "week") return subWeeks(prev, 1);
       return subDays(prev, 1);
@@ -524,16 +586,17 @@ export function BookingsClient({
 
   // Filter events based on selected staff
   const filteredEvents = useMemo(() => {
-    let filteredBookings = initialBookings;
-    let filteredBlocked = initialBlockedSlots;
-    let filteredOverrides = availabilityOverrides;
+    const activeStaffIds = staff.slice(0, currentLimit).map((s: any) => s.id);
+    let filteredBookings = initialBookings.filter((b) => activeStaffIds.includes(b.staffId));
+    let filteredBlocked = initialBlockedSlots.filter((s) => activeStaffIds.includes(s.staffId));
+    let filteredOverrides = availabilityOverrides.filter((o) => activeStaffIds.includes(o.staffId));
 
     const isFiltered = userRole === "ADMIN" && !currentStaffFilter.includes("all") && currentStaffFilter.length > 0;
 
     if (isFiltered) {
-      filteredBookings = initialBookings.filter((b) => currentStaffFilter.includes(b.staffId));
-      filteredBlocked = initialBlockedSlots.filter((s) => currentStaffFilter.includes(s.staffId));
-      filteredOverrides = availabilityOverrides.filter((o) => currentStaffFilter.includes(o.staffId));
+      filteredBookings = filteredBookings.filter((b) => currentStaffFilter.includes(b.staffId));
+      filteredBlocked = filteredBlocked.filter((s) => currentStaffFilter.includes(s.staffId));
+      filteredOverrides = filteredOverrides.filter((o) => currentStaffFilter.includes(o.staffId));
     }
 
     return [
@@ -690,6 +753,7 @@ export function BookingsClient({
             tenantId={tenant?.id || ""} 
             services={services} 
             staff={staff} 
+            tenant={tenant}
             businessType={tenant?.businessType}
             currency={tenant?.currency}
             timeFormat={tenant?.timeFormat || "12h"}
@@ -734,27 +798,44 @@ export function BookingsClient({
                       </div>
                     </button>
 
-                    {staff.map((s) => {
+                    {staff.map((s, idx) => {
+                      const isLocked = idx >= currentLimit;
                       const isSelected = currentStaffFilter.includes(s.id) || (!currentStaffFilter.includes("none") && (currentStaffFilter.includes("all") || currentStaffFilter.length === 0));
                       return (
                         <button
                           key={s.id}
-                          onClick={() => handleToggleStaff(s.id)}
-                          className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
+                          onClick={() => {
+                            if (isLocked) {
+                              toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
+                              return;
+                            }
+                            handleToggleStaff(s.id);
+                          }}
+                          className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${
+                            isLocked 
+                              ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-900'
+                          }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: s.color }}>
-                              {s.name.substring(0, 2).toUpperCase()}
+                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
+                              {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
                             </div>
-                            <span className="text-xs font-medium text-black dark:text-white">{s.name}</span>
+                            <span className={`text-xs font-semibold ${isLocked ? 'text-slate-500 dark:text-slate-400' : 'text-black dark:text-white'}`}>
+                              {s.name} {isLocked && "(Locked)"}
+                            </span>
                           </div>
-                          <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
-                            isSelected 
-                              ? 'bg-indigo-600 border-indigo-600 text-white' 
-                              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
-                          }`}>
-                            {isSelected && <Check className="h-3 w-3 stroke-[3] text-white" />}
-                          </div>
+                          {isLocked ? (
+                            <Lock className="h-3.5 w-3.5 text-slate-400" />
+                          ) : (
+                            <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
+                              isSelected 
+                                ? 'bg-indigo-600 border-indigo-600 text-white' 
+                                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
+                            }`}>
+                              {isSelected && <Check className="h-3 w-3 stroke-[3] text-white" />}
+                            </div>
+                          )}
                         </button>
                       );
                     })}
@@ -856,6 +937,7 @@ export function BookingsClient({
                       tenantId={tenantId}
                       services={services}
                       staff={staff}
+                      tenant={tenant}
                       mode="create"
                       initialData={{
                         startTime: selectedSlotInfo.date,
@@ -951,7 +1033,7 @@ export function BookingsClient({
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button 
-                onClick={() => setCurrentDate(new Date())} 
+                onClick={() => updateCurrentDate(new Date())} 
                 className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
               >
                 Today
@@ -1105,6 +1187,7 @@ export function BookingsClient({
                                             tenantId={tenant?.id || ""} 
                                             services={services} 
                                             staff={staff} 
+                                            tenant={tenant}
                                             mode="edit"
                                             initialData={booking}
                                             businessType={tenant?.businessType}
@@ -1236,7 +1319,7 @@ export function BookingsClient({
             <CalendarView 
               initialEvents={filteredEvents} 
               userRole={userRole} 
-              staffList={staff as any} 
+              staffList={activeStaff as any} 
               businessHours={tenant?.businessHoursJson as any}
               timezone={tenant?.timezone || "UTC"}
               timeFormat={tenant?.timeFormat || "12h"}
@@ -1244,7 +1327,7 @@ export function BookingsClient({
               currentDate={currentDate}
               view={viewMode as any}
               slotDuration={slotDuration}
-              onDateChange={setCurrentDate}
+              onDateChange={updateCurrentDate}
               onViewChange={setViewMode as any}
               onSlotDurationChange={setSlotDuration}
               staffFilter={currentStaffFilter}
@@ -1256,6 +1339,7 @@ export function BookingsClient({
                 }
               }}
               onStatusUpdate={handleStatusUpdate}
+              onDeleteBooking={(id) => setDeleteConfirmId(id)}
             />
           )}
         </div>

@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 /**
  * Handles requesting a password reset link.
@@ -108,5 +110,49 @@ export async function resetPassword(token: string, newPassword: string) {
   } catch (error) {
     console.error("Error in resetPassword:", error);
     return { success: false, error: "Could not reset password. Please try again." };
+  }
+}
+
+export async function checkStaffLockStatus() {
+  const session = await getServerSession(authOptions);
+  if (!session) return { isLocked: false };
+
+  const tenantId = (session.user as any).tenantId;
+  const userId = (session.user as any).id;
+  const userRole = (session.user as any).role;
+
+  if (!tenantId || !userId || userRole !== "STAFF") {
+    return { isLocked: false };
+  }
+
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { plan: true, planStatus: true, trialEndsAt: true }
+    });
+
+    if (!tenant) return { isLocked: false };
+
+    const staffList = await prisma.staff.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, userId: true }
+    });
+
+    const staffIndex = staffList.findIndex(s => s.userId === userId);
+
+    const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
+    const baseLimit = limits[tenant.plan as keyof typeof limits] || 1;
+    const isTrialActive = tenant.planStatus === "TRIALING" && tenant.trialEndsAt && new Date(tenant.trialEndsAt) > new Date();
+    const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
+
+    if (staffIndex === -1 || staffIndex >= currentLimit) {
+      return { isLocked: true };
+    }
+
+    return { isLocked: false };
+  } catch (error) {
+    console.error("Error in checkStaffLockStatus:", error);
+    return { isLocked: false };
   }
 }

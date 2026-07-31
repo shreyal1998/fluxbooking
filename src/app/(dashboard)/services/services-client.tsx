@@ -212,8 +212,11 @@ export function ServicesClient({
           {filteredServices.length === 0 ? (
             <div className="bg-indigo-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center transition-colors">
               <labels.serviceIcon className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
-              <p className="text-slate-900 dark:text-white font-medium max-w-sm opacity-60">
-                {search ? `No ${labels.serviceLower}s found matching "${search}"` : `No ${labels.serviceLower}s added yet. Create your first ${labels.serviceLower} to start taking bookings.`}
+              <h3 className="text-slate-900 dark:text-white font-bold text-lg">
+                {search ? `No ${labels.serviceLower}s found` : `No ${labels.serviceLower}s added yet`}
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mt-2 font-medium">
+                {search ? "Try adjusting your search or add a new one." : `Create your first ${labels.serviceLower} to start taking bookings.`}
               </p>
               {userRole === "ADMIN" && !search && (
                 <button 
@@ -241,7 +244,7 @@ export function ServicesClient({
                    </thead>
                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                      {currentItems?.map((service) => (
-                       <tr key={service.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                        <tr key={service.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 group">
                          <td className="px-8 py-5 whitespace-nowrap">
                            <div className="flex items-center gap-4">
                              <div className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: service.color }}></div>

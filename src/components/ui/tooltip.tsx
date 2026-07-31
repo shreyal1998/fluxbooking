@@ -4,7 +4,7 @@ import React, { useState, useRef, useLayoutEffect, useEffect, ReactNode } from "
 import { Portal } from "./portal";
 
 interface TooltipProps {
-  content: string;
+  content: React.ReactNode;
   children: ReactNode;
   position?: "top" | "bottom" | "left" | "right";
   delay?: number;
@@ -68,6 +68,7 @@ export function Tooltip({
   };
 
   const showTooltip = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setIsVisible(true);
     }, delay);
@@ -75,8 +76,14 @@ export function Tooltip({
 
   const hideTooltip = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    setIsVisible(false);
-    setIsPositioned(false);
+    timerRef.current = setTimeout(() => {
+      setIsVisible(false);
+      setIsPositioned(false);
+    }, 150);
+  };
+
+  const cancelHide = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
   };
 
   useEffect(() => {
@@ -103,6 +110,8 @@ export function Tooltip({
         <Portal>
           <div
             ref={setTooltipRef}
+            onMouseEnter={cancelHide}
+            onMouseLeave={hideTooltip}
             style={{ 
               top: coords.top, 
               left: coords.left,

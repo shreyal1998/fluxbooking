@@ -95,6 +95,7 @@ export default async function StaffPage() {
       userRole={userRole}
       plan={tenant?.plan || "FREE"}
       timeFormat={tenant?.timeFormat || "12h"}
+      trialEndsAt={tenant?.trialEndsAt}
     />
   );
 }

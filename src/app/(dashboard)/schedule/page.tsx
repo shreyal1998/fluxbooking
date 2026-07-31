@@ -17,6 +17,7 @@ export default async function SchedulePage() {
   const [staffRaw, tenant] = await Promise.all([
     prisma.staff.findMany({ 
       where: { tenantId },
+      orderBy: { createdAt: "asc" },
       include: {
         blockedSlots: true,
         availabilityOverrides: true

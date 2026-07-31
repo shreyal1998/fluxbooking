@@ -40,6 +40,7 @@ interface StaffClientProps {
   userRole: string;
   plan: string;
   timeFormat?: string;
+  trialEndsAt?: Date | string | null;
 }
 
 export function StaffClient({ 
@@ -51,7 +52,8 @@ export function StaffClient({
   businessType,
   userRole,
   plan,
-  timeFormat = "12h"
+  timeFormat = "12h",
+  trialEndsAt
 }: StaffClientProps) {
   const [staff, setStaff] = useState(initialStaff);
   const [users, setUsers] = useState(initialUsers);
@@ -59,6 +61,15 @@ export function StaffClient({
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [showTrialExpiredBanner, setShowTrialExpiredBanner] = useState(false);
+
+  useEffect(() => {
+    const isDismissed = localStorage.getItem("dismissed_free_reversion_banner");
+    if (!isDismissed && plan === "FREE" && trialEndsAt && new Date(trialEndsAt) < new Date()) {
+      setShowTrialExpiredBanner(true);
+    }
+  }, [plan, trialEndsAt]);
   
   const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"profile" | "availability">("profile");
@@ -159,11 +170,22 @@ export function StaffClient({
             <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.staff}s</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={`h-1.5 w-1.5 rounded-full ${isLimitExceeded ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    {staff.length} / {currentLimit === 1000000 ? 'Unlimited' : currentLimit} Active
-                  </p>
+                <div className="flex flex-wrap items-center gap-3 mt-1">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-1.5 w-1.5 rounded-full ${isLimitExceeded ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      {staff.length} / {currentLimit === 1000000 ? 'Unlimited' : currentLimit} Active
+                    </p>
+                  </div>
+                  {isLimitExceeded && (
+                    <Link 
+                      href="/settings/billing" 
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-[9px] font-black uppercase text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 transition-all hover:scale-105 active:scale-95 shrink-0"
+                    >
+                      <AlertCircle className="h-3 w-3 text-amber-500" />
+                      <span>Limit Exceeded - Upgrade</span>
+                    </Link>
+                  )}
                 </div>
               </div>
               
@@ -201,40 +223,50 @@ export function StaffClient({
                   <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mt-2 font-medium">Try adjusting your search or add a new {labels.staffLower}.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full table-fixed divide-y divide-slate-100 dark:divide-slate-800">
+                <div className="overflow-hidden">
+                  <table className="w-full table-fixed">
                     <thead>
-                      <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
+                      <tr className="bg-indigo-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
                         <th className="w-[30%] px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.staff}</th>
                         <th className="w-[30%] px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Details</th>
                         <th className="w-[25%] px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.service}s</th>
                         <th className="w-[15%] px-6 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody>
                       {currentItems.map((member, index) => {
-                        const actualIndex = indexOfFirstItem + index;
+                        const actualIndex = staff.indexOf(member);
                         const isLocked = actualIndex >= currentLimit;
                         
                         return (
-                          <tr key={member.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-all group ${isLocked ? 'opacity-50 grayscale bg-slate-50/30 dark:bg-slate-900/20' : ''}`}>
+                          <tr key={member.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 group ${isLocked ? 'opacity-80 dark:opacity-75 grayscale bg-slate-50/30 dark:bg-slate-900/20' : ''} ${index < currentItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
                             <td className="px-6 py-5">
                               <div className="flex items-center gap-4 min-w-0">
-                                <div 
-                                  className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-110"
-                                  style={{ 
-                                    borderColor: isLocked ? 'transparent' : member.color, 
-                                    backgroundColor: isLocked ? undefined : `${member.color}10` 
-                                  }}
-                                >
-                                  {isLocked ? <Lock className="h-5 w-5 text-slate-400" /> : <labels.staffIcon className="h-6 w-6" style={{ color: member.color }} />}
-                                </div>
+                                {isLocked ? (
+                                  <Link
+                                    href="/settings/billing"
+                                    title="Upgrade Plan"
+                                    className="h-12 w-12 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0 transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm text-slate-400 hover:text-amber-500 hover:border-amber-500/50"
+                                  >
+                                    <Lock className="h-5 w-5" />
+                                  </Link>
+                                ) : (
+                                  <div 
+                                    className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-110"
+                                    style={{ 
+                                      borderColor: member.color, 
+                                      backgroundColor: `${member.color}10` 
+                                    }}
+                                  >
+                                    <labels.staffIcon className="h-6 w-6" style={{ color: member.color }} />
+                                  </div>
+                                )}
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 truncate">
                                     <span className="truncate">{member.name}</span>
                                     {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded tracking-tighter shrink-0">Locked</span>}
                                   </p>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 truncate" title={member.bio || `Active ${labels.staff}`}>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 truncate">
                                     {isLocked ? "Limit Reached" : (member.bio || `Active ${labels.staff}`)}
                                   </p>
                                 </div>
@@ -242,12 +274,12 @@ export function StaffClient({
                             </td>
                             <td className="px-6 py-5">
                               <div className="space-y-1.5 min-w-0">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate" title={member.user?.email || "No email"}>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">
                                   <Mail className="h-3.5 w-3.5 text-indigo-500/50 shrink-0" />
                                   <span className="truncate">{member.user?.email || "No email"}</span>
                                 </div>
                                 {member.user?.phone && (
-                                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate" title={member.user.phone}>
+                                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">
                                     <Phone className="h-3.5 w-3.5 text-indigo-500/50 shrink-0" />
                                     <span className="truncate">{member.user.phone}</span>
                                   </div>
@@ -257,7 +289,7 @@ export function StaffClient({
                             <td className="px-6 py-5">
                               <div className="flex flex-wrap gap-1.5 max-w-full">
                                 {member.services?.slice(0, 2).map((service: any) => (
-                                  <span key={service.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 truncate max-w-full" title={service.name}>
+                                  <span key={service.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 truncate max-w-full">
                                     <span className="truncate">{service.name}</span>
                                   </span>
                                 ))}
@@ -292,11 +324,14 @@ export function StaffClient({
                                     </Tooltip>
                                   </div>
                                 ) : (
-                                  <Tooltip content="Upgrade Plan" position="bottom">
-                                    <Link href="/settings?tab=billing" className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl inline-block hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                                      <Lock className="h-4.5 w-4.5" />
-                                    </Link>
-                                  </Tooltip>
+                                   <Tooltip content="Upgrade Plan" position="bottom">
+                                     <Link 
+                                       href="/settings/billing" 
+                                       className="p-2.5 rounded-xl bg-transparent text-amber-600 dark:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 inline-flex items-center justify-center cursor-pointer"
+                                     >
+                                       <Lock className="h-[18px] w-[18px]" />
+                                     </Link>
+                                   </Tooltip>
                                 )
                               ) : (
                                 <div className="p-3 opacity-0 cursor-default">
@@ -374,20 +409,6 @@ export function StaffClient({
 
         {/* Right Section - Sticky Sidebar for Leave Requests & Stats */}
         <div className="lg:w-96 w-full shrink-0 flex flex-col gap-8 lg:sticky lg:top-8">
-          
-          {/* Plan Limit Card */}
-          {isLimitExceeded && (
-            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-amber-200 dark:shadow-none animate-pulse-slow">
-              <Shield className="h-10 w-10 mb-6 text-white/30" />
-              <h4 className="text-lg font-black uppercase tracking-tight mb-2">Limit Exceeded</h4>
-              <p className="text-xs font-medium text-amber-50 leading-relaxed mb-6">
-                Your current {plan} plan is capped at {currentLimit} {labels.staffLower}s. Some members are locked.
-              </p>
-              <Link href="/settings/billing" className="block w-full text-center py-4 bg-white text-amber-600 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 transition-all active:scale-95 shadow-lg">
-                  Upgrade Now
-              </Link>
-            </div>
-          )}
 
           {/* Leave Requests Section */}
           <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-indigo-100/80 dark:border-slate-800 shadow-sm flex flex-col">
@@ -423,7 +444,7 @@ export function StaffClient({
             <div className="p-8 space-y-4">
               <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-slate-800/50 flex items-center justify-between border border-indigo-100/30 dark:border-slate-800/50">
                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Active {labels.staff}s</span>
-                <span className="text-sm font-black text-slate-900 dark:text-white">{staff.length}</span>
+                <span className="text-sm font-black text-slate-900 dark:text-white">{currentLimit === 1000000 ? staff.length : Math.min(staff.length, currentLimit)}</span>
               </div>
               <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-slate-800/50 flex items-center justify-between border border-indigo-100/30 dark:border-slate-800/50">
                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Total {labels.service}s</span>

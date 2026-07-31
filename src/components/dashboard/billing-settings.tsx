@@ -1,19 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CreditCard } from "lucide-react";
+import { Check, CreditCard, AlertCircle, Calendar } from "lucide-react";
 import { PLANS } from "@/config/plans";
-import { createLemonSqueezyCheckout } from "@/app/actions/lemonsqueezy";
+import { createLemonSqueezyCheckout, cancelLemonSqueezySubscription } from "@/app/actions/lemonsqueezy";
 
 export function BillingSettings({ 
   currentPlan, 
-  planInterval
+  planInterval,
+  planStatus,
+  subscriptionId,
+  subscriptionEndsAt,
+  trialEndsAt
 }: { 
   currentPlan: string, 
-  planInterval: string
+  planInterval: string,
+  planStatus?: string | null,
+  subscriptionId?: string | null,
+  subscriptionEndsAt?: Date | string | null,
+  trialEndsAt?: Date | string | null
 }) {
   const [interval, setInterval] = useState<"MONTH" | "YEAR">(planInterval as any || "MONTH");
   const [loading, setLoading] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const isTrialActive = planStatus === "TRIALING" && trialEndsAt && new Date(trialEndsAt) > new Date();
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionId) return;
+    const confirmed = window.confirm("Are you sure you want to cancel your active subscription? You will still retain access to your plan until the end of your billing cycle.");
+    if (!confirmed) return;
+
+    setCancelling(true);
+    try {
+      const result = await cancelLemonSqueezySubscription(subscriptionId);
+      if (result.success) {
+        alert("Subscription cancelled successfully. Your plan will not renew at the end of the billing period.");
+        window.location.reload();
+      } else {
+        alert(result.error || "Failed to cancel subscription");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while cancelling your subscription");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const handleUpgrade = async (planId: string) => {
     setLoading(planId);
@@ -44,6 +77,49 @@ export function BillingSettings({
 
   return (
     <div className="space-y-6">
+      {/* Active Subscription Details */}
+      {currentPlan !== "FREE" && (
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-white shrink-0 ${
+              planStatus === "CANCELLED" 
+                ? "bg-amber-500 shadow-lg shadow-amber-500/10" 
+                : "bg-indigo-600 shadow-lg shadow-indigo-600/10"
+            }`}>
+              <CreditCard className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                Active Plan: <span className="text-indigo-600 dark:text-indigo-400 capitalize">{currentPlan.toLowerCase()}</span>
+                {planStatus === "CANCELLED" && (
+                  <span className="text-[10px] bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                    Cancelled
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                {planStatus === "CANCELLED" ? (
+                  <span>Access ends on <strong>{subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleDateString() : ""}</strong></span>
+                ) : (
+                  <span>Renews on <strong>{subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleDateString() : "Next billing date"}</strong></span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {planStatus !== "CANCELLED" && subscriptionId && (
+            <button
+              onClick={handleCancelSubscription}
+              disabled={cancelling}
+              className="px-6 py-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 shrink-0 border border-rose-100 dark:border-rose-900/30"
+            >
+              {cancelling ? "Cancelling..." : "Cancel Subscription"}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Subscription Plans */}
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -133,6 +209,12 @@ export function BillingSettings({
                   >
                     {isCurrent ? "Active" : loading === plan.id ? "Redirecting..." : "Upgrade"}
                   </button>
+                  {plan.price.amount === 0 && isTrialActive && (
+                    <p className="text-xs text-amber-500 dark:text-amber-400 font-bold mt-3 flex items-center justify-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      Includes 14-day trial of Starter features
+                    </p>
+                  )}
                 </div>
               );
             })}

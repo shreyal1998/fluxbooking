@@ -34,7 +34,10 @@ export default async function DashboardPage() {
       currency: true,
       country: true,
       businessHoursJson: true,
-      timeFormat: true
+      timeFormat: true,
+      plan: true,
+      planStatus: true,
+      trialEndsAt: true
     }
   });
   const labels = getLabels(tenant?.businessType);
@@ -88,6 +91,12 @@ export default async function DashboardPage() {
     })
   ]);
 
+  const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
+  const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
+  const isTrialActive = tenant?.planStatus === "TRIALING" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) > new Date();
+  const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
+  const activeStaffCount = Math.min(staffCount, currentLimit);
+
   // Calculate Real Revenue
   const totalRevenue = completedBookings.reduce((sum, booking) => {
     return sum + Number(booking.service.price);
@@ -103,7 +112,7 @@ export default async function DashboardPage() {
 
   const stats = [
     { name: labels.service + "s", value: servicesCount, icon: labels.serviceIcon, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
-    { name: labels.staff + " Team", value: staffCount, icon: labels.staffIcon, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: "Total", hidden: userRole === "STAFF" },
+    { name: `Active ${labels.staff}s`, value: activeStaffCount, icon: labels.staffIcon, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: currentLimit === 1000000 ? "Unlimited" : `Limit: ${currentLimit}`, hidden: userRole === "STAFF" },
     { name: userRole === "STAFF" ? `My Active ${labels.appointment}s` : `Pending ${labels.appointment}s`, value: bookingsCount, icon: CalendarIcon, color: "text-rose-600", bg: "bg-rose-50/50", trend: "Waiting" },
     { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: formatCurrency(totalRevenue, currency), icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
   ].filter(s => !s.hidden);

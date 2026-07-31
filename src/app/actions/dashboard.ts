@@ -37,7 +37,8 @@ export async function addStaff(formData: FormData) {
     const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
 
     if (tenant && tenant.staff.length >= currentLimit) {
-      return { error: `Your ${tenant.plan} plan is limited to ${currentLimit} staff member(s). Please upgrade to add more.` };
+      const planLabel = isTrialActive && tenant.plan === "FREE" ? "Free Trial" : tenant.plan;
+      return { error: `Your ${planLabel} plan is limited to ${currentLimit} staff member(s). Please upgrade to add more.` };
     }
 
     let targetUserId: string | null = null;

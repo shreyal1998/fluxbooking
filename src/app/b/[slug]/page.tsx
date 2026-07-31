@@ -76,6 +76,7 @@ export default async function PublicBookingPage({
         orderBy: { name: "asc" }
       },
       staff: {
+        orderBy: { createdAt: "asc" },
         include: {
           services: true
         }
@@ -90,11 +91,20 @@ export default async function PublicBookingPage({
   // Check for trial expiration
   const now = new Date();
   const isTrialExpired = 
+    tenant.plan !== "FREE" &&
     tenant.planStatus === "TRIALING" && 
     tenant.trialEndsAt && 
     tenant.trialEndsAt < now;
   
   const isPastDue = tenant.planStatus === "PAST_DUE";
+
+  const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
+  let currentLimit = limits[tenant.plan as keyof typeof limits] || 1;
+  const isTrialActive = tenant.planStatus === "TRIALING" && tenant.trialEndsAt && new Date(tenant.trialEndsAt) > now;
+  if (isTrialActive && currentLimit < 5) {
+    currentLimit = 5;
+  }
+  const activeStaff = tenant.staff.slice(0, currentLimit);
 
   if (isTrialExpired || isPastDue) {
     return (
@@ -159,7 +169,7 @@ export default async function PublicBookingPage({
           <BookingForm 
             tenantId={tenant.id} 
             services={tenant.services.map(s => ({ ...s, price: s.price.toString() }))} 
-            staff={tenant.staff.map(s => ({
+            staff={activeStaff.map(s => ({
               ...s,
               services: s.services?.map(srv => ({
                 ...srv,
