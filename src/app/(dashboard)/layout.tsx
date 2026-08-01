@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { InactivityTimeout } from "@/components/providers/inactivity-provider";
 import { LockedStaffScreen } from "@/components/dashboard/locked-staff-screen";
 
@@ -51,9 +52,19 @@ export default async function DashboardLayout({
   });
   const dbTheme = user?.theme || "light";
 
+  const cookieStore = await cookies();
+  const isCollapsed = (cookieStore.get(`sidebar-collapsed-${userId}`)?.value || cookieStore.get("sidebar-collapsed")?.value) === "true";
+
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col">
-      <DashboardShell session={session} tenant={tenant} dbTheme={dbTheme}>{children}</DashboardShell>
+      <DashboardShell 
+        session={session} 
+        tenant={tenant} 
+        dbTheme={dbTheme}
+        initialCollapsed={isCollapsed}
+      >
+        {children}
+      </DashboardShell>
       <InactivityTimeout />
     </div>
   );

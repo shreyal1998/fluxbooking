@@ -162,6 +162,11 @@ body {
 /* Dashboard-Specific Centering Offset */
 .in-dashboard .premium-pulsar-container { 
   margin-left: 9rem !important; 
+  transition: margin-left 0.3s ease !important;
+}
+
+.in-dashboard.sidebar-collapsed .premium-pulsar-container { 
+  margin-left: 2.5rem !important; 
 }
 
 @media (max-width: 1023px) {

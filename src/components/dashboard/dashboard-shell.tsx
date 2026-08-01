@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronLeft,
   CalendarCheck
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -36,17 +37,33 @@ export function DashboardShell({
   children,
   session,
   tenant,
-  dbTheme
+  dbTheme,
+  initialCollapsed = false
 }: { 
   children: React.ReactNode,
   session: any,
   tenant: any,
-  dbTheme?: string
+  dbTheme?: string,
+  initialCollapsed?: boolean
 }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLockedClient, setIsLockedClient] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(initialCollapsed);
+
+  const toggleSidebar = () => {
+    const next = !isSidebarCollapsed;
+    setIsSidebarCollapsed(next);
+    const userId = session?.user?.id;
+    if (userId) {
+      localStorage.setItem(`sidebar-collapsed:${userId}`, String(next));
+      document.cookie = `sidebar-collapsed-${userId}=${next}; path=/; max-age=31536000; SameSite=Lax`;
+    } else {
+      localStorage.setItem("sidebar-collapsed", String(next));
+      document.cookie = `sidebar-collapsed=${next}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+  };
 
   useEffect(() => {
     // Only check if user is a staff member
@@ -106,8 +123,20 @@ export function DashboardShell({
   // Manage body class once on mount
   useEffect(() => {
     document.body.classList.add('in-dashboard');
-    return () => document.body.classList.remove('in-dashboard');
+    return () => {
+      document.body.classList.remove('in-dashboard');
+      document.body.classList.remove('sidebar-collapsed');
+    };
   }, []);
+
+  // Manage body class for sidebar collapsed state
+  useEffect(() => {
+    if (isSidebarCollapsed) {
+      document.body.classList.add("sidebar-collapsed");
+    } else {
+      document.body.classList.remove("sidebar-collapsed");
+    }
+  }, [isSidebarCollapsed]);
 
   // Manage body class for logout confirmation
   useEffect(() => {
@@ -193,29 +222,64 @@ export function DashboardShell({
 
   return (
     <div className="flex flex-1 bg-white dark:bg-slate-950 transition-colors duration-500 text-slate-900 dark:text-slate-100">
-      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-500 sticky top-0 h-screen">
-        <div className="h-16 lg:h-20 px-8 flex items-center">
+      <aside className={`hidden lg:flex flex-col shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-slate-100 dark:border-slate-800 z-[100001] transition-all duration-300 sticky top-0 h-screen relative ${isSidebarCollapsed ? "w-20" : "w-72"}`}>
+        {/* Collapse Toggle Button */}
+        <div className="absolute right-[-14px] top-10 z-[100002]">
+          <Tooltip content={isSidebarCollapsed ? "Expand" : "Collapse"} position="right" delay={100}>
+            <button
+              onClick={toggleSidebar}
+              className="w-7 h-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white shadow-md hover:scale-105 transition-all outline-none"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </button>
+          </Tooltip>
+        </div>
+
+        <div className={`h-16 lg:h-20 flex items-center ${isSidebarCollapsed ? "px-4 justify-center" : "px-8"}`}>
           <Link href="/overview" className="relative -top-0.5">
-            <Logo size="xl" textClassName="dark:text-white" />
+            <Logo 
+              size="xl" 
+              textClassName={isSidebarCollapsed ? "hidden" : "dark:text-white"} 
+              iconClassName={isSidebarCollapsed ? "w-11 h-11 flex items-center justify-center rounded-xl p-0 !bg-indigo-50 dark:!bg-indigo-950/40 !shadow-none [&_svg]:!text-indigo-600 dark:[&_svg]:!text-indigo-400 [&_svg]:!h-7 [&_svg]:!w-7" : ""}
+            />
           </Link>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
           {filteredNavItems.map((item) => {
             const isActive = isLinkActive(item.href);
-            const commonProps = {
-              className: `flex items-center justify-between px-4 py-1.5 rounded-[1.25rem] transition-all group relative overflow-hidden ${
-                isActive 
-                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 dark:shadow-none" 
-                  : "text-slate-900 dark:text-white hover:bg-white dark:hover:bg-slate-800"
-              }`
-            };
+            
+            const className = `flex items-center transition-all group relative overflow-hidden ${
+              isSidebarCollapsed 
+                ? `w-11 h-11 mx-auto justify-center rounded-xl ${
+                    isActive 
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 dark:shadow-none" 
+                      : "text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`
+                : `justify-between px-4 py-1.5 rounded-[1.25rem] ${
+                    isActive 
+                      ? "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 dark:shadow-none" 
+                      : "text-slate-900 dark:text-white hover:bg-white dark:hover:bg-slate-800"
+                  }`
+            }`;
 
-            const content = (
+            const iconClass = `h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${
+              isActive ? "text-white" : "text-slate-900 dark:text-white"
+            }`;
+
+            const content = isSidebarCollapsed ? (
+              <div className="flex items-center justify-center relative z-10 w-8 h-8 shrink-0">
+                <item.icon className={iconClass} />
+              </div>
+            ) : (
               <>
-                <div className="flex items-center gap-4 relative z-10">
+                <div className="flex items-center gap-2 relative z-10">
                   <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                    <item.icon className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`} />
+                    <item.icon className={iconClass} />
                   </div>
                   <span className="text-base font-medium tracking-tight whitespace-nowrap">{item.name}</span>
                 </div>
@@ -223,33 +287,52 @@ export function DashboardShell({
               </>
             );
 
-            if (isActive) {
-              return <div key={item.name} {...commonProps}>{content}</div>;
-            }
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                {...commonProps}
-              >
+            const buttonEl = isActive ? (
+              <div key={item.name} className={className}>{content}</div>
+            ) : (
+              <Link key={item.name} href={item.href} className={className}>
                 {content}
               </Link>
             );
+
+            if (isSidebarCollapsed) {
+              return (
+                <div key={item.name} className="w-full flex justify-center py-0">
+                  <Tooltip content={item.name} position="right" delay={100}>
+                    {buttonEl}
+                  </Tooltip>
+                </div>
+              );
+            }
+
+            return buttonEl;
           })}
         </nav>
 
         <div className="mt-auto">
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
-            <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-4 w-full px-4 py-1.5 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
-            >
-              <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
-              </div>
-              <span className="text-base font-medium">Logout</span>
-            </button>
+          <div className={`border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20 ${isSidebarCollapsed ? "p-3 flex justify-center" : "p-4"}`}>
+            {isSidebarCollapsed ? (
+              <Tooltip content="Logout" position="right" delay={100}>
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="flex items-center justify-center w-11 h-11 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all group"
+                >
+                  <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                    <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                  </div>
+                </button>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="flex items-center gap-2 w-full px-4 py-1.5 text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all group"
+              >
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                  <LogOut className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                </div>
+                <span className="text-base font-medium">Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </aside>

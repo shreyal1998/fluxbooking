@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { ScheduleClient } from "./schedule-client";
+import { cookies } from "next/headers";
 
 import { Suspense } from "react";
 
@@ -13,6 +14,10 @@ export default async function SchedulePage() {
   const tenantId = (session.user as any).tenantId;
   const userRole = (session.user as any).role;
   const userId = (session.user as any).id;
+
+  const cookieStore = await cookies();
+  const savedZoom = cookieStore.get(`zoom-level-${userId}`)?.value;
+  const initialZoomLevel = savedZoom ? parseInt(savedZoom, 10) : 100;
 
   const [staffRaw, tenant] = await Promise.all([
     prisma.staff.findMany({ 
@@ -57,6 +62,8 @@ export default async function SchedulePage() {
         defaultView={defaultView}
         serverDateIso={serverDateIso}
         defaultSlotDuration={defaultSlotDuration}
+        initialZoomLevel={initialZoomLevel}
+        userId={userId}
       />
     </Suspense>
   );

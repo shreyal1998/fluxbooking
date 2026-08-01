@@ -22,12 +22,17 @@ import {
   Loader2,
   Building,
   Undo,
-  Lock
+  Lock,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  AlertCircle
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
 import { saveCalendarViewMode, saveCalendarSlotDuration } from "@/app/actions/schedule";
 import { toast } from "sonner";
+import { Tooltip } from "@/components/ui/tooltip";
 import { 
   addMonths, 
   subMonths, 
@@ -45,7 +50,6 @@ import { ManualBooking } from "@/components/dashboard/manual-booking";
 import { QuickBlockForm } from "@/components/dashboard/quick-block-form";
 import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
-import { Tooltip } from "@/components/ui/tooltip";
 import { Booking, Service, Staff, Tenant, UserRole, BlockedSlot, BookingStatus } from "@prisma/client";
 import { getInTimezone, formatInTimezone } from "@/lib/timezone-utils";
 
@@ -77,6 +81,8 @@ interface BookingsClientProps {
   defaultViewMode?: string;
   serverDateIso?: string;
   defaultSlotDuration?: number;
+  initialZoomLevel?: number;
+  userId?: string;
 }
 
 const startTimes = (() => {
@@ -174,7 +180,9 @@ export function BookingsClient({
   tenant,
   defaultViewMode = "week",
   serverDateIso,
-  defaultSlotDuration = 60
+  defaultSlotDuration = 60,
+  initialZoomLevel = 100,
+  userId
 }: BookingsClientProps) {
   const limits = { FREE: 1, STARTER: 5, PRO: 1000000 };
   const baseLimit = limits[tenant?.plan as keyof typeof limits] || 1;
@@ -204,6 +212,15 @@ export function BookingsClient({
   }, []);
 
   const [slotDuration, setSlotDuration] = useState<15 | 30 | 60>((defaultSlotDuration || 60) as any);
+  const [zoomLevel, setZoomLevel] = useState<number>(initialZoomLevel);
+
+  // Save zoom level to cookie and localStorage when it changes
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem(`zoom-level:${userId}`, String(zoomLevel));
+      document.cookie = `zoom-level-${userId}=${zoomLevel}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+  }, [zoomLevel, userId]);
 
   // Save slot duration to database whenever it changes
   useEffect(() => {
@@ -216,6 +233,7 @@ export function BookingsClient({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
 
   // Pagination State for List View
   const [currentPage, setCurrentPage] = useState(1);
@@ -242,6 +260,8 @@ export function BookingsClient({
   // Custom Staff Dropdown State
   const [isStaffFilterOpen, setIsStaffFilterOpen] = useState(false);
   const staffDropdownRef = useRef<HTMLDivElement>(null);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const zoomDropdownRef = useRef<HTMLDivElement>(null);
 
   // Schedule view visible hours range
   const [showScheduleViewModal, setShowScheduleViewModal] = useState(false);
@@ -325,6 +345,9 @@ export function BookingsClient({
       }
       if (endDropdownRef.current && !endDropdownRef.current.contains(event.target as Node)) {
         setIsEndOpen(false);
+      }
+      if (zoomDropdownRef.current && !zoomDropdownRef.current.contains(event.target as Node)) {
+        setIsZoomOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -504,10 +527,26 @@ export function BookingsClient({
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
+    if (status === "CANCELLED") {
+      setCancelConfirmId(id);
+      return;
+    }
     setProcessingId(id);
     const result = await updateBookingStatus(id, status);
     if (result.success) {
       toast.success(`Booking ${status.toLowerCase()}`);
+      router.refresh();
+    } else {
+      toast.error(result.error);
+    }
+    setProcessingId(null);
+  };
+
+  const proceedCancel = async (id: string) => {
+    setProcessingId(id);
+    const result = await updateBookingStatus(id, "CANCELLED");
+    if (result.success) {
+      toast.success("Booking cancelled");
       router.refresh();
     } else {
       toast.error(result.error);
@@ -1020,10 +1059,54 @@ export function BookingsClient({
         </Portal>
       )}
 
+      {/* Cancel Confirmation Modal */}
+      {cancelConfirmId && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 space-y-6 text-center">
+                <div className="mx-auto h-16 w-16 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center text-amber-500 dark:text-amber-400 animate-bounce">
+                  <AlertCircle className="h-8 w-8" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Cancel Booking?</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Are you sure you want to cancel this booking? This will free up the slot for other customers.
+                  </p>
+                </div>
+
+                <div className="flex gap-4 pt-2">
+                  <button 
+                    onClick={() => setCancelConfirmId(null)}
+                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    No, Keep it
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      const id = cancelConfirmId;
+                      setCancelConfirmId(null);
+                      if (id) await proceedCancel(id);
+                    }}
+                    className="flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-md active:scale-95 transition-all cursor-pointer"
+                  >
+                    Yes, Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
       {/* Toolbar & Content Card */}
       <div className="w-full flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 p-1.5 shadow-sm">
               <button 
@@ -1073,19 +1156,82 @@ export function BookingsClient({
               </div>
             )}
 
-            {/* View Switcher */}
-            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center">
+            {/* View Switcher with Zoom */}
+            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-0.5">
+              {viewMode === "week" && (
+                <>
+                  <div className="relative" ref={zoomDropdownRef}>
+                    <Tooltip content="Zoom" position="bottom" delay={100}>
+                      <button
+                        onClick={() => setIsZoomOpen(!isZoomOpen)}
+                        className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
+                          isZoomOpen
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
+                        }`}
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </button>
+                    </Tooltip>
+
+                    {isZoomOpen && (
+                      <div className="absolute left-0 mt-2 w-[200px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 p-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 outline-none focus:outline-none">
+                        <div className="flex items-center justify-between p-1 bg-slate-50 dark:bg-slate-950/40 rounded-xl gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomLevel((prev) => Math.max(50, prev - 10));
+                            }}
+                            disabled={zoomLevel <= 50}
+                            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 transition-all cursor-pointer active:scale-90 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                          >
+                            <ZoomOut className="h-4 w-4" />
+                          </button>
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 min-w-[36px] text-center select-none">
+                            {zoomLevel}%
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomLevel((prev) => Math.min(200, prev + 10));
+                            }}
+                            disabled={zoomLevel >= 200}
+                            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 transition-all cursor-pointer active:scale-90 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                          >
+                            <ZoomIn className="h-4 w-4" />
+                          </button>
+                          {zoomLevel !== 100 && (
+                            <Tooltip content="Reset" position="bottom" delay={100}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setZoomLevel(100);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer active:scale-90 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              </button>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-[1px] h-5 bg-slate-100 dark:bg-slate-700 mx-1.5 self-center" />
+                </>
+              )}
+
               {(["month", "week", "day", "team", "list"] as const).map((mode) => (
                 <button 
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-5 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all ${
-                    viewMode === mode 
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
-                      : "text-black dark:text-white"
-                  }`}
+                   key={mode}
+                   onClick={() => setViewMode(mode)}
+                   className={`px-5 py-2 rounded-xl text-xs font-normal tracking-normal transition-all cursor-pointer ${
+                     viewMode === mode 
+                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
+                       : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                   }`}
                 >
-                  {mode}
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </button>
               ))}
             </div>
@@ -1181,7 +1327,7 @@ export function BookingsClient({
 
                                     {/* Edit Booking: PENDING, CONFIRMED, COMPLETED */}
                                     {booking.status !== "CANCELLED" && (
-                                      <Tooltip content="Edit Booking" position="bottom">
+                                      <Tooltip content="Edit" position="bottom">
                                         <div onClick={(e) => e.stopPropagation()}>
                                           <ManualBooking 
                                             tenantId={tenant?.id || ""} 
@@ -1203,7 +1349,7 @@ export function BookingsClient({
 
                                     {/* Complete Booking: PENDING, CONFIRMED */}
                                     {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
-                                      <Tooltip content="Complete Booking" position="bottom">
+                                      <Tooltip content="Complete" position="bottom">
                                         <button 
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1219,14 +1365,14 @@ export function BookingsClient({
 
                                     {/* Cancel Booking: PENDING, CONFIRMED, COMPLETED */}
                                     {booking.status !== "CANCELLED" && (
-                                      <Tooltip content="Cancel Booking" position="bottom">
+                                      <Tooltip content="Cancel" position="bottom">
                                         <button 
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleStatusUpdate(booking.id, "CANCELLED");
                                           }}
                                           disabled={processingId === booking.id}
-                                          className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                          className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-450 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                         >
                                           <X className="h-4 w-4" />
                                         </button>
@@ -1340,6 +1486,7 @@ export function BookingsClient({
               }}
               onStatusUpdate={handleStatusUpdate}
               onDeleteBooking={(id) => setDeleteConfirmId(id)}
+              zoomLevel={zoomLevel}
             />
           )}
         </div>

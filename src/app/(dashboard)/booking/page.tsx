@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { BookingsClient } from "./bookings-client";
+import { cookies } from "next/headers";
 
 export default async function BookingsPage() {
   const session = await getServerSession(authOptions);
@@ -22,6 +23,10 @@ export default async function BookingsPage() {
   const defaultViewMode = userPrefs?.calendarViewMode || "week";
   const defaultSlotDuration = userPrefs?.calendarSlotDuration || 60;
   const serverDateIso = new Date().toISOString();
+
+  const cookieStore = await cookies();
+  const savedZoom = cookieStore.get(`zoom-level-${userId}`)?.value;
+  const initialZoomLevel = savedZoom ? parseInt(savedZoom, 10) : 100;
 
   // Filter logic for staff: only see their own appointments
   const bookingQuery: any = { tenantId };
@@ -118,6 +123,8 @@ export default async function BookingsPage() {
       defaultViewMode={defaultViewMode as any}
       serverDateIso={serverDateIso}
       defaultSlotDuration={defaultSlotDuration}
+      initialZoomLevel={initialZoomLevel}
+      userId={userId}
     />
   );
 }

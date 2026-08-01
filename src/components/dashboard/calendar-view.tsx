@@ -40,11 +40,15 @@ import {
   CheckCircle2,
   Undo,
   X,
-  Trash2
+  Trash2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw
 } from "lucide-react";
 import { rescheduleBooking } from "@/app/actions/booking";
 import { toast } from "sonner";
 import { getInTimezone, formatInTimezone } from "@/lib/timezone-utils";
+import { Tooltip } from "@/components/ui/tooltip";
 
 type ViewType = "month" | "week" | "day" | "team";
 
@@ -199,7 +203,8 @@ export function CalendarView({
   scheduleViewEnd,
   onEventClick,
   onStatusUpdate,
-  onDeleteBooking
+  onDeleteBooking,
+  zoomLevel = 100
 }: {
   initialEvents: Event[],
   userRole: string,
@@ -221,7 +226,8 @@ export function CalendarView({
   scheduleViewEnd?: string,
   onEventClick?: (event: Event) => void,
   onStatusUpdate?: (id: string, status: string) => Promise<void>,
-  onDeleteBooking?: (id: string) => void
+  onDeleteBooking?: (id: string) => void,
+  zoomLevel?: number
 }) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
@@ -291,7 +297,8 @@ export function CalendarView({
     };
   }, []);
 
-  const slotHeight = slotDuration === 15 ? 40 : slotDuration === 30 ? 60 : 80;
+  const baseSlotHeight = slotDuration === 15 ? 40 : slotDuration === 30 ? 60 : 80;
+  const slotHeight = view === "week" ? baseSlotHeight * (zoomLevel / 100) : baseSlotHeight;
   const pixelsPerMinute = slotHeight / slotDuration;
 
   const getVenueTime = useCallback(() => {
@@ -930,8 +937,9 @@ export function CalendarView({
     const N = activeStaffList.length;
     const isSplit = N > 1;
 
+    const colWidth = 120 * (zoomLevel / 100);
     const gridCols = isSplit ? `repeat(${7 * N}, 1fr)` : `repeat(7, 1fr)`;
-    const gridMinWidth = (isSplit && N > 2) ? `${7 * N * 100}px` : '100%';
+    const gridMinWidth = isSplit ? `max(100%, ${7 * N * colWidth}px)` : "100%";
     const headerHeight = isSplit ? 111 : 76;
 
     const getSingleStaffParam = () => {
@@ -971,7 +979,7 @@ export function CalendarView({
         </div>
 
         {/* Right Side: Horizontal Scrollable Wrapper */}
-        <div className={`flex-1 ${mode === 'booking' ? 'overflow-y-hidden' : 'overflow-y-hidden premium-scrollbar'} relative pb-0 ${(isSplit && N > 2) ? 'overflow-x-auto' : 'overflow-x-hidden'}`}>
+        <div className={`flex-1 ${mode === 'booking' ? 'overflow-y-hidden' : 'overflow-y-hidden premium-scrollbar'} relative pb-0 overflow-x-auto`}>
           <div className="grid" style={{ gridTemplateColumns: gridCols, minWidth: gridMinWidth }}>
             
             {/* Day Headers (Row 1) */}
@@ -1641,7 +1649,7 @@ export function CalendarView({
 
   return (
     <>
-      <div className={`${(view === "month" && mode !== "booking") ? "h-full min-h-0" : "w-full"} flex flex-col animate-fade-in`}>
+      <div className={`${(view === "month" && mode !== "booking") ? "h-full min-h-0" : "w-full"} flex flex-col animate-fade-in relative`}>
         {view === "month" && renderMonthView()}
         {view === "week" && renderWeekView()}
         {view === "day" && (() => {
@@ -1654,8 +1662,7 @@ export function CalendarView({
             return renderTeamView();
           }
           return renderDayView();
-        })()}
-        {view === "team" && renderTeamView()}
+        })()}        {view === "team" && renderTeamView()}
       </div>
       {/* Portal renders tooltip directly into document.body — outside any CSS transform context */}
       {tooltipEl && typeof document !== 'undefined' && createPortal(tooltipEl, document.body)}

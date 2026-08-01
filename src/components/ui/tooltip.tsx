@@ -121,7 +121,7 @@ export function Tooltip({
               visibility: isPositioned ? 'visible' : 'hidden'
             }}
             className={`
-              pointer-events-none px-3 py-1.5 rounded-xl text-[10px] font-medium tracking-wide
+              pointer-events-none px-3 py-1.5 rounded-xl text-xs font-medium tracking-wide
               bg-indigo-600 dark:bg-indigo-600 text-white
               border border-indigo-500/20 dark:border-indigo-400/20 shadow-2xl shadow-indigo-500/10
               transition-opacity duration-150

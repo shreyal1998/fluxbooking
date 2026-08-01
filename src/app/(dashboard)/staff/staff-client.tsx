@@ -177,15 +177,7 @@ export function StaffClient({
                       {staff.length} / {currentLimit === 1000000 ? 'Unlimited' : currentLimit} Active
                     </p>
                   </div>
-                  {isLimitExceeded && (
-                    <Link 
-                      href="/settings/billing" 
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-[9px] font-black uppercase text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 transition-all hover:scale-105 active:scale-95 shrink-0"
-                    >
-                      <AlertCircle className="h-3 w-3 text-amber-500" />
-                      <span>Limit Exceeded - Upgrade</span>
-                    </Link>
-                  )}
+
                 </div>
               </div>
               

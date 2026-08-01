@@ -1,7 +1,5 @@
 "use client";
 
-import { Calendar } from "lucide-react";
-
 interface LogoProps {
   className?: string;
   showIcon?: boolean;
@@ -42,10 +40,18 @@ export function Logo({
   };
 
   return (
-    <div className={`flex items-center gap-4 group outline-none ${className}`}>
+    <div className={`flex items-center gap-2 group outline-none ${className}`}>
       {showIcon && (
-        <div className={`bg-indigo-600 rounded-lg group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20 ${iconPaddingClasses[size]} ${iconClassName} shrink-0`}>
-          <Calendar className={`text-white ${iconSizeClasses[size]}`} />
+        <div className={`bg-indigo-600 rounded-lg shadow-lg shadow-indigo-500/20 ${iconPaddingClasses[size]} ${iconClassName} shrink-0`}>
+          <svg 
+            viewBox="0 0 32 32" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            className={`text-white transition-transform duration-300 group-hover:scale-110 ${iconSizeClasses[size]}`}
+          >
+            <path d="M10 8H22V11H13V15H20V18H13V24H10V8Z" fill="currentColor"/>
+            <path d="M18 20L21 23L26 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
       )}
       <span className={`font-bold tracking-tight text-slate-900 dark:text-white ${sizeClasses[size]} ${textClassName}`}>
