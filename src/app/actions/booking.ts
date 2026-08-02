@@ -23,6 +23,7 @@ import {
   sendBookingCancelledEmail 
 } from "@/lib/mail";
 import { getInTimezone, parseInTimezone, formatInTimezone } from "@/lib/timezone-utils";
+import { validatePhoneNumber } from "@/lib/utils";
 
 function parseShiftEnd(dateStr: string, timeStr: string, timezone: string): Date {
   if (timeStr === "00:00" || timeStr === "24:00") {
@@ -365,6 +366,10 @@ export async function createBooking(formData: FormData) {
       if (isBlocked) return { error: "Staff member is unavailable during this time." };
     }
 
+    const customerPhone = formData.get("customerPhone") as string;
+    const phoneError = validatePhoneNumber(customerPhone);
+    if (phoneError) return { error: phoneError };
+
     // Find or create the Customer record
     let customer = await prisma.customer.findUnique({
       where: {
@@ -381,8 +386,14 @@ export async function createBooking(formData: FormData) {
           tenantId,
           name: customerName,
           email: customerEmail,
+          phone: customerPhone || null,
           status: "ACTIVE"
         }
+      });
+    } else if (customerPhone && !customer.phone) {
+      customer = await prisma.customer.update({
+        where: { id: customer.id },
+        data: { phone: customerPhone }
       });
     }
 

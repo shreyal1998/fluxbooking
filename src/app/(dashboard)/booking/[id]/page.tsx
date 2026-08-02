@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { format } from "date-fns";
 import { getInTimezone } from "@/lib/timezone-utils";
 import { formatCurrency } from "@/lib/currency-utils";
+import { COUNTRIES } from "@/config/countries";
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -83,6 +84,13 @@ export default async function BookingDetailPage({ params }: PageProps) {
   const timezone = tenant?.timezone || "UTC";
   const timeFormatSetting = tenant?.timeFormat || "12h";
   const currencySetting = tenant?.currency || "USD";
+  const countryData = COUNTRIES.find(c => c.code === (tenant?.country || "US"));
+  const dialCode = countryData?.phoneCode ? `+${countryData.phoneCode} ` : "";
+
+  const formatPhone = (phone?: string | null) => {
+    if (!phone) return null;
+    return phone.startsWith("+") ? phone : `${dialCode}${phone}`;
+  };
 
   const serializedServices = services.map(s => ({
     ...s,
@@ -115,7 +123,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
   const localEnd = getInTimezone(booking.endTime, timezone);
   const actualDuration = Math.round((booking.endTime.getTime() - booking.startTime.getTime()) / 60000);
 
-  const formattedDate = format(localStart, "EEEE, MMMM d, yyyy");
+  const formattedDate = format(localStart, "dd/MM/yyyy");
   const timeFormatPattern = timeFormatSetting === "24h" ? "HH:mm" : "hh:mm a";
   const formattedStart = format(localStart, timeFormatPattern);
   const formattedEnd = format(localEnd, timeFormatPattern);
@@ -228,7 +236,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
                 <p className="text-base font-medium text-black dark:text-slate-300">{booking.customerName}</p>
                 <p className="text-sm text-black dark:text-slate-400 truncate">{booking.customerEmail}</p>
                 {booking.customer?.phone && (
-                  <p className="text-sm text-black dark:text-slate-400 font-mono mt-0.5">{booking.customer.phone}</p>
+                  <p className="text-sm text-black dark:text-slate-400 font-mono mt-0.5">{formatPhone(booking.customer.phone)}</p>
                 )}
               </div>
             </div>

@@ -74,6 +74,7 @@ model Tenant {
   subscriptionEndsAt         DateTime?
   timezone                   String               @default("UTC")
   timeFormat                 String               @default("12h") // '12h' or '24h'
+  weekStart                  String               @default("sunday") // 'sunday' or 'monday'
 
   // Notifications & Credits
   emailNotificationsEnabled Boolean @default(true)

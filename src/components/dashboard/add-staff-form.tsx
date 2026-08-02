@@ -7,17 +7,21 @@ import { COUNTRIES } from "@/config/countries";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { validatePhoneNumber } from "@/lib/utils";
 
 export function AddStaffForm({ 
   users, 
   services, 
   onSuccess,
-  businessType
+  businessType,
+  country
 }: { 
   users: any[], 
   services: any[], 
   onSuccess?: () => void,
-  businessType?: any
+  businessType?: any,
+  country?: string
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -39,34 +43,7 @@ export function AddStaffForm({
 
   const labels = getLabels(businessType);
   
-  // Country Code State
-  const [openDropdown, setOpenDropdown] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES.find(c => c.code === "US") || COUNTRIES[0]);
-  const [countrySearch, setCountrySearch] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdown(false);
-        setCountrySearch("");
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (openDropdown && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [openDropdown]);
-
-  const filteredCountries = COUNTRIES.filter(c => 
-    c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
-    c.phoneCode.includes(countrySearch)
-  );
+  // Phone number input state - handled by PhoneInput component
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -96,8 +73,11 @@ export function AddStaffForm({
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
+    const phone = formData.get("phone") as string;
 
     const errors: Record<string, string> = {};
+    const phoneError = validatePhoneNumber(phone);
+    if (phoneError) errors.phone = phoneError;
     if (!name) errors.name = `${labels.staff} name is required`;
     
     if (!email) errors.email = "Email is required";
@@ -189,56 +169,12 @@ export function AddStaffForm({
                     <InputError message={fieldErrors.email} />
                   </div>
                   <div>
-                    <div className="flex gap-2">
-                       <div className="relative" ref={dropdownRef}>
-                          <button
-                            type="button"
-                            onClick={() => setOpenDropdown(!openDropdown)}
-                            className="h-10 px-3 bg-indigo-50/30 dark:bg-slate-900 border-2 border-indigo-100/50 dark:border-slate-800 rounded-xl flex items-center gap-2 text-xs font-black text-slate-500 hover:border-indigo-200 dark:hover:border-slate-800 transition-all cursor-pointer shadow-sm"
-                          >
-                            <span>+{selectedCountry.phoneCode}</span>
-                            <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${openDropdown ? 'rotate-180' : ''}`} />
-                          </button>
-                          <input type="hidden" name="staffCountryCode" value={selectedCountry.code} />
-
-                          {openDropdown && (
-                            <div className="absolute z-[120] left-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-indigo-100/50 dark:border-slate-800 py-2 max-h-60 flex flex-col">
-                              <div className="px-3 pb-2 border-b-2 border-indigo-100/50 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900">
-                                <div className="relative">
-                                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
-                                  <input 
-                                    ref={searchInputRef}
-                                    type="text"
-                                    placeholder="Search..."
-                                    value={countrySearch}
-                                    onChange={(e) => setCountrySearch(e.target.value)}
-                                    className="w-full pl-7 pr-3 py-1.5 bg-indigo-50/30 dark:bg-slate-900 border-2 border-indigo-100/50 dark:border-slate-800 rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-indigo-500/20 dark:text-white shadow-sm"
-                                  />
-                                </div>
-                              </div>
-                              <div className="overflow-y-auto flex-1 text-left">
-                                {filteredCountries.map((c) => (
-                                  <button
-                                    key={c.code}
-                                    type="button"
-                                    onClick={() => { setSelectedCountry(c); setOpenDropdown(false); setCountrySearch(""); }}
-                                    className={`flex items-center justify-between w-full px-4 py-2 text-[10px] font-bold ${selectedCountry.code === c.code ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                                  >
-                                    <span className="truncate mr-2">{c.name}</span>
-                                    <span className="text-slate-400">+{c.phoneCode}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                       </div>
-                       <input
-                        name="phone"
-                        type="tel"
-                        placeholder="Phone (Optional)"
-                        className="flex-1 h-10 bg-indigo-50/30 dark:bg-slate-900 border-2 border-indigo-100/50 dark:border-slate-800 rounded-xl px-4 py-2 text-xs dark:text-white focus:outline-none transition-all hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 shadow-sm"
-                       />
-                    </div>
+                    <PhoneInput
+                      name="phone"
+                      defaultValue=""
+                      defaultCountry={country || "US"}
+                    />
+                    <InputError message={fieldErrors.phone} />
                   </div>
                     <div>
                       <div className="relative">

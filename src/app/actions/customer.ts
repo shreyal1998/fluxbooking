@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 import { Prisma, CustomerStatus } from "@prisma/client";
+import { validatePhoneNumber } from "@/lib/utils";
 
 export async function addCustomer(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -17,12 +18,15 @@ export async function addCustomer(formData: FormData) {
   const phone = formData.get("phone") as string;
   const notes = formData.get("notes") as string;
 
+  const phoneError = validatePhoneNumber(phone);
+  if (phoneError) return { error: phoneError };
+
   try {
     const customer = await prisma.customer.create({
       data: {
         name,
         email,
-        phone,
+        phone: phone || null,
         notes,
         tenantId: tenantId || "",
         status: CustomerStatus.ACTIVE
@@ -49,13 +53,16 @@ export async function updateCustomer(customerId: string, formData: FormData) {
   const notes = formData.get("notes") as string;
   const status = formData.get("status") as string;
 
+  const phoneError = validatePhoneNumber(phone);
+  if (phoneError) return { error: phoneError };
+
   try {
     await prisma.customer.update({
       where: { id: customerId, tenantId: tenantId || "" },
       data: {
         name,
         email,
-        phone,
+        phone: phone || null,
         notes,
         status: status as CustomerStatus
       },

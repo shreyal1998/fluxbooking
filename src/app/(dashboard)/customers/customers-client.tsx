@@ -26,6 +26,8 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { getLabels } from "@/lib/labels";
 import { AddCustomerForm } from "@/components/dashboard/add-customer-form";
 import { updateCustomer, toggleCustomerStatus } from "@/app/actions/customer";
+import { COUNTRIES } from "@/config/countries";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -33,12 +35,14 @@ export function CustomersClient({
   initialCustomers, 
   tenantId,
   userRole,
-  businessType 
+  businessType,
+  country
 }: { 
   initialCustomers: any[], 
   tenantId: string,
   userRole: string, 
-  businessType?: any 
+  businessType?: any,
+  country?: string
 }) {
   const router = useRouter();
   const [customers, setCustomers] = useState(initialCustomers);
@@ -56,6 +60,14 @@ export function CustomersClient({
 
   const labels = getLabels(businessType);
   useLockBodyScroll(isAddModalOpen || !!editingCustomer || !!archivingCustomer);
+
+  const countryData = COUNTRIES.find(c => c.code === (country || "US"));
+  const dialCode = countryData?.phoneCode ? `+${countryData.phoneCode} ` : "";
+
+  const formatPhone = (phone?: string | null) => {
+    if (!phone) return "";
+    return phone.startsWith("+") ? phone : `${dialCode}${phone}`;
+  };
 
   // Sync state when initialCustomers changes
   useEffect(() => {
@@ -266,7 +278,7 @@ export function CustomersClient({
                             </div>
                             {customer.phone && (
                               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                                <Phone className="h-3 w-3 text-slate-400" /> {customer.phone}
+                                <Phone className="h-3 w-3 text-slate-400" /> {formatPhone(customer.phone)}
                               </div>
                             )}
                           </div>
@@ -417,6 +429,7 @@ export function CustomersClient({
                     tenantId={tenantId} 
                     onSuccess={() => setIsAddModalOpen(false)} 
                     businessType={businessType}
+                    country={country}
                   />
                </div>
             </div>
@@ -484,12 +497,11 @@ export function CustomersClient({
                     
                     <div>
                       <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
-                      <input 
+                      <PhoneInput 
                         name="phone" 
-                        type="tel"
                         defaultValue={editingCustomer.phone || ""} 
-                        placeholder="+1 234 567 890" 
-                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm"
+                        defaultCountry={country || "US"}
+                        placeholder="234 567 890" 
                       />
                     </div>
                     

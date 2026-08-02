@@ -181,6 +181,7 @@ export default async function PublicBookingPage({
             timezone={tenant.timezone}
             currency={currency}
             timeFormat={tenant.timeFormat}
+            country={tenant.country}
           />
         </div>
 

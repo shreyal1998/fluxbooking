@@ -16,6 +16,7 @@ import {
   DollarSign,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Check
 } from "lucide-react";
 import { createBooking, updateBooking } from "@/app/actions/booking";
@@ -29,6 +30,9 @@ import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency-utils";
 import { getInTimezone } from "@/lib/timezone-utils";
+import { COUNTRIES } from "@/config/countries";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { AddCustomerForm } from "@/components/dashboard/add-customer-form";
 
 function InputError({ message }: { message?: string }) {
   if (!message) return null;
@@ -107,6 +111,15 @@ function parseTimeTo24h(input: string): string | null {
   return null;
 }
 
+// Auto-formats a raw input string into dd/mm/yyyy as the user types.
+// Strips non-digits and injects slashes after position 2 and 4.
+function formatDateInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return digits.slice(0, 2) + "/" + digits.slice(2);
+  return digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4, 8);
+}
+
 interface ManualBookingProps {
   tenantId: string;
   services: any[];
@@ -122,6 +135,8 @@ interface ManualBookingProps {
   timezone?: string;
   triggerIconOnly?: boolean;
   triggerClassName?: string;
+  weekStart?: string;
+  onDateTimeChange?: (date: Date, staffId: string) => void;
 }
 
 export function ManualBooking({ 
@@ -138,10 +153,71 @@ export function ManualBooking({
   timeFormat = "12h",
   timezone = "UTC",
   triggerIconOnly = false,
-  triggerClassName
+  triggerClassName,
+  weekStart = "sunday",
+  onDateTimeChange,
 }: ManualBookingProps) {
   const router = useRouter();
   const labels = getLabels(businessType);
+
+  const getDaysInMonth = (year: number, month: number) => {
+    const firstDay = new Date(year, month, 1);
+    const startDayOfWeek = weekStart === "monday"
+      ? (firstDay.getDay() + 6) % 7
+      : firstDay.getDay();
+    const days = [];
+
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+
+    // Previous month's padding days
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      days.push({
+        day: prevMonthTotalDays - i,
+        monthOffset: -1,
+        date: new Date(year, month - 1, prevMonthTotalDays - i)
+      });
+    }
+
+    // Current month's days
+    for (let i = 1; i <= totalDays; i++) {
+      days.push({
+        day: i,
+        monthOffset: 0,
+        date: new Date(year, month, i)
+      });
+    }
+
+    // Next month's padding days (to fill 6 rows, i.e. 42 cells)
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      days.push({
+        day: i,
+        monthOffset: 1,
+        date: new Date(year, month + 1, i)
+      });
+    }
+
+    return days;
+  };
+
+  const handlePrevMonth = () => {
+    if (datePickerMonth === 0) {
+      setDatePickerMonth(11);
+      setDatePickerYear(prev => prev - 1);
+    } else {
+      setDatePickerMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (datePickerMonth === 11) {
+      setDatePickerMonth(0);
+      setDatePickerYear(prev => prev + 1);
+    } else {
+      setDatePickerMonth(prev => prev + 1);
+    }
+  };
 
   const formatOptionLabel = (timeVal: string) => {
     if (!timeVal) return "";
@@ -214,6 +290,12 @@ export function ManualBooking({
   const [startAmPmDir, setStartAmPmDir] = useState<"up" | "down">("down");
   const [endAmPmDir, setEndAmPmDir] = useState<"up" | "down">("down");
 
+  // Date Picker States
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [datePickerMonth, setDatePickerMonth] = useState(new Date().getMonth());
+  const [datePickerYear, setDatePickerYear] = useState(new Date().getFullYear());
+  const [datePickerDir, setDatePickerDir] = useState<"up" | "down">("down");
+
   // Dropdown Refs for Click Outside Detection
   const serviceRef = useRef<HTMLDivElement>(null);
   const staffRef = useRef<HTMLDivElement>(null);
@@ -222,6 +304,7 @@ export function ManualBooking({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const startAmPmRef = useRef<HTMLDivElement>(null);
   const endAmPmRef = useRef<HTMLDivElement>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
 
   // Customer Search State
   const [customerSearch, setCustomerSearch] = useState("");
@@ -252,6 +335,30 @@ export function ManualBooking({
       ? format(new Date(initialData.startTime), "yyyy-MM-dd") 
       : ""
   );
+
+  const [dateInputValue, setDateInputValue] = useState<string>(
+    initialData?.startTime 
+      ? format(new Date(initialData.startTime), "dd/MM/yyyy") 
+      : ""
+  );
+
+  // Sync text input value when selectedDateStr is updated via the calendar dropdown
+  useEffect(() => {
+    if (selectedDateStr) {
+      const parsedDate = new Date(selectedDateStr + "T00:00");
+      if (!isNaN(parsedDate.getTime())) {
+        const formatted = format(parsedDate, "dd/MM/yyyy");
+        if (dateInputValue !== formatted) {
+          setDateInputValue(formatted);
+        }
+      }
+    } else {
+      // If selectedDateStr was cleared (invalid typed date), do not clear typed value so user can keep editing
+      if (!dateInputValue) {
+        setDateInputValue("");
+      }
+    }
+  }, [selectedDateStr]);
 
   const [startTimeStr, setStartTimeStr] = useState<string>(
     initialData?.startTime 
@@ -323,6 +430,90 @@ export function ManualBooking({
     phone: ""
   });
 
+  // Session storage draft persistence keys
+  const draftKey = inline ? `booking_draft_slot` : `booking_draft_header`;
+  const isOpenKey = inline ? `booking_open_slot` : `booking_open_header`;
+  const isRestored = useRef(false);
+
+  // Restore state from sessionStorage on mount (hydration-safe)
+  useEffect(() => {
+    // 1. Restore isOpen
+    if (!inline) {
+      const savedOpen = sessionStorage.getItem(isOpenKey);
+      if (savedOpen === "true") {
+        setIsOpen(true);
+      }
+    }
+
+    // 2. Restore form draft
+    const saved = sessionStorage.getItem(draftKey);
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        if (draft.selectedServiceId) {
+          const s = services.find(x => x.id === draft.selectedServiceId);
+          if (s) setSelectedService(s);
+        }
+        if (draft.selectedStaffId) setSelectedStaffId(draft.selectedStaffId);
+        if (draft.selectedDateStr) setSelectedDateStr(draft.selectedDateStr);
+        if (draft.dateInputValue) setDateInputValue(draft.dateInputValue);
+        if (draft.startTimeStr) setStartTimeStr(draft.startTimeStr);
+        if (draft.endTimeStr) setEndTimeStr(draft.endTimeStr);
+        if (draft.startTimeInput) setStartTimeInput(draft.startTimeInput);
+        if (draft.endTimeInput) setEndTimeInput(draft.endTimeInput);
+        if (draft.startAmPm) setStartAmPm(draft.startAmPm);
+        if (draft.endAmPm) setEndAmPm(draft.endAmPm);
+        if (draft.customPrice) setCustomPrice(draft.customPrice);
+        if (draft.customerInfo) setCustomerInfo(draft.customerInfo);
+      } catch (e) {
+        console.error("Failed to parse booking draft", e);
+      }
+    }
+    isRestored.current = true;
+  }, [services, inline, draftKey, isOpenKey]);
+
+  // Save form draft and isOpen state to sessionStorage whenever they change
+  useEffect(() => {
+    if (!isRestored.current) return;
+    if (isOpen || inline) {
+      const draft = {
+        selectedServiceId: selectedService?.id || "",
+        selectedStaffId,
+        selectedDateStr,
+        dateInputValue,
+        startTimeStr,
+        endTimeStr,
+        startTimeInput,
+        endTimeInput,
+        startAmPm,
+        endAmPm,
+        customPrice,
+        customerInfo
+      };
+      sessionStorage.setItem(draftKey, JSON.stringify(draft));
+      if (!inline) {
+        sessionStorage.setItem(isOpenKey, "true");
+      }
+    }
+  }, [
+    isOpen,
+    inline,
+    selectedService,
+    selectedStaffId,
+    selectedDateStr,
+    dateInputValue,
+    startTimeStr,
+    endTimeStr,
+    startTimeInput,
+    endTimeInput,
+    startAmPm,
+    endAmPm,
+    customPrice,
+    customerInfo,
+    draftKey,
+    isOpenKey
+  ]);
+
   // Clear errors when context changes
   useEffect(() => {
     setFieldErrors({});
@@ -351,6 +542,9 @@ export function ManualBooking({
       }
       if (endAmPmRef.current && !endAmPmRef.current.contains(event.target as Node)) {
         setIsEndAmPmOpen(false);
+      }
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setIsDatePickerOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -396,6 +590,11 @@ export function ManualBooking({
         const spaceBelow = window.innerHeight - rect.bottom;
         setEndAmPmDir(spaceBelow < 120 ? "up" : "down");
       }
+      if (isDatePickerOpen && datePickerRef.current) {
+        const rect = datePickerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setDatePickerDir(spaceBelow < 180 ? "up" : "down");
+      }
     };
 
     if (
@@ -405,7 +604,8 @@ export function ManualBooking({
       isServiceOpen || 
       isStaffOpen ||
       isStartAmPmOpen ||
-      isEndAmPmOpen
+      isEndAmPmOpen ||
+      isDatePickerOpen
     ) {
       // Run once immediately on open
       handleScrollOrResize();
@@ -430,19 +630,68 @@ export function ManualBooking({
     isServiceOpen, 
     isStaffOpen,
     isStartAmPmOpen,
-    isEndAmPmOpen
+    isEndAmPmOpen,
+    isDatePickerOpen
   ]);
+
+  // Sync date picker view with selected date
+  useEffect(() => {
+    if (selectedDateStr) {
+      const parsedDate = new Date(selectedDateStr + "T00:00");
+      if (!isNaN(parsedDate.getTime())) {
+        setDatePickerMonth(parsedDate.getMonth());
+        setDatePickerYear(parsedDate.getFullYear());
+      }
+    }
+  }, [selectedDateStr]);
+
+  // Auto-scroll the modal container to bring the date picker fully into view
+  useEffect(() => {
+    if (isDatePickerOpen && scrollContainerRef.current && datePickerRef.current) {
+      const timer = setTimeout(() => {
+        const container = scrollContainerRef.current;
+        const pickerElement = datePickerRef.current;
+        if (!container || !pickerElement) return;
+
+        const pickerRect = pickerElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        if (datePickerDir === "down") {
+          const calendarBottom = pickerRect.bottom + 250; // height of dropdown + margin
+          const overflow = calendarBottom - containerRect.bottom;
+          if (overflow > 0) {
+            container.scrollBy({
+              top: overflow + 16,
+              behavior: "smooth"
+            });
+          }
+        } else {
+          const calendarTop = pickerRect.top - 250;
+          const overflow = containerRect.top - calendarTop;
+          if (overflow > 0) {
+            container.scrollBy({
+              top: -(overflow + 16),
+              behavior: "smooth"
+            });
+          }
+        }
+      }, 60);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isDatePickerOpen, datePickerDir]);
 
   // Reset form when popup is closed
   useEffect(() => {
+    if (!isRestored.current) return;
     if (!isOpen && !inline) {
       setSelectedService(initialData?.service || null);
       setSelectedStaffId(initialData?.staffId || "");
-      setSelectedDateStr(
-        initialData?.startTime 
-          ? format(new Date(initialData.startTime), "yyyy-MM-dd") 
-          : ""
-      );
+      const resetDateStr = initialData?.startTime 
+        ? format(new Date(initialData.startTime), "yyyy-MM-dd") 
+        : "";
+      setSelectedDateStr(resetDateStr);
+      setDateInputValue(resetDateStr ? format(new Date(resetDateStr + "T00:00"), "dd/MM/yyyy") : "");
       setStartTimeStr(
         initialData?.startTime 
           ? format(new Date(initialData.startTime), "HH:mm") 
@@ -573,6 +822,25 @@ export function ManualBooking({
       setCustomPrice("");
     }
   }, [selectedService, initialData]);
+
+  // Sync date, time, and staff selection changes back to the parent to prevent loss of state on component re-mount
+  useEffect(() => {
+    if (onDateTimeChange) {
+      const finalDateStr = selectedDateStr || format(new Date(), "yyyy-MM-dd");
+      const finalTimeStr = startTimeStr || "09:00";
+      const combined = new Date(`${finalDateStr}T${finalTimeStr}`);
+      if (!isNaN(combined.getTime())) {
+        // Compare with initialData to prevent infinite loop
+        const initialTime = initialData?.startTime ? new Date(initialData.startTime) : null;
+        const timeChanged = !initialTime || combined.getTime() !== initialTime.getTime();
+        const staffChanged = selectedStaffId !== (initialData?.staffId || "");
+
+        if (timeChanged || staffChanged) {
+          onDateTimeChange(combined, selectedStaffId);
+        }
+      }
+    }
+  }, [selectedDateStr, startTimeStr, selectedStaffId, onDateTimeChange, initialData]);
 
   // Digits-only auto-format with smart format-aware hour detection
   // prevVal is the current field value, used to detect backspace vs forward typing
@@ -951,8 +1219,10 @@ export function ManualBooking({
     if (!selectedStaffId) {
       errors.staff = "Please select a team member.";
     }
-    if (!selectedDateStr) {
-      errors.date = "Please select a date.";
+    if (!dateInputValue) {
+      errors.date = "Please enter a booking date.";
+    } else if (!selectedDateStr) {
+      errors.date = "Please enter a valid date in dd/mm/yyyy format.";
     }
     if (!errors.startTime && !resolvedStart) {
       errors.startTime = "Please select a start time.";
@@ -996,6 +1266,10 @@ export function ManualBooking({
 
     if (result.success) {
       toast.success(mode === "edit" ? `${labels.appointment} updated successfully!` : `${labels.appointment} created successfully!`);
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(inline ? "booking_draft_slot" : "booking_draft_header");
+        sessionStorage.removeItem(inline ? "booking_open_slot" : "booking_open_header");
+      }
       router.refresh();
       handleClose();
     } else {
@@ -1006,6 +1280,10 @@ export function ManualBooking({
   };
 
   const handleClose = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(inline ? "booking_draft_slot" : "booking_draft_header");
+      sessionStorage.removeItem(inline ? "booking_open_slot" : "booking_open_header");
+    }
     if (!inline) setIsOpen(false);
     if (onClose) onClose();
     setGeneralError(null);
@@ -1016,6 +1294,8 @@ export function ManualBooking({
       setCustomerSearch("");
     }
   };
+
+  const selectedStaff = staff.find(st => st.id === selectedStaffId);
 
   const content = (
     <div className={`relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] ${inline ? '' : 'shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden'} animate-fade-in-up flex flex-col max-h-[90vh] transition-colors`}>
@@ -1108,7 +1388,7 @@ export function ManualBooking({
 
         {/* Team Member Selector */}
         <div className="space-y-2 relative" ref={staffRef}>
-          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Practitioner <span className="text-rose-500">*</span></label>
+          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select {labels.staff} <span className="text-rose-500">*</span></label>
           <button 
             type="button"
             onClick={() => {
@@ -1127,16 +1407,15 @@ export function ManualBooking({
               }
               setIsStaffOpen(!isStaffOpen);
             }}
-            className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedStaffId ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.staff ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+            className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedStaff ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.staff ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
           >
             {(() => {
-              const selectedStaff = staff.find(st => st.id === selectedStaffId);
               const isSelectedStaffLocked = selectedStaff ? (staff.indexOf(selectedStaff) >= currentLimit) : false;
               return (
                 <span>
                   {selectedStaff 
                     ? `${selectedStaff.name}${isSelectedStaffLocked ? " (Locked)" : ""}` 
-                    : "Select Practitioner"
+                    : `Select ${labels.staff}`
                   }
                 </span>
               );
@@ -1172,19 +1451,152 @@ export function ManualBooking({
         </div>
 
         {/* Date Selector */}
-        <div className="space-y-2">
+        <div className="space-y-2 relative" ref={datePickerRef}>
           <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Booking Date <span className="text-rose-500">*</span></label>
           <div className="relative">
-            <input 
-              type="date"
-              value={selectedDateStr}
+            <input
+              type="text"
+              value={dateInputValue}
+              placeholder="dd/mm/yyyy"
               onChange={(e) => {
-                setSelectedDateStr(e.target.value);
-                setFieldErrors(prev => ({ ...prev, date: "" }));
+                // Strip non-digits and auto-insert slashes
+                const formatted = formatDateInput(e.target.value);
+                setDateInputValue(formatted);
+
+                // Only validate once user has typed a full date (10 chars: dd/mm/yyyy)
+                if (formatted.length < 10) {
+                  setFieldErrors(prev => ({ ...prev, date: "" }));
+                  setSelectedDateStr("");
+                  return;
+                }
+
+                const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+                const match = formatted.match(dateRegex);
+                if (match) {
+                  const day = parseInt(match[1], 10);
+                  const month = parseInt(match[2], 10) - 1;
+                  const year = parseInt(match[3], 10);
+
+                  const parsedDate = new Date(year, month, day);
+                  if (
+                    parsedDate.getFullYear() === year &&
+                    parsedDate.getMonth() === month &&
+                    parsedDate.getDate() === day &&
+                    !isNaN(parsedDate.getTime())
+                  ) {
+                    // Valid date — clear error, store it
+                    setFieldErrors(prev => ({ ...prev, date: "" }));
+                    const yyyymmdd = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    setSelectedDateStr(yyyymmdd);
+                    return;
+                  }
+                }
+
+                // Full date entered but invalid — show inline error immediately
+                setSelectedDateStr("");
+                setFieldErrors(prev => ({ ...prev, date: "Please enter a valid date in dd/mm/yyyy format." }));
               }}
-              className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm ${selectedDateStr ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.date ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+              className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
+                fieldErrors.date 
+                  ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' 
+                  : 'border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'
+              }`}
             />
+            <button
+              type="button"
+              onClick={() => {
+                setIsDatePickerOpen(!isDatePickerOpen);
+                setIsServiceOpen(false);
+                setIsStaffOpen(false);
+                setIsStartTimeOpen(false);
+                setIsEndTimeOpen(false);
+                setIsCustomerDropdownOpen(false);
+                setIsStartAmPmOpen(false);
+                setIsEndAmPmOpen(false);
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 focus:outline-none hover:opacity-80 active:scale-95 transition-all"
+            >
+              <CalendarIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-450 shrink-0" />
+            </button>
           </div>
+
+          {isDatePickerOpen && (
+            <div 
+              className={`absolute z-[100] w-[240px] right-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-850 rounded-[1.25rem] shadow-xl p-3 animate-in fade-in slide-in-from-top-2 duration-200 ${
+                datePickerDir === "up" ? "bottom-full mb-2" : "top-full mt-2"
+              }`}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  {format(new Date(datePickerYear, datePickerMonth, 1), "MMMM yyyy")}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Days of Week */}
+              <div className="grid grid-cols-7 gap-0.5 text-center mb-1">
+                {(weekStart === "monday"
+                  ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+                  : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+                ).map((d) => (
+                  <span key={d} className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 py-0.5">
+                    {d}
+                  </span>
+                ))}
+              </div>
+
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 gap-0.5">
+                {getDaysInMonth(datePickerYear, datePickerMonth).map((dayObj, idx) => {
+                  const dayDate = dayObj.date;
+                  const dayStr = format(dayDate, "yyyy-MM-dd");
+                  const isSelected = selectedDateStr === dayStr;
+                  const isToday = format(new Date(), "yyyy-MM-dd") === dayStr;
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDateStr(dayStr);
+                        setFieldErrors(prev => ({ ...prev, date: "" }));
+                        setIsDatePickerOpen(false);
+                      }}
+                      className={`aspect-square flex items-center justify-center rounded-lg text-[11px] font-bold cursor-pointer transition-all active:scale-90 ${
+                        dayObj.monthOffset !== 0
+                          ? "text-slate-300 dark:text-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850"
+                      } ${
+                        isSelected 
+                          ? "!bg-indigo-600 !text-white hover:!bg-indigo-700 shadow-md shadow-indigo-100 dark:shadow-none" 
+                          : ""
+                      } ${
+                        isToday && !isSelected
+                          ? "ring-2 ring-indigo-500/20 dark:ring-indigo-400/20 font-black text-indigo-600 dark:text-indigo-450"
+                          : ""
+                      }`}
+                    >
+                      {dayObj.day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <InputError message={fieldErrors.date} />
         </div>
 
@@ -1477,7 +1889,7 @@ export function ManualBooking({
             <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select {labels.customer} <span className="text-rose-500">*</span></label>
           </div>
 
-          {!customerInfo.name && !isAddingNewCustomer ? (
+          {!customerInfo.name ? (
             <div className="space-y-4 relative" ref={customerDropdownRef}>
               <button 
                 type="button"
@@ -1566,49 +1978,6 @@ export function ManualBooking({
                 </div>
               )}
             </div>
-          ) : isAddingNewCustomer ? (
-            <form onSubmit={handleCreateNewCustomer} className="space-y-4 animate-fade-in" noValidate>
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest">New {labels.customer} Details</h4>
-                <button type="button" onClick={() => { setIsAddingNewCustomer(false); setGeneralError(null); }} className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors">Back to search</button>
-              </div>
-              <div>
-                <input 
-                  name="name" 
-                  placeholder="Full Name *" 
-                  required 
-                  className={`w-full bg-indigo-50/30 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm font-bold dark:text-white outline-none border-2 transition-all shadow-sm ${
-                    fieldErrors.customerName 
-                      ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                      : "border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800"
-                  }`} 
-                />
-                <InputError message={fieldErrors.customerName} />
-              </div>
-              <div>
-                <input 
-                  name="email" 
-                  type="email" 
-                  placeholder="Email Address *" 
-                  required 
-                  className={`w-full bg-indigo-50/30 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm font-bold dark:text-white outline-none border-2 transition-all shadow-sm ${
-                    fieldErrors.customerEmail 
-                      ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                      : "border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800"
-                  }`} 
-                />
-                <InputError message={fieldErrors.customerEmail} />
-              </div>
-              <input name="phone" placeholder="Phone Number (Optional)" className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-800 rounded-2xl px-5 py-3 text-sm font-bold dark:text-white outline-none transition-all shadow-sm hover:border-indigo-200 dark:hover:border-slate-600" />
-              {generalError && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-450 rounded-xl text-xs font-bold border border-rose-100 dark:border-rose-900/30 animate-in fade-in slide-in-from-top-2 duration-200 text-center">
-                  {generalError}
-                </div>
-              )}
-              <button type="submit" disabled={loading} className="w-full py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-[0.98]">
-                {loading ? "Creating..." : `Create & Select ${labels.customer}`}
-              </button>
-            </form>
           ) : (
             <div className="w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-bold text-slate-900 dark:text-white animate-fade-in shadow-sm">
               <div className="flex items-center gap-3">
@@ -1659,7 +2028,60 @@ export function ManualBooking({
     </div>
   );
 
-  if (inline) return content;
+  const addCustomerPortal = isAddingNewCustomer && (
+    <Portal>
+      <div className="fixed inset-0 z-[2147483648] flex items-center justify-center p-4 md:p-8">
+        <div 
+          className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse animate-in fade-in duration-200"
+          onClick={() => setIsAddingNewCustomer(false)}
+        />
+        <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] transition-colors">
+          <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
+                <Plus className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                  Add New {labels.customer}
+                </h2>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAddingNewCustomer(false)}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+            >
+              <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+            <AddCustomerForm
+              tenantId={tenantId}
+              businessType={businessType}
+              country={tenant?.country}
+              skipRefresh={true}
+              onSuccess={(newCustomer) => {
+                if (newCustomer) {
+                  handleSelectCustomer(newCustomer);
+                }
+                setIsAddingNewCustomer(false);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </Portal>
+  );
+
+  if (inline) {
+    return (
+      <>
+        {content}
+        {addCustomerPortal}
+      </>
+    );
+  }
 
   return (
     <>
@@ -1698,6 +2120,8 @@ export function ManualBooking({
           </div>
         </Portal>
       )}
+
+      {addCustomerPortal}
     </>
   );
 }

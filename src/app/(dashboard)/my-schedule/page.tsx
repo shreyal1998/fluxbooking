@@ -141,7 +141,7 @@ export default async function MySchedulePage() {
 
           {/* Quick Block Section */}
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-indigo-50/50 dark:bg-slate-900/50">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50 dark:bg-slate-950/40">
               <div className="h-10 w-10 rounded-2xl bg-slate-900 dark:bg-slate-800 flex items-center justify-center text-white">
                 <Ban className="h-5 w-5" />
               </div>
@@ -175,7 +175,7 @@ export default async function MySchedulePage() {
 
           {/* Leave History */}
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden">
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-indigo-50/50 dark:bg-slate-900/50">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40">
               <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
                 <History className="h-4 w-4 text-slate-400" />
                 Recent History

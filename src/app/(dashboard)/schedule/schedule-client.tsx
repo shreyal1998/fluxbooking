@@ -635,15 +635,15 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                    <div className="relative" ref={zoomDropdownRef}>
                      <Tooltip content="Zoom" position="bottom" delay={100}>
                        <button
-                         onClick={() => setIsZoomOpen(!isZoomOpen)}
-                         className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
-                           isZoomOpen
-                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
-                             : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
-                         }`}
-                       >
-                         <ZoomIn className="h-4 w-4" />
-                       </button>
+                        onClick={() => setIsZoomOpen(!isZoomOpen)}
+                        className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
+                          isZoomOpen
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
+                            : "text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                        }`}
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </button>
                      </Tooltip>
 
                      {isZoomOpen && (
@@ -695,20 +695,20 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
 
                <button 
                 onClick={() => setView('day')} 
-                className={`px-5 py-2 rounded-xl text-xs font-normal tracking-normal transition-all cursor-pointer ${view === 'day' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'day' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                >
                 Day
                </button>
                <button 
                 onClick={() => setView('week')} 
-                className={`px-5 py-2 rounded-xl text-xs font-normal tracking-normal transition-all cursor-pointer ${view === 'week' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'week' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                >
                 Week
                </button>
                {userRole !== "STAFF" && (
                  <button 
                   onClick={() => setView('team')} 
-                  className={`px-5 py-2 rounded-xl text-xs font-normal tracking-normal transition-all cursor-pointer ${view === 'team' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                  className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'team' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                  >
                   Team
                  </button>
@@ -738,6 +738,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
           scheduleViewEnd={viewEnd}
           timeFormat={tenant.timeFormat || "12h"}
           zoomLevel={zoomLevel}
+          weekStart={tenant.weekStart || "sunday"}
         />
       </div>
       </div>

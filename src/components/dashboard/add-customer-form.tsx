@@ -1,25 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { UserCircle, Mail, Phone, FileText, Loader2, Check } from "lucide-react";
+import { UserCircle, Mail, FileText, Loader2, Check } from "lucide-react";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { addCustomer } from "@/app/actions/customer";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
+import { COUNTRIES } from "@/config/countries";
+import { validatePhoneNumber } from "@/lib/utils";
 
 export function AddCustomerForm({ 
   tenantId, 
   onSuccess,
-  businessType
+  businessType,
+  country,
+  skipRefresh = false
 }: { 
   tenantId: string, 
-  onSuccess?: () => void,
-  businessType?: any
+  onSuccess?: (customer?: any) => void,
+  businessType?: any,
+  country?: string,
+  skipRefresh?: boolean
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const labels = getLabels(businessType);
+  const countryData = COUNTRIES.find(c => c.code === (country || "US"));
+  const dialCode = countryData?.phoneCode ? `+${countryData.phoneCode} ` : "+1 ";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,10 +40,14 @@ export function AddCustomerForm({
 
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
 
     const errors: Record<string, string> = {};
     if (!name) errors.name = `${labels.customer} name is required`;
     if (!email) errors.email = "Email is required";
+
+    const phoneError = validatePhoneNumber(phone);
+    if (phoneError) errors.phone = phoneError;
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -45,8 +58,10 @@ export function AddCustomerForm({
     const result = await addCustomer(formData);
     if (result.success) {
       toast.success(`${labels.customer} added successfully!`);
-      router.refresh();
-      if (onSuccess) onSuccess();
+      if (!skipRefresh) {
+        router.refresh();
+      }
+      if (onSuccess) onSuccess(result.customer);
     } else {
       if (result.error?.includes("email")) {
         setFieldErrors({ email: "This email is already in use" });
@@ -114,15 +129,12 @@ export function AddCustomerForm({
 
           <div>
             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                name="phone"
-                type="tel"
-                placeholder="+1 234 567 890"
-                className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-              />
-            </div>
+            <PhoneInput
+              name="phone"
+              defaultCountry={country || "US"}
+              defaultValue=""
+              placeholder="234 567 890"
+            />
           </div>
 
           <div>

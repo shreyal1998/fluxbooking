@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search } from "lucide-react";
+import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search, Calendar } from "lucide-react";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
 import { LocationList } from "@/components/dashboard/location-list";
 import { getLabels } from "@/lib/labels";
 import { timezones } from "@/config/timezones";
 import { COUNTRIES } from "@/config/countries";
-import { updateTenantTimezone, updateTenantCountry, updateTenantTimeFormat } from "@/app/actions/dashboard";
+import { updateTenantTimezone, updateTenantCountry, updateTenantTimeFormat, updateTenantWeekStart } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter, useParams } from "next/navigation";
 
@@ -66,9 +66,11 @@ export function SettingsClient({
   const [timezone, setTimezone] = useState(initialTimezone);
   const [country, setCountry] = useState(initialCountry);
   const [timeFormat, setTimeFormat] = useState(tenant?.timeFormat || "12h");
+  const [weekStart, setWeekStart] = useState(tenant?.weekStart || "sunday");
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
   const [isUpdatingCountry, setIsUpdatingCountry] = useState(false);
   const [isUpdatingTimeFormat, setIsUpdatingTimeFormat] = useState(false);
+  const [isUpdatingWeekStart, setIsUpdatingWeekStart] = useState(false);
   
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [countrySearch, setCountrySearch] = useState("");
@@ -77,6 +79,7 @@ export function SettingsClient({
   const countryRef = useRef<HTMLDivElement>(null);
   const timezoneRef = useRef<HTMLDivElement>(null);
   const timeFormatRef = useRef<HTMLDivElement>(null);
+  const weekStartRef = useRef<HTMLDivElement>(null);
   const countrySearchRef = useRef<HTMLInputElement>(null);
   const timezoneSearchRef = useRef<HTMLInputElement>(null);
 
@@ -108,7 +111,8 @@ export function SettingsClient({
       if (
         (countryRef.current && !countryRef.current.contains(event.target as Node)) &&
         (timezoneRef.current && !timezoneRef.current.contains(event.target as Node)) &&
-        (timeFormatRef.current && !timeFormatRef.current.contains(event.target as Node))
+        (timeFormatRef.current && !timeFormatRef.current.contains(event.target as Node)) &&
+        (weekStartRef.current && !weekStartRef.current.contains(event.target as Node))
       ) {
         if (openDropdown) toggleDropdown(null);
       }
@@ -171,6 +175,22 @@ export function SettingsClient({
     } else {
       toast.error(result.error || "Failed to update time format");
       setTimeFormat(tenant?.timeFormat || "12h");
+    }
+  };
+
+  const handleWeekStartChange = async (newWeekStart: string) => {
+    setWeekStart(newWeekStart);
+    setOpenDropdown(null);
+    setIsUpdatingWeekStart(true);
+    const result = await updateTenantWeekStart(newWeekStart);
+    setIsUpdatingWeekStart(false);
+
+    if (result.success) {
+      toast.success("First day of week updated successfully");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update week start");
+      setWeekStart(tenant?.weekStart || "sunday");
     }
   };
 
@@ -439,6 +459,60 @@ export function SettingsClient({
                         </div>
                         <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
                           <Clock className="h-3 w-3" /> Changes how time is displayed across your dashboard and booking page.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">First Day of Week</label>
+                        <div className="relative group" ref={weekStartRef}>
+                          <button
+                            type="button"
+                            onClick={() => toggleDropdown("weekstart")}
+                            disabled={isUpdatingWeekStart || userRole !== "ADMIN"}
+                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                              openDropdown === "weekstart"
+                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                            } ${userRole !== "ADMIN" ? "opacity-60 cursor-not-allowed" : ""}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isUpdatingWeekStart ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                              ) : (
+                                <Calendar className="h-4 w-4 text-slate-400" />
+                              )}
+                              <span>{weekStart === "monday" ? "Monday" : "Sunday"}</span>
+                            </div>
+                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "weekstart" ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {openDropdown === "weekstart" && (
+                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
+                              <button
+                                type="button"
+                                onClick={() => handleWeekStartChange("sunday")}
+                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                  weekStart === "sunday" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <span>Sunday</span>
+                                {weekStart === "sunday" && <Check className="h-4 w-4" />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleWeekStartChange("monday")}
+                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                  weekStart === "monday" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                              >
+                                <span>Monday</span>
+                                {weekStart === "monday" && <Check className="h-4 w-4" />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3" /> Sets the first day shown on your calendar and date picker.
                         </p>
                       </div>
                     </div>

@@ -24,6 +24,8 @@ import { LiquidLoader } from "@/components/ui/liquid-loader";
 import { getLabels } from "@/lib/labels";
 import { formatCurrency } from "@/lib/currency-utils";
 import { BusinessType } from "@prisma/client";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { validatePhoneNumber } from "@/lib/utils";
 
 interface Service {
   id: string;
@@ -59,7 +61,8 @@ export function BookingForm({
   businessType,
   timezone = "UTC",
   currency = "USD",
-  timeFormat = "12h"
+  timeFormat = "12h",
+  country
 }: { 
   tenantId: string; 
   services: Service[]; 
@@ -69,6 +72,7 @@ export function BookingForm({
   timezone?: string;
   currency?: string;
   timeFormat?: string;
+  country?: string;
 }) {
   const labels = getLabels(businessType);
   const searchParams = useSearchParams();
@@ -158,10 +162,14 @@ export function BookingForm({
     const formData = new FormData(event.currentTarget);
     const customerName = formData.get("customerName") as string;
     const customerEmail = formData.get("customerEmail") as string;
+    const customerPhone = formData.get("customerPhone") as string;
 
     const errors: Record<string, string> = {};
     if (!customerName) errors.customerName = "Full name is required";
     if (!customerEmail) errors.customerEmail = "Email address is required";
+
+    const phoneError = validatePhoneNumber(customerPhone);
+    if (phoneError) errors.customerPhone = phoneError;
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -220,7 +228,7 @@ export function BookingForm({
            </div>
            <div className="flex justify-between mb-2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Time</span>
-              <span className="text-sm font-bold text-slate-900">{format(selectedDate, "MMM d")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</span>
+              <span className="text-sm font-bold text-slate-900">{format(selectedDate, "dd/MM/yyyy")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</span>
            </div>
            <div className="flex justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{labels.staff}</span>
@@ -486,7 +494,7 @@ export function BookingForm({
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-500" style={{ color: `${primaryColor}cc` }}>New Date & Time</p>
-                    <p className="font-bold text-slate-900">{format(selectedDate, "EEEE, MMMM d")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</p>
+                    <p className="font-bold text-slate-900">{format(selectedDate, "dd/MM/yyyy")} at {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}</p>
                   </div>
                </div>
             </div>
@@ -529,6 +537,18 @@ export function BookingForm({
                       placeholder="name@example.com"
                     />
                     <InputError message={fieldErrors.customerEmail} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                      Phone Number
+                    </label>
+                    <PhoneInput
+                      name="customerPhone"
+                      defaultValue=""
+                      defaultCountry={country || "US"}
+                      placeholder="234 567 890"
+                    />
+                    <InputError message={fieldErrors.customerPhone} />
                   </div>
                 </div>
               )}

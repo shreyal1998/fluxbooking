@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import { sendStaffWelcomeEmail } from "@/lib/mail";
 import { getLabels } from "@/lib/labels";
 import { parseInTimezone, formatInTimezone } from "@/lib/timezone-utils";
+import { validatePhoneNumber } from "@/lib/utils";
 
 export async function addStaff(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -20,7 +21,11 @@ export async function addStaff(formData: FormData) {
   const email = formData.get("email") as string;
   const bio = formData.get("bio") as string;
   const password = formData.get("password") as string;
+  const phone = formData.get("phone") as string;
   const serviceIds = formData.getAll("services") as string[];
+
+  const phoneError = validatePhoneNumber(phone);
+  if (phoneError) return { error: phoneError };
 
   try {
     const tenant = await prisma.tenant.findUnique({
@@ -55,6 +60,7 @@ export async function addStaff(formData: FormData) {
           password: hashedPassword,
           role: "STAFF",
           tenantId: tenantId || "",
+          phone: phone || null,
         },
       });
       targetUserId = newUser.id;
@@ -126,6 +132,10 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
   const color = formData.get("color") as string;
   const serviceIds = formData.getAll("services") as string[];
   const email = formData.get("email") as string;
+  const phone = formData.get("phone") as string;
+
+  const phoneError = validatePhoneNumber(phone);
+  if (phoneError) return { error: phoneError };
 
   try {
     // 1. Get current staff and associated user
@@ -145,33 +155,37 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
       return { error: "Unauthorized" };
     }
 
-    // 2. If the user is an ADMIN and wants to change the email or password, validate and update them
-    if (isAdmin && currentStaff.userId) {
+    // 2. Update user details (email/password if admin, phone number for both admin and owner)
+    if (currentStaff.userId) {
       const userUpdateData: any = {};
 
-      if (email) {
-        // Check if email is already in use by another user
-        const emailConflict = await prisma.user.findFirst({
-          where: {
-            email: { equals: email, mode: 'insensitive' },
-            id: { not: currentStaff.userId }
+      if (isAdmin) {
+        if (email) {
+          // Check if email is already in use by another user
+          const emailConflict = await prisma.user.findFirst({
+            where: {
+              email: { equals: email, mode: 'insensitive' },
+              id: { not: currentStaff.userId }
+            }
+          });
+
+          if (emailConflict) {
+            return { error: "Email address is already in use by another user" };
           }
-        });
 
-        if (emailConflict) {
-          return { error: "Email address is already in use by another user" };
+          userUpdateData.email = email;
         }
 
-        userUpdateData.email = email;
+        const password = formData.get("password") as string;
+        if (password) {
+          if (password.length < 6) {
+            return { error: "Password must be at least 6 characters" };
+          }
+          userUpdateData.password = await bcrypt.hash(password, 10);
+        }
       }
 
-      const password = formData.get("password") as string;
-      if (password) {
-        if (password.length < 6) {
-          return { error: "Password must be at least 6 characters" };
-        }
-        userUpdateData.password = await bcrypt.hash(password, 10);
-      }
+      userUpdateData.phone = phone || null;
 
       if (Object.keys(userUpdateData).length > 0) {
         // Update associated user's details
@@ -263,6 +277,25 @@ export async function updateTenantTimeFormat(timeFormat: string) {
     return { success: true };
   } catch {
     return { error: "Failed to update time format" };
+  }
+}
+
+export async function updateTenantWeekStart(weekStart: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") return { error: "Unauthorized" };
+
+  const tenantId = session.user.tenantId;
+
+  try {
+    await prisma.tenant.update({
+      where: { id: tenantId || "" },
+      data: { weekStart },
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: "Failed to update week start" };
   }
 }
 

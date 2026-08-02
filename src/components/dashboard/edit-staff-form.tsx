@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { getLabels } from "@/lib/labels";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { validatePhoneNumber } from "@/lib/utils";
 
 interface EditStaffFormProps {
   staff: {
@@ -24,6 +26,7 @@ interface EditStaffFormProps {
   onSuccess?: () => void;
   services: any[];
   businessType?: any;
+  country?: string;
 }
 
 const InputError = ({ message }: { message?: string }) => {
@@ -36,7 +39,7 @@ const InputError = ({ message }: { message?: string }) => {
   );
 };
 
-export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessType }: EditStaffFormProps) {
+export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessType, country }: EditStaffFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -87,8 +90,11 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
 
     const errors: Record<string, string> = {};
+    const phoneError = validatePhoneNumber(phone);
+    if (phoneError) errors.phone = phoneError;
     if (isAdmin) {
       if (!name) errors.name = `${labels.staff} name is required`;
       if (!email) {
@@ -271,17 +277,10 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
 
         <div>
           <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
-          <input
+          <PhoneInput
             name="phone"
-            type="tel"
             defaultValue={staff.user?.phone || ""}
-            onChange={() => clearFieldError("phone")}
-            placeholder="+1 234 567 8900"
-            className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
-              fieldErrors.phone 
-                ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
-            }`}
+            defaultCountry={country || "US"}
           />
           <InputError message={fieldErrors.phone} />
         </div>

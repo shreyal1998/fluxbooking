@@ -204,7 +204,8 @@ export function CalendarView({
   onEventClick,
   onStatusUpdate,
   onDeleteBooking,
-  zoomLevel = 100
+  zoomLevel = 100,
+  weekStart = "sunday"
 }: {
   initialEvents: Event[],
   userRole: string,
@@ -227,7 +228,8 @@ export function CalendarView({
   onEventClick?: (event: Event) => void,
   onStatusUpdate?: (id: string, status: string) => Promise<void>,
   onDeleteBooking?: (id: string) => void,
-  zoomLevel?: number
+  zoomLevel?: number,
+  weekStart?: string
 }) {
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
@@ -613,14 +615,18 @@ export function CalendarView({
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
+    const weekStartsOn = weekStart === "monday" ? 1 : 0 as 0 | 1;
+    const startDate = startOfWeek(monthStart, { weekStartsOn });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn });
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
+    const dayHeaders = weekStart === "monday"
+      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     return (
       <div className={`flex flex-col border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-950 overflow-hidden shadow-sm ${mode === 'booking' ? '' : 'flex-1 min-h-0'}`}>
         <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          {dayHeaders.map((day) => (
             <div key={day} className="py-4 text-center text-[10px] font-bold text-black dark:text-white uppercase tracking-widest bg-slate-50/50 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-800 last:border-r-0">
               {day}
             </div>
@@ -908,7 +914,8 @@ export function CalendarView({
   };
 
   const renderWeekView = () => {
-    const startDate = startOfWeek(currentDate);
+    const weekStartsOn = weekStart === "monday" ? 1 : 0 as 0 | 1;
+    const startDate = startOfWeek(currentDate, { weekStartsOn });
     const weekDays = eachDayOfInterval({ start: startDate, end: addDays(startDate, 6) });
     const refDate = startOfDay(currentDate);
     const visibleSlots = getVisibleSlots(refDate);

@@ -14,11 +14,11 @@ export default async function CustomersPage() {
   const [customers, tenant] = await Promise.all([
     prisma.customer.findMany({
       where: { tenantId },
-      orderBy: { name: "asc" },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { businessType: true, timeFormat: true }
+      select: { businessType: true, timeFormat: true, country: true }
     })
   ]);
 
@@ -27,7 +27,8 @@ export default async function CustomersPage() {
       initialCustomers={customers} 
       tenantId={tenantId}
       userRole={userRole} 
-      businessType={tenant?.businessType} 
+      businessType={tenant?.businessType}
+      country={tenant?.country}
     />
   );
 }

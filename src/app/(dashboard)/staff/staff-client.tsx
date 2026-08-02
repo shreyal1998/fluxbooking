@@ -41,6 +41,7 @@ interface StaffClientProps {
   plan: string;
   timeFormat?: string;
   trialEndsAt?: Date | string | null;
+  country?: string;
 }
 
 export function StaffClient({ 
@@ -53,7 +54,8 @@ export function StaffClient({
   userRole,
   plan,
   timeFormat = "12h",
-  trialEndsAt
+  trialEndsAt,
+  country
 }: StaffClientProps) {
   const [staff, setStaff] = useState(initialStaff);
   const [users, setUsers] = useState(initialUsers);
@@ -480,6 +482,7 @@ export function StaffClient({
                     services={initialServices} 
                     onSuccess={() => setIsAddModalOpen(false)} 
                     businessType={businessType}
+                    country={country}
                   />
                </div>
             </div>
@@ -524,6 +527,7 @@ export function StaffClient({
                     onSuccess={() => setEditingStaff(null)} 
                     services={initialServices}
                     businessType={businessType}
+                    country={country}
                   />
                </div>
             </div>

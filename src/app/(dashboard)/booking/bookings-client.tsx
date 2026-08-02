@@ -797,6 +797,7 @@ export function BookingsClient({
             currency={tenant?.currency}
             timeFormat={tenant?.timeFormat || "12h"}
             timezone={tenant?.timezone || "UTC"}
+            weekStart={tenant?.weekStart || "sunday"}
           />
 
           {userRole === "ADMIN" && (
@@ -985,10 +986,14 @@ export function BookingsClient({
                       }}
                       onClose={() => setSelectedSlotInfo(null)}
                       inline={true}
+                      onDateTimeChange={(newDate, newStaffId) => {
+                        setSelectedSlotInfo(prev => prev ? { ...prev, date: newDate, staffId: newStaffId } : null);
+                      }}
                       businessType={tenant?.businessType}
                       currency={tenant?.currency || "USD"}
                       timeFormat={tenant?.timeFormat || "12h"}
                       timezone={tenant?.timezone || "UTC"}
+                      weekStart={tenant?.weekStart || "sunday"}
                     />
                  </div>
                ) : (
@@ -1167,7 +1172,7 @@ export function BookingsClient({
                         className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
                           isZoomOpen
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
-                            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700"
+                            : "text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                         }`}
                       >
                         <ZoomIn className="h-4 w-4" />
@@ -1225,7 +1230,7 @@ export function BookingsClient({
                 <button 
                    key={mode}
                    onClick={() => setViewMode(mode)}
-                   className={`px-5 py-2 rounded-xl text-xs font-normal tracking-normal transition-all cursor-pointer ${
+                   className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${
                      viewMode === mode 
                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
                        : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50"
@@ -1340,6 +1345,7 @@ export function BookingsClient({
                                             currency={tenant?.currency}
                                             timeFormat={tenant?.timeFormat || "12h"}
                                             timezone={tenant?.timezone || "UTC"}
+                                            weekStart={tenant?.weekStart || "sunday"}
                                             triggerIconOnly={true}
                                             triggerClassName="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center"
                                           />
@@ -1487,6 +1493,7 @@ export function BookingsClient({
               onStatusUpdate={handleStatusUpdate}
               onDeleteBooking={(id) => setDeleteConfirmId(id)}
               zoomLevel={zoomLevel}
+              weekStart={tenant?.weekStart || "sunday"}
             />
           )}
         </div>
