@@ -27,8 +27,10 @@ import { TrialBadge } from "./trial-badge";
 import { useTheme } from "next-themes";
 import { CompactThemeToggle } from "./compact-theme-toggle";
 import { Portal } from "../ui/portal";
-import { searchGlobal } from "@/app/actions/dashboard";
-import { Loader2, User, Calendar as CalendarIcon, Users as UsersIcon, AlertCircle, Sparkles } from "lucide-react";
+import { searchGlobal, getPersonalProfile } from "@/app/actions/dashboard";
+import { EditStaffForm } from "./edit-staff-form";
+import { toast } from "sonner";
+import { Loader2, User, Calendar as CalendarIcon, Users as UsersIcon, AlertCircle, Sparkles, Lock } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { checkStaffLockStatus } from "@/app/actions/auth";
 import { LockedStaffScreen } from "./locked-staff-screen";
@@ -52,6 +54,35 @@ export function DashboardShell({
   const [isLockedClient, setIsLockedClient] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(initialCollapsed);
 
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileModalMode, setProfileModalMode] = useState<"profile" | "security">("profile");
+  const [profileData, setProfileData] = useState<{ staff: any; services: any[] } | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  const handleProfileClick = async (mode: "profile" | "security" = "profile") => {
+    setProfileModalMode(mode);
+    setIsProfileModalOpen(true);
+    setLoadingProfile(true);
+    try {
+      const res = await getPersonalProfile();
+      if (res.success) {
+        setProfileData({
+          staff: res.staff,
+          services: res.services || []
+        });
+      } else {
+        toast.error(res.error || "Failed to load profile");
+        setIsProfileModalOpen(false);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to load profile");
+      setIsProfileModalOpen(false);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
   const toggleSidebar = () => {
     const next = !isSidebarCollapsed;
     setIsSidebarCollapsed(next);
@@ -64,6 +95,30 @@ export function DashboardShell({
       document.cookie = `sidebar-collapsed=${next}; path=/; max-age=31536000; SameSite=Lax`;
     }
   };
+
+  useEffect(() => {
+    const handleOpenProfile = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const mode = customEvent.detail?.mode || "profile";
+      handleProfileClick(mode);
+    };
+    window.addEventListener("open-profile-modal", handleOpenProfile);
+    return () => {
+      window.removeEventListener("open-profile-modal", handleOpenProfile);
+    };
+  }, []);
+
+  // Lock body scroll when the security settings popup is open
+  useEffect(() => {
+    if (isProfileModalOpen && profileModalMode === "security") {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isProfileModalOpen, profileModalMode]);
 
   useEffect(() => {
     // Only check if user is a staff member
@@ -462,12 +517,15 @@ export function DashboardShell({
               <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full"></span>
             </button>
             
-            <div className="flex items-center gap-3 pl-2 border-l border-slate-100 dark:border-slate-800">
+            <div 
+              onClick={() => handleProfileClick("profile")}
+              className="flex items-center gap-3 pl-2 border-l border-slate-100 dark:border-slate-800 cursor-pointer hover:opacity-80 transition-all select-none group"
+            >
               <div className="hidden md:flex flex-col items-end">
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{user?.name || "User"}</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[120px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{user?.name || "User"}</p>
                 <p className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{user?.role || "Member"}</p>
               </div>
-              <div className="h-9 w-9 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-medium text-xs border-2 border-white dark:border-slate-800 select-none hover:scale-105 transition-transform cursor-pointer shrink-0">
+              <div className="h-9 w-9 rounded-xl bg-indigo-600 shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white font-medium text-xs border-2 border-white dark:border-slate-800 select-none group-hover:scale-105 transition-all shrink-0">
                 {user?.name?.substring(0, 2).toUpperCase() || "US"}
               </div>
             </div>
@@ -541,6 +599,97 @@ export function DashboardShell({
                  </div>
               </div>
             </aside>
+          </div>
+        </Portal>
+      )}
+
+      {/* Profile Modal */}
+      {isProfileModalOpen && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
+            <div 
+              className={`fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse ${
+                profileModalMode === "security" ? "cursor-default" : "cursor-pointer"
+              }`}
+              onClick={() => {
+                if (profileModalMode !== "security") {
+                  setIsProfileModalOpen(false);
+                }
+              }}
+            />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+              <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="h-10 w-10 rounded-2xl flex items-center justify-center border shadow-sm"
+                    style={{ 
+                      borderColor: profileData?.staff?.color || "#6366f1", 
+                      backgroundColor: `${profileData?.staff?.color || "#6366f1"}10` 
+                    }}
+                  >
+                    {profileModalMode === "security" ? (
+                      <Lock className="h-5 w-5" style={{ color: profileData?.staff?.color || "#6366f1" }} />
+                    ) : (
+                      <UserCircle className="h-5 w-5" style={{ color: profileData?.staff?.color || "#6366f1" }} />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {profileModalMode === "security" ? "Security Settings" : "My Profile"}
+                    </h2>
+                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">
+                      {profileModalMode === "security" ? "Update your credentials" : "Configuring your settings"}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsProfileModalOpen(false)} 
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                </button>
+              </div>
+
+              <div className="flex-1 flex flex-col min-h-0">
+                {loadingProfile ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading profile information...</p>
+                  </div>
+                ) : profileData?.staff ? (
+                  <EditStaffForm 
+                    staff={profileData.staff}
+                    isAdmin={session?.user?.role === "ADMIN"}
+                    onSuccess={() => {
+                      setIsProfileModalOpen(false);
+                      toast.success(
+                        profileModalMode === "security" 
+                          ? "Security settings updated successfully!" 
+                          : "Profile updated successfully!"
+                      );
+                      window.location.reload();
+                    }}
+                    services={profileData.services}
+                    businessType={tenant?.businessType}
+                    country={tenant?.country}
+                    securityOnlyMode={profileModalMode === "security"}
+                  />
+                ) : (
+                  <div className="p-8 text-center space-y-4">
+                    <div className="mx-auto h-16 w-16 rounded-3xl bg-amber-50 dark:bg-amber-900/10 flex items-center justify-center text-amber-500">
+                      <AlertCircle className="h-8 w-8" />
+                    </div>
+                    <div className="max-w-sm mx-auto">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2">No Linked Practitioner Profile</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        This user account is not linked to any practitioner profile. 
+                        Please go to the Staff section to link your account or create a profile.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </Portal>
       )}

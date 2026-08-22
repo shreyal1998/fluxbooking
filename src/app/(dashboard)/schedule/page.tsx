@@ -25,7 +25,10 @@ export default async function SchedulePage() {
       orderBy: { createdAt: "asc" },
       include: {
         blockedSlots: true,
-        availabilityOverrides: true
+        availabilityOverrides: true,
+        leaveRequests: {
+          where: { status: { in: ["APPROVED", "PENDING"] } }
+        }
       }
     }),
     prisma.tenant.findUnique({ 

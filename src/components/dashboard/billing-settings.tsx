@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CreditCard, AlertCircle, Calendar } from "lucide-react";
+import { Check, CreditCard, AlertCircle, Calendar, FileText } from "lucide-react";
 import { PLANS } from "@/config/plans";
 import { createLemonSqueezyCheckout, cancelLemonSqueezySubscription } from "@/app/actions/lemonsqueezy";
 
@@ -11,14 +11,20 @@ export function BillingSettings({
   planStatus,
   subscriptionId,
   subscriptionEndsAt,
-  trialEndsAt
+  trialEndsAt,
+  invoices = [],
+  onViewInvoice,
+  onDownloadInvoice
 }: { 
   currentPlan: string, 
   planInterval: string,
   planStatus?: string | null,
   subscriptionId?: string | null,
   subscriptionEndsAt?: Date | string | null,
-  trialEndsAt?: Date | string | null
+  trialEndsAt?: Date | string | null,
+  invoices?: any[],
+  onViewInvoice: (invoice: any) => void,
+  onDownloadInvoice: (invoice: any) => void
 }) {
   const [interval, setInterval] = useState<"MONTH" | "YEAR">(planInterval as any || "MONTH");
   const [loading, setLoading] = useState<string | null>(null);
@@ -219,6 +225,74 @@ export function BillingSettings({
               );
             })}
           </div>
+        </div>
+      </div>
+      {/* Invoices / Billing History Section */}
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mt-8">
+        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
+          <FileText className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+          <div>
+            <h3 className="font-medium text-slate-900 dark:text-white">Billing History</h3>
+            <p className="text-sm font-normal text-slate-500 dark:text-slate-400">View and download your subscription invoices.</p>
+          </div>
+        </div>
+        
+        <div className="p-8">
+          {invoices.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-950/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-850">
+              <FileText className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+              <h4 className="text-sm font-bold text-slate-750 dark:text-slate-400">No Invoices Found</h4>
+              <p className="text-xs text-slate-550 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+                Invoices are only generated for paid subscriptions. You are currently on the Free plan.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 font-black uppercase tracking-wider">
+                    <th className="pb-4 font-bold">Invoice Number</th>
+                    <th className="pb-4 font-bold">Billing Date</th>
+                    <th className="pb-4 font-bold">Plan</th>
+                    <th className="pb-4 font-bold">Amount</th>
+                    <th className="pb-4 font-bold">Status</th>
+                    <th className="pb-4 font-bold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                  {invoices.map((invoice) => (
+                    <tr key={invoice.id} className="text-slate-750 dark:text-slate-350 hover:bg-slate-50/40 dark:hover:bg-slate-950/10 transition-colors">
+                      <td className="py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{invoice.number}</td>
+                      <td className="py-4">{invoice.date.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                      <td className="py-4 font-medium">{invoice.planName} ({invoice.interval})</td>
+                      <td className="py-4 font-bold text-slate-900 dark:text-white">{invoice.amount}</td>
+                      <td className="py-4">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                          Paid
+                        </span>
+                      </td>
+                      <td className="py-4 text-right space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => onViewInvoice(invoice)}
+                          className="px-3.5 py-2 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl font-black text-[10px] uppercase tracking-wider border border-slate-200 dark:border-slate-750 transition-all cursor-pointer"
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDownloadInvoice(invoice)}
+                          className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                        >
+                          Download PDF
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

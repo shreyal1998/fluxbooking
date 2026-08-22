@@ -68,19 +68,67 @@ export default async function StaffPage() {
       const bEnd = new Date(booking.endTime);
       return bStart < new Date(req.endTime) && bEnd > new Date(req.startTime);
     });
-    return { ...req, hasConflicts };
+    return {
+      id: req.id,
+      tenantId: req.tenantId,
+      staffId: req.staffId,
+      type: req.type,
+      reason: req.reason,
+      startTime: req.startTime,
+      endTime: req.endTime,
+      status: req.status,
+      createdAt: req.createdAt,
+      updatedAt: req.updatedAt,
+      hasConflicts,
+      staff: {
+        id: req.staff.id,
+        name: req.staff.name
+      }
+    };
   });
 
   const serializedServices = services.map(s => ({
-    ...s,
-    price: s.price.toString()
+    id: s.id,
+    tenantId: s.tenantId,
+    name: s.name,
+    durationMinutes: s.durationMinutes,
+    bufferTime: s.bufferTime,
+    price: s.price.toString(),
+    color: s.color,
+    capacity: s.capacity,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt
   }));
 
   const serializedStaff = staffMembers.map(s => ({
-    ...s,
+    id: s.id,
+    tenantId: s.tenantId,
+    userId: s.userId,
+    name: s.name,
+    bio: s.bio,
+    color: s.color,
+    availabilityJson: s.availabilityJson,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
+    user: s.user ? {
+      id: s.user.id,
+      name: s.user.name,
+      email: s.user.email,
+      role: s.user.role,
+      image: s.user.image,
+      phone: s.user.phone
+    } : null,
     services: s.services.map(srv => ({
-      ...srv,
-      price: srv.price.toString()
+      id: srv.id,
+      tenantId: srv.tenantId,
+      name: srv.name,
+      durationMinutes: srv.durationMinutes,
+      bufferTime: srv.bufferTime,
+      price: srv.price.toString(),
+      color: srv.color,
+      capacity: srv.capacity,
+      createdAt: srv.createdAt,
+      updatedAt: srv.updatedAt
     }))
   }));
 
@@ -97,6 +145,7 @@ export default async function StaffPage() {
       timeFormat={tenant?.timeFormat || "12h"}
       trialEndsAt={tenant?.trialEndsAt}
       country={tenant?.country}
+      currentUserId={(session.user as any).id}
     />
   );
 }

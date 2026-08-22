@@ -36,15 +36,23 @@ export async function toggleSlotStatus({
     let endUTC: Date;
 
     if (typeof startTime === 'string') {
-      const parts = startTime.split('T');
-      startUTC = parseInTimezone(parts[0], parts[1].substring(0, 5), tz);
+      if (startTime.endsWith('Z') || startTime.includes('+') || (startTime.includes('-') && startTime.split('-').length > 3)) {
+        startUTC = new Date(startTime);
+      } else {
+        const parts = startTime.split('T');
+        startUTC = parseInTimezone(parts[0], parts[1].substring(0, 5), tz);
+      }
     } else {
       startUTC = new Date(startTime);
     }
 
     if (typeof endTime === 'string') {
-      const parts = endTime.split('T');
-      endUTC = parseInTimezone(parts[0], parts[1].substring(0, 5), tz);
+      if (endTime.endsWith('Z') || endTime.includes('+') || (endTime.includes('-') && endTime.split('-').length > 3)) {
+        endUTC = new Date(endTime);
+      } else {
+        const parts = endTime.split('T');
+        endUTC = parseInTimezone(parts[0], parts[1].substring(0, 5), tz);
+      }
     } else {
       endUTC = new Date(endTime);
     }
@@ -63,14 +71,16 @@ export async function toggleSlotStatus({
       const leave = await prisma.leaveRequest.findFirst({
         where: {
           staffId,
-          status: "APPROVED",
-          startTime: { lte: startUTC },
+          status: { in: ["APPROVED", "PENDING"] },
+          startTime: { lt: endUTC },
           endTime: { gt: startUTC }
         }
       });
-      const blockReason = leave 
-        ? `Leave: ${leave.reason || (leave.type.charAt(0).toUpperCase() + leave.type.slice(1).toLowerCase())}` 
-        : (reason || "Scheduled Off");
+
+      if (leave) {
+        const statusLabel = leave.status.toLowerCase();
+        return { error: `Cannot block hours. Practitioner has a ${statusLabel} leave during this time.` };
+      }
 
       await prisma.blockedSlot.create({
         data: {
@@ -78,7 +88,7 @@ export async function toggleSlotStatus({
           staffId,
           startTime: startUTC,
           endTime: endUTC,
-          reason: blockReason
+          reason: reason || "Scheduled Off"
         }
       });
     } else if (type === 'override') {
@@ -126,6 +136,49 @@ export async function toggleSlotStatus({
         } else if (block.startTime >= startUTC && block.startTime < endUTC && block.endTime > endUTC) {
           await prisma.blockedSlot.update({
             where: { id: block.id },
+            data: { startTime: endUTC }
+          });
+        }
+      }
+
+      // Also delete/split any approved/pending LeaveRequests that overlap with this slot
+      const overlappingLeaves = await prisma.leaveRequest.findMany({
+        where: {
+          staffId,
+          status: { in: ["APPROVED", "PENDING"] },
+          startTime: { lt: endUTC },
+          endTime: { gt: startUTC }
+        }
+      });
+
+      for (const leave of overlappingLeaves) {
+        if (leave.startTime >= startUTC && leave.endTime <= endUTC) {
+          await prisma.leaveRequest.delete({ where: { id: leave.id } });
+        } else if (leave.startTime < startUTC && leave.endTime > endUTC) {
+          const originalEndTime = leave.endTime;
+          await prisma.leaveRequest.update({
+            where: { id: leave.id },
+            data: { endTime: startUTC }
+          });
+          await prisma.leaveRequest.create({
+            data: {
+              tenantId: leave.tenantId,
+              staffId: leave.staffId,
+              type: leave.type,
+              reason: leave.reason,
+              startTime: endUTC,
+              endTime: originalEndTime,
+              status: leave.status
+            }
+          });
+        } else if (leave.startTime < startUTC && leave.endTime > startUTC && leave.endTime <= endUTC) {
+          await prisma.leaveRequest.update({
+            where: { id: leave.id },
+            data: { endTime: startUTC }
+          });
+        } else if (leave.startTime >= startUTC && leave.startTime < endUTC && leave.endTime > endUTC) {
+          await prisma.leaveRequest.update({
+            where: { id: leave.id },
             data: { startTime: endUTC }
           });
         }

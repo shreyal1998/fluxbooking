@@ -22,7 +22,7 @@ export default async function DashboardLayout({
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    select: { plan: true, planStatus: true, trialEndsAt: true, businessType: true, name: true, timeFormat: true }
+    select: { plan: true, planStatus: true, trialEndsAt: true, businessType: true, name: true, timeFormat: true, country: true }
   });
 
   if (!tenant) redirect("/login");

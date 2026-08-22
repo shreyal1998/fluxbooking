@@ -14,16 +14,19 @@ export default async function SettingsTabPage({ params }: { params: Promise<{ ta
     redirect("/settings/business");
   }
 
+  const userRole = (session.user as any).role;
+  if (userRole === "STAFF" && ["billing", "security"].includes(tab)) {
+    redirect("/settings/business");
+  }
+
   const tenantId = (session.user as any).tenantId;
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
     include: { locations: true }
   });
 
-  const userRole = (session.user as any).role;
-
   return (
-    <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col animate-fade-in pt-4 pb-6 px-6 md:pt-5 md:pb-8 md:px-8 lg:pt-6 lg:pb-10 lg:px-10 space-y-5 overflow-y-auto custom-scrollbar">
       <div className="flex-1 pb-8">
         <SettingsClient 
           tenant={tenant} 

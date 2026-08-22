@@ -141,7 +141,15 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
     // 1. Get current staff and associated user
     const currentStaff = await prisma.staff.findUnique({
       where: { id: staffId },
-      select: { userId: true, tenantId: true }
+      select: { 
+        userId: true, 
+        tenantId: true,
+        user: {
+          select: {
+            email: true
+          }
+        }
+      }
     });
 
     if (!currentStaff) {
@@ -153,6 +161,23 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
     const isOwner = currentStaff.userId === session.user.id;
     if (!isAdmin && !isOwner) {
       return { error: "Unauthorized" };
+    }
+
+    // Track if the active user is changing their own email or password
+    let isSelfEmailChanged = false;
+    let isSelfPasswordChanged = false;
+    if (currentStaff.userId === session.user.id) {
+      if (email) {
+        const emailLower = email.trim().toLowerCase();
+        const currentEmailLower = currentStaff.user?.email.trim().toLowerCase();
+        if (emailLower !== currentEmailLower) {
+          isSelfEmailChanged = true;
+        }
+      }
+      const password = formData.get("password") as string;
+      if (password) {
+        isSelfPasswordChanged = true;
+      }
     }
 
     // 2. Update user details (email/password if admin, phone number for both admin and owner)
@@ -175,14 +200,14 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
 
           userUpdateData.email = email;
         }
+      }
 
-        const password = formData.get("password") as string;
-        if (password) {
-          if (password.length < 6) {
-            return { error: "Password must be at least 6 characters" };
-          }
-          userUpdateData.password = await bcrypt.hash(password, 10);
+      const password = formData.get("password") as string;
+      if (password) {
+        if (password.length < 6) {
+          return { error: "Password must be at least 6 characters" };
         }
+        userUpdateData.password = await bcrypt.hash(password, 10);
       }
 
       userUpdateData.phone = phone || null;
@@ -213,7 +238,7 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
     revalidatePath("/practitioners");
     revalidatePath("/team");
     revalidatePath("/trainers");
-    return { success: true };
+    return { success: true, emailChanged: isSelfEmailChanged, passwordChanged: isSelfPasswordChanged };
   } catch (error: any) {
     console.error("updateStaffProfile error:", error);
     return { error: "Failed to update staff profile" };
@@ -306,7 +331,8 @@ export async function addService(formData: FormData) {
   const tenantId = session.user.tenantId;
   const name = formData.get("name") as string;
   const durationMinutes = parseInt(formData.get("duration") as string);
-  const price = parseFloat(formData.get("price") as string);
+  const priceInput = formData.get("price") as string;
+  const price = priceInput && !isNaN(parseFloat(priceInput)) ? parseFloat(priceInput) : 0;
   const color = formData.get("color") as string;
 
   try {
@@ -334,7 +360,8 @@ export async function updateService(serviceId: string, formData: FormData) {
   const name = formData.get("name") as string;
   const durationMinutes = parseInt(formData.get("duration") as string);
   const bufferTime = parseInt(formData.get("bufferTime") as string) || 0;
-  const price = parseFloat(formData.get("price") as string);
+  const priceInput = formData.get("price") as string;
+  const price = priceInput && !isNaN(parseFloat(priceInput)) ? parseFloat(priceInput) : 0;
   const color = formData.get("color") as string;
 
   if (isNaN(durationMinutes) || isNaN(price)) {
@@ -457,6 +484,21 @@ export async function addBlockedSlot(formData: FormData) {
     const startTime = parseInTimezone(startDateStr, startTimeVal, businessTimezone);
     const endTime = parseInTimezone(endDateStr, endTimeVal, businessTimezone);
 
+    // Check for overlapping approved/pending leave requests
+    const overlappingLeave = await prisma.leaveRequest.findFirst({
+      where: {
+        staffId,
+        status: { in: ["APPROVED", "PENDING"] },
+        startTime: { lt: endTime },
+        endTime: { gt: startTime }
+      }
+    });
+
+    if (overlappingLeave) {
+      const statusLabel = overlappingLeave.status.toLowerCase();
+      return { error: `Cannot block hours. Practitioner has a ${statusLabel} leave during this time.` };
+    }
+
     await prisma.blockedSlot.create({
       data: {
         tenantId: tenantId || "",
@@ -528,6 +570,50 @@ export async function updateBusinessHours(hours: any) {
   }
 }
 
+async function cleanupOverlappingBlocks(staffId: string, startUTC: Date, endUTC: Date) {
+  const overlappingBlocks = await prisma.blockedSlot.findMany({
+    where: {
+      staffId,
+      startTime: { lt: endUTC },
+      endTime: { gt: startUTC },
+      NOT: {
+        reason: { startsWith: "Leave:" }
+      }
+    }
+  });
+
+  for (const block of overlappingBlocks) {
+    if (block.startTime >= startUTC && block.endTime <= endUTC) {
+      await prisma.blockedSlot.delete({ where: { id: block.id } });
+    } else if (block.startTime < startUTC && block.endTime > endUTC) {
+      const originalEndTime = block.endTime;
+      await prisma.blockedSlot.update({
+        where: { id: block.id },
+        data: { endTime: startUTC }
+      });
+      await prisma.blockedSlot.create({
+        data: {
+          tenantId: block.tenantId,
+          staffId: block.staffId,
+          reason: block.reason,
+          startTime: endUTC,
+          endTime: originalEndTime
+        }
+      });
+    } else if (block.startTime < startUTC && block.endTime > startUTC && block.endTime <= endUTC) {
+      await prisma.blockedSlot.update({
+        where: { id: block.id },
+        data: { endTime: startUTC }
+      });
+    } else if (block.startTime >= startUTC && block.startTime < endUTC && block.endTime > endUTC) {
+      await prisma.blockedSlot.update({
+        where: { id: block.id },
+        data: { startTime: endUTC }
+      });
+    }
+  }
+}
+
 export async function submitLeaveRequest(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
@@ -580,19 +666,24 @@ export async function submitLeaveRequest(formData: FormData) {
           ? formatInTimezone(existingLeave.startTime, businessTimezone, "MMM d, yyyy")
           : `${formatInTimezone(existingLeave.startTime, businessTimezone, "MMM d")} - ${formatInTimezone(endAdjusted, businessTimezone, "MMM d, yyyy")}`;
       } else {
-        const formattedStart = formatInTimezone(existingLeave.startTime, businessTimezone, "MMM d, yyyy h:mm a");
+        const timePattern = tenant?.timeFormat === "24h" ? "HH:mm" : "h:mm a";
+        const formattedStart = formatInTimezone(existingLeave.startTime, businessTimezone, `MMM d, yyyy ${timePattern}`);
         const formattedEnd = isSameDay 
-          ? formatInTimezone(endAdjusted, businessTimezone, "h:mm a")
-          : formatInTimezone(endAdjusted, businessTimezone, "MMM d, yyyy h:mm a");
+          ? formatInTimezone(existingLeave.endTime, businessTimezone, timePattern)
+          : formatInTimezone(existingLeave.endTime, businessTimezone, `MMM d, yyyy ${timePattern}`);
         dateRangeStr = `${formattedStart} - ${formattedEnd}`;
       }
       
+      const isApproved = existingLeave.status === "APPROVED";
       const statusLabel = existingLeave.status.toLowerCase();
 
       return { 
-        error: `You already have a ${statusLabel} leave request for ${dateRangeStr}.` 
+        error: `You already have a ${statusLabel} leave${isApproved ? "" : " request"} for ${dateRangeStr}.` 
       };
     }
+
+    const userRole = session.user.role;
+    const initialStatus = userRole === "ADMIN" ? "APPROVED" : "PENDING";
 
     await prisma.leaveRequest.create({
       data: {
@@ -602,14 +693,37 @@ export async function submitLeaveRequest(formData: FormData) {
         startTime,
         endTime,
         reason,
-        status: "PENDING"
+        status: initialStatus
       }
     });
 
+    if (initialStatus === "APPROVED") {
+      // Auto-approved for Admin, clean up overlapping blocks immediately
+      await cleanupOverlappingBlocks(staff.id, startTime, endTime);
+
+      await prisma.blockedSlot.create({
+        data: {
+          tenantId: tenantId || "",
+          staffId: staff.id,
+          reason: `Leave: ${reason || (type.charAt(0).toUpperCase() + type.slice(1).toLowerCase())}`,
+          startTime,
+          endTime,
+        }
+      });
+    }
+
     revalidatePath("/staff");
     revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
+    revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/booking");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
+
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("Error submitting leave request:", err);
     return { error: "Failed to submit leave request" };
   }
 }
@@ -632,6 +746,8 @@ export async function approveLeaveRequest(requestId: string) {
     });
 
     // 2. Create a BlockedSlot so the staff is actually unavailable
+    await cleanupOverlappingBlocks(request.staffId, request.startTime, request.endTime);
+
     await prisma.blockedSlot.create({
       data: {
         tenantId: request.tenantId,
@@ -746,5 +862,136 @@ export async function searchGlobal(query: string) {
   } catch (error) {
     console.error("Global Search Error:", error);
     return { error: "Failed to perform search" };
+  }
+}
+
+export async function cancelLeaveRequest(requestId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const userId = session.user.id;
+  const userRole = session.user.role;
+
+  try {
+    const request = await prisma.leaveRequest.findUnique({
+      where: { id: requestId },
+      include: { staff: true }
+    });
+
+    if (!request) return { error: "Request not found" };
+
+    // Security: STAFF can only cancel their own leave requests
+    if (userRole === "STAFF" && request.staff.userId !== userId) {
+      return { error: "Unauthorized" };
+    }
+
+    // If request was approved, delete the corresponding BlockedSlot
+    if (request.status === "APPROVED") {
+      await prisma.blockedSlot.deleteMany({
+        where: {
+          staffId: request.staffId,
+          startTime: request.startTime,
+          endTime: request.endTime,
+          reason: { startsWith: "Leave:" }
+        }
+      });
+    }
+
+    // Delete the LeaveRequest
+    await prisma.leaveRequest.delete({
+      where: { id: requestId }
+    });
+
+    revalidatePath("/staff");
+    revalidatePath("/my-schedule");
+    revalidatePath("/schedule");
+    revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/booking");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
+    
+    return { success: true };
+  } catch (err) {
+    console.error("Error in cancelLeaveRequest:", err);
+    return { error: "Failed to cancel leave request" };
+  }
+}
+
+export async function getPersonalProfile() {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Not authenticated" };
+
+  const userId = session.user.id;
+  const tenantId = (session.user as any).tenantId;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        staffProfile: {
+          include: {
+            services: true
+          }
+        }
+      }
+    });
+
+    if (!user) return { error: "User not found" };
+
+    const services = await prisma.service.findMany({
+      where: { tenantId },
+      orderBy: { name: "asc" }
+    });
+
+    const serializedServices = services.map(s => ({
+      id: s.id,
+      tenantId: s.tenantId,
+      name: s.name,
+      durationMinutes: s.durationMinutes,
+      bufferTime: s.bufferTime,
+      price: s.price.toString(),
+      color: s.color,
+      capacity: s.capacity,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt
+    }));
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      staff: user.staffProfile ? {
+        id: user.staffProfile.id,
+        name: user.staffProfile.name,
+        bio: user.staffProfile.bio,
+        color: user.staffProfile.color,
+        user: {
+          email: user.email,
+          phone: user.phone
+        },
+        services: user.staffProfile.services.map(srv => ({
+          id: srv.id,
+          tenantId: srv.tenantId,
+          name: srv.name,
+          durationMinutes: srv.durationMinutes,
+          bufferTime: srv.bufferTime,
+          price: srv.price.toString(),
+          color: srv.color,
+          capacity: srv.capacity,
+          createdAt: srv.createdAt,
+          updatedAt: srv.updatedAt
+        }))
+      } : null,
+      services: serializedServices
+    };
+  } catch (err) {
+    console.error("Error in getPersonalProfile:", err);
+    return { error: "Failed to fetch profile info" };
   }
 }

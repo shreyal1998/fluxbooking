@@ -16,13 +16,15 @@ import {
   Mail,
   Phone,
   BarChart3,
-  Calendar
+  Calendar,
+  Eye
 } from "lucide-react";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { toast } from "sonner";
 import { Portal } from "@/components/ui/portal";
 import { Tooltip } from "@/components/ui/tooltip";
 import { getLabels } from "@/lib/labels";
+import { COUNTRIES } from "@/config/countries";
 import { AddStaffForm } from "@/components/dashboard/add-staff-form";
 import { EditStaffForm } from "@/components/dashboard/edit-staff-form";
 import { LeaveRequestsManager } from "@/components/dashboard/leave-requests-manager";
@@ -42,6 +44,7 @@ interface StaffClientProps {
   timeFormat?: string;
   trialEndsAt?: Date | string | null;
   country?: string;
+  currentUserId?: string;
 }
 
 export function StaffClient({ 
@@ -55,7 +58,8 @@ export function StaffClient({
   plan,
   timeFormat = "12h",
   trialEndsAt,
-  country
+  country,
+  currentUserId
 }: StaffClientProps) {
   const [staff, setStaff] = useState(initialStaff);
   const [users, setUsers] = useState(initialUsers);
@@ -79,8 +83,44 @@ export function StaffClient({
   const [deletingStaff, setDeletingStaff] = useState<any | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [viewingStaffDetails, setViewingStaffDetails] = useState<any | null>(null);
+  const [detailsTab, setDetailsTab] = useState<"details" | "availability">("details");
+
   const labels = getLabels(businessType);
-  useLockBodyScroll(isAddModalOpen || !!editingStaff || !!deletingStaff);
+  useLockBodyScroll(isAddModalOpen || !!editingStaff || !!deletingStaff || !!viewingStaffDetails);
+
+  const DAYS_OF_WEEK = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+  const getStaffDaySchedule = (member: any, day: string) => {
+    try {
+      const avail = typeof member?.availabilityJson === "string"
+        ? JSON.parse(member.availabilityJson)
+        : member?.availabilityJson || {};
+      
+      const daySlots = avail[day];
+      if (!daySlots || daySlots.length === 0) return null;
+      return daySlots;
+    } catch {
+      return null;
+    }
+  };
+
+  const formatTimeStr = (timeVal: string) => {
+    if (!timeVal) return "";
+    let normalized = timeVal;
+    if (timeVal.includes(":")) {
+      const parts = timeVal.split(":");
+      normalized = `${parts[0].padStart(2, "0")}:${parts[1]}`;
+    }
+    const is12h = timeFormat === "12h";
+    if (!is12h) return normalized === "24:00" ? "00:00" : normalized;
+    
+    const [hStr, mStr] = normalized.split(":");
+    const h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${displayHour}:${mStr} ${ampm}`;
+  };
 
   // Sync state when props change (after router.refresh())
   useEffect(() => {
@@ -171,7 +211,7 @@ export function StaffClient({
             {/* Unified Card Header */}
             <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.staff}s</h2>
+                <h2 className="text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">{labels.staff}s</h2>
                 <div className="flex flex-wrap items-center gap-3 mt-1">
                   <div className="flex items-center gap-2">
                     <div className={`h-1.5 w-1.5 rounded-full ${isLimitExceeded ? 'bg-amber-500' : 'bg-emerald-500'}`} />
@@ -233,34 +273,45 @@ export function StaffClient({
                         const isLocked = actualIndex >= currentLimit;
                         
                         return (
-                          <tr key={member.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 group ${isLocked ? 'opacity-80 dark:opacity-75 grayscale bg-slate-50/30 dark:bg-slate-900/20' : ''} ${index < currentItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
+                          <tr key={member.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 group ${isLocked ? 'bg-slate-50/30 dark:bg-slate-900/20' : ''} ${index < currentItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
                             <td className="px-6 py-5">
                               <div className="flex items-center gap-4 min-w-0">
                                 {isLocked ? (
-                                  <Link
-                                    href="/settings/billing"
-                                    title="Upgrade Plan"
-                                    className="h-12 w-12 rounded-2xl flex items-center justify-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0 transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-sm text-slate-400 hover:text-amber-500 hover:border-amber-500/50"
-                                  >
-                                    <Lock className="h-5 w-5" />
-                                  </Link>
+                                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 shrink-0 shadow-sm">
+                                    <labels.staffIcon className="h-6 w-6" />
+                                  </div>
                                 ) : (
-                                  <div 
-                                    className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform group-hover:scale-110"
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setViewingStaffDetails(member);
+                                      setDetailsTab("details");
+                                    }}
+                                    className="h-12 w-12 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-transform hover:scale-110 active:scale-95 cursor-pointer"
                                     style={{ 
                                       borderColor: member.color, 
                                       backgroundColor: `${member.color}10` 
                                     }}
                                   >
                                     <labels.staffIcon className="h-6 w-6" style={{ color: member.color }} />
-                                  </div>
+                                  </button>
                                 )}
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 truncate">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!isLocked) {
+                                        setViewingStaffDetails(member);
+                                        setDetailsTab("details");
+                                      }
+                                    }}
+                                    disabled={isLocked}
+                                    className={`text-sm font-medium flex items-center gap-2.5 min-w-0 max-w-full text-left focus:outline-none ${isLocked ? 'text-slate-950 dark:text-slate-50 cursor-default' : 'text-slate-950 dark:text-slate-50 cursor-pointer'}`}
+                                  >
                                     <span className="truncate">{member.name}</span>
-                                    {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded tracking-tighter shrink-0">Locked</span>}
-                                  </p>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5 truncate">
+                                    {isLocked && <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-lg tracking-wider shrink-0 ml-1">Locked</span>}
+                                  </button>
+                                  <p className="text-[11px] font-bold text-slate-400 mt-0.5 truncate text-left">
                                     {isLocked ? "Limit Reached" : (member.bio || `Active ${labels.staff}`)}
                                   </p>
                                 </div>
@@ -268,69 +319,93 @@ export function StaffClient({
                             </td>
                             <td className="px-6 py-5">
                               <div className="space-y-1.5 min-w-0">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">
-                                  <Mail className="h-3.5 w-3.5 text-indigo-500/50 shrink-0" />
+                                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 truncate">
+                                  <Mail className="h-3.5 w-3.5 text-indigo-400 dark:text-indigo-400 shrink-0" />
                                   <span className="truncate">{member.user?.email || "No email"}</span>
                                 </div>
                                 {member.user?.phone && (
-                                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate">
-                                    <Phone className="h-3.5 w-3.5 text-indigo-500/50 shrink-0" />
+                                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 truncate">
+                                    <Phone className="h-3.5 w-3.5 text-indigo-400 dark:text-indigo-400 shrink-0" />
                                     <span className="truncate">{member.user.phone}</span>
                                   </div>
                                 )}
                               </div>
                             </td>
                             <td className="px-6 py-5">
-                              <div className="flex flex-wrap gap-1.5 max-w-full">
-                                {member.services?.slice(0, 2).map((service: any) => (
-                                  <span key={service.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 truncate max-w-full">
-                                    <span className="truncate">{service.name}</span>
+                              {member.services && member.services.length > 0 ? (
+                                isLocked ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 grayscale-0">
+                                    Yes
                                   </span>
-                                ))}
-                                {member.services?.length > 2 && (
-                                  <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-800 shrink-0">+{member.services.length - 2}</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-5 whitespace-nowrap text-right">
-                              {userRole === "ADMIN" ? (
-                                !isLocked ? (
-                                  <div className="flex items-center justify-end gap-2">
-                                    <Tooltip content="Edit" position="bottom">
-                                      <button 
-                                        onClick={() => {
-                                          setEditingStaff(member);
-                                          setActiveTab("profile");
-                                        }}
-                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
-                                      >
-                                        <Pencil className="h-[18px] w-[18px]" />
-                                      </button>
-                                    </Tooltip>
-
-                                    <Tooltip content="Delete" position="bottom">
-                                      <button 
-                                        onClick={() => setDeletingStaff(member)}
-                                        className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
-                                      >
-                                        <Trash2 className="h-[18px] w-[18px]" />
-                                      </button>
-                                    </Tooltip>
-                                  </div>
                                 ) : (
-                                   <Tooltip content="Upgrade Plan" position="bottom">
-                                     <Link 
-                                       href="/settings/billing" 
-                                       className="p-2.5 rounded-xl bg-transparent text-amber-600 dark:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 inline-flex items-center justify-center cursor-pointer"
-                                     >
-                                       <Lock className="h-[18px] w-[18px]" />
-                                     </Link>
-                                   </Tooltip>
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 grayscale-0">
+                                    Yes
+                                  </span>
                                 )
                               ) : (
-                                <div className="p-3 opacity-0 cursor-default">
-                                  <Pencil className="h-4.5 w-4.5" />
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 grayscale-0">
+                                  No
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-5 whitespace-nowrap text-right">
+                              {!isLocked ? (
+                                <div className="flex items-center justify-end gap-2">
+                                  <Tooltip content="View" position="bottom" delay={100}>
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        setViewingStaffDetails(member);
+                                        setDetailsTab("details");
+                                      }}
+                                      className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                                    >
+                                      <Eye className="h-[18px] w-[18px]" />
+                                    </button>
+                                  </Tooltip>
+                                  {(userRole === "ADMIN" || member.userId === currentUserId) && (
+                                    <>
+                                      <Tooltip content="Edit" position="bottom" delay={100}>
+                                        <button 
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingStaff(member);
+                                            setActiveTab("profile");
+                                          }}
+                                          className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                                        >
+                                          <Pencil className="h-[18px] w-[18px]" />
+                                        </button>
+                                      </Tooltip>
+                                      {userRole === "ADMIN" && member.userId !== currentUserId && (
+                                        <Tooltip content="Delete" position="bottom" delay={100}>
+                                          <button 
+                                            type="button"
+                                            onClick={() => setDeletingStaff(member)}
+                                            className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                                          >
+                                            <Trash2 className="h-[18px] w-[18px]" />
+                                          </button>
+                                        </Tooltip>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
+                              ) : (
+                                userRole === "ADMIN" ? (
+                                  <Tooltip content="Upgrade Plan" position="bottom" delay={100}>
+                                    <Link 
+                                      href="/settings/billing" 
+                                      className="p-2.5 rounded-xl bg-transparent text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 inline-flex items-center justify-center cursor-pointer"
+                                    >
+                                      <Lock className="h-[18px] w-[18px]" />
+                                    </Link>
+                                  </Tooltip>
+                                ) : (
+                                  <div className="p-3 opacity-0 cursor-default">
+                                    <Lock className="h-4.5 w-4.5" />
+                                  </div>
+                                )
                               )}
                             </td>
                           </tr>
@@ -578,6 +653,186 @@ export function StaffClient({
                     {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Remove"}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Staff Details & Availability Modal */}
+      {viewingStaffDetails && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+            />
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+              
+              {/* Modal Header */}
+              <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="h-10 w-10 rounded-2xl flex items-center justify-center border shadow-sm"
+                    style={{ borderColor: viewingStaffDetails.color, backgroundColor: `${viewingStaffDetails.color}10` }}
+                  >
+                    <labels.staffIcon className="h-5 w-5" style={{ color: viewingStaffDetails.color }} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {viewingStaffDetails.name}
+                    </h2>
+                    <p className="text-xs font-bold text-slate-500">{viewingStaffDetails.bio || `Active ${labels.staff}`}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setViewingStaffDetails(null)} 
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                </button>
+              </div>
+
+              {/* Tab Selector */}
+              <div className="px-8 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800/60 flex gap-6 bg-white dark:bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => setDetailsTab("details")}
+                  className={`pb-2 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+                    detailsTab === "details"
+                      ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                      : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Profile & Services
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDetailsTab("availability")}
+                  className={`pb-2 text-xs font-black uppercase tracking-wider border-b-2 transition-all ${
+                    detailsTab === "availability"
+                      ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                      : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Available Hours
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-8 space-y-6 premium-scrollbar bg-white dark:bg-slate-900">
+                {detailsTab === "details" ? (
+                  <div className="space-y-6 animate-fade-in">
+                    
+                    {/* Contact Info Card */}
+                    <div className="p-5 bg-indigo-50/30 dark:bg-slate-800/20 rounded-[1.5rem] border border-indigo-100/30 dark:border-slate-800/80 space-y-4">
+                      <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400">Contact Information</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+                          <Mail className="h-4 w-4 text-indigo-500/50 shrink-0" />
+                          <span className="font-bold truncate">{viewingStaffDetails.user?.email || "No email address set"}</span>
+                        </div>
+                        {viewingStaffDetails.user?.phone && (
+                          <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+                            <Phone className="h-4 w-4 text-indigo-500/50 shrink-0" />
+                            <span className="font-bold">{viewingStaffDetails.user.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Services List */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 ml-1">Assigned {labels.service}s</h4>
+                      {viewingStaffDetails.services && viewingStaffDetails.services.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {viewingStaffDetails.services.map((service: any) => {
+                            const currencySymbol = COUNTRIES.find(c => c.code === (country || "US"))?.symbol || "$";
+                            return (
+                              <div 
+                                key={service.id} 
+                                className="px-4 py-3 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-950 flex items-center justify-between shadow-sm"
+                              >
+                                <span className="text-xs font-normal text-slate-800 dark:text-slate-200">{service.name}</span>
+                                <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase">
+                                  <span>{service.durationMinutes} Min</span>
+                                  <span className="text-indigo-600 dark:text-indigo-400 font-bold">{currencySymbol}{parseFloat(service.price).toFixed(2)}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs font-bold text-slate-400 italic ml-1">No services assigned to this {labels.staffLower}.</p>
+                      )}
+                    </div>
+
+                    {/* Edit Profile button for self or admin */}
+                    {(userRole === "ADMIN" || viewingStaffDetails.userId === currentUserId) && (
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const target = viewingStaffDetails;
+                            setViewingStaffDetails(null);
+                            setEditingStaff(target);
+                            setActiveTab("profile");
+                          }}
+                          className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md border border-transparent dark:border-white/10"
+                        >
+                          <Pencil className="h-4 w-4 text-white" />
+                          Edit Profile Details
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-5 animate-fade-in">
+                    
+                    {/* Weekly availability days */}
+                    <div className="space-y-2.5">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const slots = getStaffDaySchedule(viewingStaffDetails, day);
+                        return (
+                          <div 
+                            key={day} 
+                            className="px-5 py-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between shadow-sm"
+                          >
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-200 capitalize">{day}</span>
+                            <div className="flex flex-col items-end gap-1">
+                              {slots ? (
+                                slots.map((slot: any, idx: number) => (
+                                  <span 
+                                    key={idx} 
+                                    className="px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-black text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-800/40"
+                                  >
+                                    {formatTimeStr(slot.start)} - {formatTimeStr(slot.end)}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="px-3 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-[10px] font-bold text-slate-400 border border-slate-100 dark:border-slate-800/40">
+                                  Closed / Offline
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Manage Hours button for Admin */}
+                    {userRole === "ADMIN" && (
+                      <div className="pt-2">
+                        <Link
+                          href="/schedule"
+                          className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 active:scale-95 border border-transparent dark:border-white/10 shadow-lg shadow-indigo-500/10 dark:shadow-none"
+                        >
+                          <Clock className="h-4 w-4" />
+                          Manage Weekly Hours
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

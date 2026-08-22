@@ -93,28 +93,79 @@ export default async function BookingDetailPage({ params }: PageProps) {
   };
 
   const serializedServices = services.map(s => ({
-    ...s,
-    price: s.price.toString()
+    id: s.id,
+    tenantId: s.tenantId,
+    name: s.name,
+    durationMinutes: s.durationMinutes,
+    bufferTime: s.bufferTime,
+    price: s.price.toString(),
+    color: s.color,
+    capacity: s.capacity,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt
   }));
 
   const serializedStaff = staff.map(s => ({
-    ...s,
+    id: s.id,
+    tenantId: s.tenantId,
+    userId: s.userId,
+    name: s.name,
+    bio: s.bio,
+    color: s.color,
+    availabilityJson: s.availabilityJson,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
     services: s.services?.map(srv => ({
-      ...srv,
-      price: srv.price.toString()
+      id: srv.id,
+      tenantId: srv.tenantId,
+      name: srv.name,
+      durationMinutes: srv.durationMinutes,
+      bufferTime: srv.bufferTime,
+      price: srv.price.toString(),
+      color: srv.color,
+      capacity: srv.capacity,
+      createdAt: srv.createdAt,
+      updatedAt: srv.updatedAt
     })) || []
   }));
 
   const serializedBooking = {
-    ...booking,
+    id: booking.id,
+    tenantId: booking.tenantId,
+    serviceId: booking.serviceId,
+    staffId: booking.staffId,
+    customerId: booking.customerId,
+    customerName: booking.customerName,
+    customerEmail: booking.customerEmail,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    status: booking.status,
     price: booking.price ? booking.price.toString() : null,
+    notes: booking.notes,
+    createdAt: booking.createdAt,
+    updatedAt: booking.updatedAt,
     service: booking.service ? {
-      ...booking.service,
-      price: booking.service.price.toString()
+      id: booking.service.id,
+      tenantId: booking.service.tenantId,
+      name: booking.service.name,
+      durationMinutes: booking.service.durationMinutes,
+      bufferTime: booking.service.bufferTime,
+      price: booking.service.price.toString(),
+      color: booking.service.color,
+      capacity: booking.service.capacity,
+      createdAt: booking.service.createdAt,
+      updatedAt: booking.service.updatedAt
     } : null,
     staff: booking.staff ? {
-      ...booking.staff,
-      availabilityJson: booking.staff.availabilityJson
+      id: booking.staff.id,
+      tenantId: booking.staff.tenantId,
+      userId: booking.staff.userId,
+      name: booking.staff.name,
+      bio: booking.staff.bio,
+      color: booking.staff.color,
+      availabilityJson: booking.staff.availabilityJson,
+      createdAt: booking.staff.createdAt,
+      updatedAt: booking.staff.updatedAt
     } : null
   };
 
@@ -233,7 +284,11 @@ export default async function BookingDetailPage({ params }: PageProps) {
                 <span className="text-xs font-medium text-black dark:text-slate-400 tracking-wider">Client Information</span>
               </div>
               <div className="space-y-1">
-                <p className="text-base font-medium text-black dark:text-slate-300">{booking.customerName}</p>
+                <p className="text-base font-medium text-black dark:text-slate-300">
+                  {booking.customer?.name && booking.customerName.trim().toLowerCase() !== booking.customer.name.trim().toLowerCase()
+                    ? `${booking.customerName} (${booking.customer.name})`
+                    : booking.customerName}
+                </p>
                 <p className="text-sm text-black dark:text-slate-400 truncate">{booking.customerEmail}</p>
                 {booking.customer?.phone && (
                   <p className="text-sm text-black dark:text-slate-400 font-mono mt-0.5">{formatPhone(booking.customer.phone)}</p>
@@ -311,9 +366,24 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
           </div>
 
+          {/* Special Request / Notes */}
+          {booking.notes && (
+            <div className="bg-amber-50/10 dark:bg-amber-950/10 rounded-2xl p-4 border border-amber-100 dark:border-amber-900/30">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 tracking-wider">Special Request / Notes</span>
+              </div>
+              <p className="text-sm text-slate-800 dark:text-slate-300 leading-relaxed font-semibold whitespace-pre-wrap">
+                {booking.notes}
+              </p>
+            </div>
+          )}
+
           {/* Internal Notes */}
           {(booking.customer?.notes || booking.customerName === "Carson Dickerson") && (
-            <div className="bg-slate-50 dark:bg-slate-950/40 rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-slate-950/40 rounded-2xl p-4 border border-slate-200 dark:border-slate-850">
               <div className="flex items-center gap-2 mb-1.5">
                 <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <FileText className="h-4 w-4" />

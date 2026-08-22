@@ -1,20 +1,20 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("=== BLOCKED SLOTS ===");
-  const blocks = await prisma.blockedSlot.findMany();
-  blocks.forEach(b => {
-    console.log(`Block ID: ${b.id}, Staff ID: ${b.staffId}, Start: ${b.startTime.toISOString()}, End: ${b.endTime.toISOString()}, Reason: ${b.reason}`);
+  const users = await prisma.user.findMany({
+    include: {
+      staffProfile: true
+    }
   });
-
-  console.log("\n=== LEAVE REQUESTS ===");
-  const leaves = await prisma.leaveRequest.findMany();
-  leaves.forEach(l => {
-    console.log(`Leave ID: ${l.id}, Staff ID: ${l.staffId}, Status: ${l.status}, Start: ${l.startTime.toISOString()}, End: ${l.endTime.toISOString()}, Reason: ${l.reason}`);
-  });
+  console.log("Users and their staff profiles:", JSON.stringify(users.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    hasStaffProfile: !!u.staffProfile,
+    staffProfileId: u.staffProfile?.id
+  })), null, 2));
 }
 
-main()
-  .catch(e => console.error(e))
-  .finally(() => prisma.$disconnect());
+main().catch(console.error).finally(() => prisma.$disconnect());

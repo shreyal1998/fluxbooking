@@ -94,7 +94,9 @@ export function BookingForm({
   const [hasMounted, setHasMounted] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedStaffId, setSelectedStaffId] = useState<string>("any");
+  const [selectedStaffId, setSelectedStaffId] = useState<string>(
+    searchParams.get("staffId") || "any"
+  );
   const [selectedDate, setSelectedDate] = useState<Date>(getTodayAtVenue());
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; staffId: string; staffName: string } | null>(null);
   const [slots, setSlots] = useState<{ time: string; staffId: string; staffName: string }[]>([]);
@@ -119,6 +121,14 @@ export function BookingForm({
   const filteredStaff = staff.filter(s => 
     !selectedService || s.services?.some((srv) => srv.id === selectedService.id)
   );
+
+  // Filter services based on selected staff if one is preselected via query parameter
+  const filteredServices = selectedStaffId !== "any"
+    ? services.filter(srv => {
+        const selectedStaff = staff.find(s => s.id === selectedStaffId);
+        return selectedStaff?.services?.some((sSrv: any) => sSrv.id === srv.id);
+      })
+    : services;
 
   // Fetch slots when date, service, or staff changes
   useEffect(() => {
@@ -289,42 +299,65 @@ export function BookingForm({
               </h2>
               <p className="text-slate-500 font-medium mt-1">{isRescheduling ? `Verify the ${labels.serviceLower} for your new ${labels.appointmentLower} time.` : `Choose the ${labels.serviceLower} you&apos;d like to book.`}</p>
             </div>
-            <div className="grid gap-4">
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => {
-                    setSelectedService(service);
-                    setStep(2);
-                  }}
-                  className={`group flex items-center justify-between p-6 rounded-3xl border-2 text-left transition-all ${
-                    selectedService?.id === service.id
-                      ? "bg-opacity-10"
-                      : "border-slate-300 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                  style={{ 
-                    borderColor: selectedService?.id === service.id ? primaryColor : undefined,
-                    backgroundColor: selectedService?.id === service.id ? `${primaryColor}10` : undefined
-                  }}
-                >
-                  <div className="space-y-1">
-                    <p className="font-bold text-slate-900 text-lg">{service.name}</p>
-                    <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
-                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {service.durationMinutes}m</span>
-                      <span className="h-1 w-1 bg-slate-300 rounded-full"></span>
-                      <span>{formatCurrency(service.price, currency)}</span>
-                    </div>
-                  </div>
-                  <div 
-                    className={`h-10 w-10 rounded-2xl flex items-center justify-center transition-all ${
-                      selectedService?.id === service.id ? "text-white" : "bg-white text-slate-400 shadow-sm"
-                    }`}
-                    style={{ backgroundColor: selectedService?.id === service.id ? primaryColor : undefined }}
+            <div className="space-y-4">
+              {selectedStaffId !== "any" && (
+                <div className="flex items-center justify-between p-4 bg-indigo-50/50 dark:bg-slate-900/50 rounded-2xl border border-indigo-100/50 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-350">
+                  <span>
+                    Showing services for <strong className="text-indigo-600 dark:text-indigo-400">{staff.find(s => s.id === selectedStaffId)?.name}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStaffId("any")}
+                    className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 hover:underline bg-transparent border-0 outline-none cursor-pointer"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    Show All Services
+                  </button>
+                </div>
+              )}
+
+              <div className="grid gap-4">
+                {filteredServices.length === 0 ? (
+                  <div className="text-center py-10 bg-slate-50/30 dark:bg-slate-950/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800/60">
+                    <p className="text-xs text-slate-400 font-semibold">No services available for this practitioner.</p>
                   </div>
-                </button>
-              ))}
+                ) : (
+                  filteredServices.map((service) => (
+                    <button
+                      key={service.id}
+                      onClick={() => {
+                        setSelectedService(service);
+                        setStep(2);
+                      }}
+                      className={`group flex items-center justify-between p-6 rounded-3xl border-2 text-left transition-all ${
+                        selectedService?.id === service.id
+                          ? "bg-opacity-10"
+                          : "border-slate-300 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                      style={{ 
+                        borderColor: selectedService?.id === service.id ? primaryColor : undefined,
+                        backgroundColor: selectedService?.id === service.id ? `${primaryColor}10` : undefined
+                      }}
+                    >
+                      <div className="space-y-1">
+                        <p className="font-bold text-slate-900 text-lg">{service.name}</p>
+                        <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
+                          <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {service.durationMinutes}m</span>
+                          <span className="h-1 w-1 bg-slate-300 rounded-full"></span>
+                          <span>{formatCurrency(service.price, currency)}</span>
+                        </div>
+                      </div>
+                      <div 
+                        className={`h-10 w-10 rounded-2xl flex items-center justify-center transition-all ${
+                          selectedService?.id === service.id ? "text-white" : "bg-white text-slate-400 shadow-sm"
+                        }`}
+                        style={{ backgroundColor: selectedService?.id === service.id ? primaryColor : undefined }}
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -549,6 +582,17 @@ export function BookingForm({
                       placeholder="234 567 890"
                     />
                     <InputError message={fieldErrors.customerPhone} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                      Special Request / Notes
+                    </label>
+                    <textarea
+                      name="notes"
+                      rows={3}
+                      className="w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 border-slate-300 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-slate-300 resize-none placeholder-slate-400"
+                      placeholder="Any special instructions or requests (optional)..."
+                    />
                   </div>
                 </div>
               )}

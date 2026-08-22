@@ -8,7 +8,6 @@ import {
   Mail, 
   Filter,
   CheckCircle2,
-  Trash2,
   Users,
   ChevronLeft,
   ChevronRight,
@@ -29,7 +28,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
-import { updateBookingStatus, deleteBooking } from "@/app/actions/booking";
+import { updateBookingStatus } from "@/app/actions/booking";
 import { saveCalendarViewMode, saveCalendarSlotDuration } from "@/app/actions/schedule";
 import { toast } from "sonner";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -67,12 +66,14 @@ type SerializedService = Omit<Service, "price"> & { price: string };
 type SerializedBooking = Omit<Booking, "service"> & {
   service: SerializedService;
   staff: Staff;
+  customer?: { name: string; email: string } | null;
 };
 
 interface BookingsClientProps {
   bookings: SerializedBooking[];
   blockedSlots: BlockedSlotWithRelations[];
   availabilityOverrides: any[];
+  leaveRequests?: any[];
   services: SerializedService[];
   staff: Staff[];
   tenantId: string;
@@ -173,6 +174,7 @@ export function BookingsClient({
   bookings: initialBookings, 
   blockedSlots: initialBlockedSlots, 
   availabilityOverrides,
+  leaveRequests = [],
   services, 
   staff, 
   tenantId,
@@ -232,7 +234,6 @@ export function BookingsClient({
   const [isFilterLoaded, setIsFilterLoaded] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showHoursModal, setShowHoursModal] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
 
   // Pagination State for List View
@@ -554,17 +555,6 @@ export function BookingsClient({
     setProcessingId(null);
   };
 
-  const handleDelete = async (id: string) => {
-    setProcessingId(id);
-    const result = await deleteBooking(id);
-    if (result.success) {
-      toast.success("Booking deleted");
-      router.refresh();
-    } else {
-      toast.error(result.error);
-    }
-    setProcessingId(null);
-  };
 
   // Filtered Bookings for List View
   const listFilteredBookings = useMemo(() => {
@@ -626,9 +616,10 @@ export function BookingsClient({
   // Filter events based on selected staff
   const filteredEvents = useMemo(() => {
     const activeStaffIds = staff.slice(0, currentLimit).map((s: any) => s.id);
-    let filteredBookings = initialBookings.filter((b) => activeStaffIds.includes(b.staffId));
+    let filteredBookings = initialBookings.filter((b) => activeStaffIds.includes(b.staffId) && b.status !== "CANCELLED");
     let filteredBlocked = initialBlockedSlots.filter((s) => activeStaffIds.includes(s.staffId));
     let filteredOverrides = availabilityOverrides.filter((o) => activeStaffIds.includes(o.staffId));
+    let filteredLeaves = (leaveRequests || []).filter((l: any) => activeStaffIds.includes(l.staffId));
 
     const isFiltered = userRole === "ADMIN" && !currentStaffFilter.includes("all") && currentStaffFilter.length > 0;
 
@@ -636,21 +627,29 @@ export function BookingsClient({
       filteredBookings = filteredBookings.filter((b) => currentStaffFilter.includes(b.staffId));
       filteredBlocked = filteredBlocked.filter((s) => currentStaffFilter.includes(s.staffId));
       filteredOverrides = filteredOverrides.filter((o) => currentStaffFilter.includes(o.staffId));
+      filteredLeaves = filteredLeaves.filter((l: any) => currentStaffFilter.includes(l.staffId));
     }
 
-    return [
-      ...(filteredBookings?.map((b) => ({
-        id: b.id,
-        title: `${b.customerName} - ${b.service.name}`,
-        start: getInTimezone(new Date(b.startTime), tenant?.timezone || "UTC"),
-        end: getInTimezone(new Date(b.endTime), tenant?.timezone || "UTC"),
-        type: "booking" as const,
-        staffId: b.staffId,
-        resourceName: b.staff.name,
-        status: b.status,
-        color: b.service.color,
-        serviceDuration: b.service.durationMinutes
-      })) || []),
+    const eventsList = [
+      ...(filteredBookings?.map((b) => {
+        const displayCustomerName = b.customer?.name && b.customerName.trim().toLowerCase() !== b.customer.name.trim().toLowerCase()
+          ? `${b.customerName} (${b.customer.name})`
+          : b.customerName;
+        return {
+          id: b.id,
+          title: `${displayCustomerName} - ${b.service.name}`,
+          start: getInTimezone(new Date(b.startTime), tenant?.timezone || "UTC"),
+          end: getInTimezone(new Date(b.endTime), tenant?.timezone || "UTC"),
+          type: "booking" as const,
+          staffId: b.staffId,
+          resourceName: b.staff.name,
+          status: b.status,
+          color: b.service.color,
+          serviceDuration: b.service.durationMinutes,
+          customerName: displayCustomerName,
+          serviceName: b.service.name
+        };
+      }) || []),
       ...(filteredBlocked?.map((s) => ({
         id: s.id,
         title: s.reason || "Blocked",
@@ -671,7 +670,29 @@ export function BookingsClient({
         resourceName: o.staff.name
       })) || [])
     ];
-  }, [initialBookings, initialBlockedSlots, availabilityOverrides, currentStaffFilter, userRole, tenant?.timezone]);
+
+    // Merge leaves that are not already matched by a blocked slot
+    filteredLeaves?.forEach((leave: any) => {
+      const alreadyBlocked = filteredBlocked.some((b) => 
+        new Date(b.startTime).getTime() === new Date(leave.startTime).getTime() &&
+        new Date(b.endTime).getTime() === new Date(leave.endTime).getTime()
+      );
+      if (!alreadyBlocked) {
+        eventsList.push({
+          id: leave.id,
+          title: leave.reason ? `Leave: ${leave.reason}` : `Leave: ${leave.type}`,
+          start: getInTimezone(new Date(leave.startTime), tenant?.timezone || "UTC"),
+          end: getInTimezone(new Date(leave.endTime), tenant?.timezone || "UTC"),
+          type: "blocked" as const,
+          staffId: leave.staffId,
+          resourceName: leave.staff.name,
+          leaveType: leave.type
+        });
+      }
+    });
+
+    return eventsList;
+  }, [initialBookings, initialBlockedSlots, availabilityOverrides, leaveRequests, staff, currentLimit, currentStaffFilter, userRole, tenant?.timezone]);
 
   const scheduleView = useMemo(() => {
     try {
@@ -747,7 +768,7 @@ export function BookingsClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Booking Calendar</h2>
+            <h2 className="text-xl font-medium text-black dark:text-slate-200 tracking-tight">Booking Calendar</h2>
             {(() => {
               const formattedHours = formatBusinessHours(tenant?.businessHoursJson, tenant?.timeFormat || "12h");
               if (formattedHours.length === 0) return null;
@@ -1020,49 +1041,6 @@ export function BookingsClient({
         </Portal>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
-            <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
-            />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-              <div className="p-8 space-y-6 text-center">
-                <div className="mx-auto h-16 w-16 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center text-rose-600 dark:text-rose-450 animate-bounce">
-                  <Trash2 className="h-8 w-8" />
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Delete Booking?</h3>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Are you sure you want to permanently delete this booking? This action cannot be undone.
-                  </p>
-                </div>
-
-                <div className="flex gap-4 pt-2">
-                  <button 
-                    onClick={() => setDeleteConfirmId(null)}
-                    className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      const id = deleteConfirmId;
-                      setDeleteConfirmId(null);
-                      if (id) await handleDelete(id);
-                    }}
-                    className="flex-1 py-3 px-4 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 shadow-md active:scale-95 transition-all cursor-pointer"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Portal>
-      )}
 
       {/* Cancel Confirmation Modal */}
       {cancelConfirmId && (
@@ -1274,16 +1252,24 @@ export function BookingsClient({
                            <tr 
                              key={booking.id} 
                              onClick={() => router.push(`/${labels.appointmentSlug}/${booking.id}`)}
-                             className="hover:bg-indigo-50/50 dark:hover:bg-slate-800/30 transition-all group cursor-pointer"
+                             className={`transition-all group cursor-pointer ${
+                               booking.status === "CANCELLED"
+                                 ? "opacity-60 bg-slate-50/80 dark:bg-slate-900/40 hover:opacity-80"
+                                 : "hover:bg-indigo-50/50 dark:hover:bg-slate-800/30"
+                             }`}
                            >
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="text-sm font-normal text-black dark:text-white">{formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", "MMM d, yyyy")}</div>
+                              <div className={`text-sm font-normal ${booking.status === "CANCELLED" ? "text-slate-400 dark:text-slate-500 line-through" : "text-black dark:text-white"}`}>{formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", "MMM d, yyyy")}</div>
                               <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
                                 <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", listTimeFormat)}
                               </div>
                             </td>
                             <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="text-sm font-normal text-black dark:text-white">{booking.customerName}</div>
+                              <div className={`text-sm font-normal ${booking.status === "CANCELLED" ? "text-slate-400 dark:text-slate-500" : "text-black dark:text-white"}`}>
+                                {booking.customer?.name && booking.customerName.trim().toLowerCase() !== booking.customer.name.trim().toLowerCase()
+                                  ? `${booking.customerName} (${booking.customer.name})`
+                                  : booking.customerName}
+                              </div>
                               <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
                                 <Mail className="h-3.5 w-3.5 text-indigo-500/50" /> {booking.customerEmail}
                               </div>
@@ -1297,7 +1283,7 @@ export function BookingsClient({
                             <td className="px-10 py-6 whitespace-nowrap">
                               <div className="flex items-center gap-3">
                                 <div 
-                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[10px] font-normal text-white"
+                                  className={`h-8 w-8 rounded-xl flex items-center justify-center text-[10px] font-normal text-white ${booking.status === "CANCELLED" ? "opacity-40" : ""}`}
                                   style={{ backgroundColor: booking.staff.color }}
                                 >
                                   {booking.staff.name.substring(0, 2).toUpperCase()}
@@ -1314,22 +1300,6 @@ export function BookingsClient({
                               <div className="flex items-center justify-end gap-1 transition-all">
                                 {(booking.status === "PENDING" || booking.status === "CONFIRMED" || booking.status === "COMPLETED" || booking.status === "CANCELLED") && (
                                   <>
-                                    {/* Restore to Pending: CANCELLED or COMPLETED */}
-                                    {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
-                                      <Tooltip content="Restore to Pending" position="bottom">
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStatusUpdate(booking.id, "PENDING");
-                                          }}
-                                          disabled={processingId === booking.id}
-                                          className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
-                                        >
-                                          <Undo className="h-4 w-4" />
-                                        </button>
-                                      </Tooltip>
-                                    )}
-
                                     {/* Edit Booking: PENDING, CONFIRMED, COMPLETED */}
                                     {booking.status !== "CANCELLED" && (
                                       <Tooltip content="Edit" position="bottom">
@@ -1369,13 +1339,29 @@ export function BookingsClient({
                                       </Tooltip>
                                     )}
 
-                                    {/* Cancel Booking: PENDING, CONFIRMED, COMPLETED */}
+                                    {/* Restore to Pending: CANCELLED or COMPLETED */}
+                                    {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
+                                      <Tooltip content="Restore" position="bottom">
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusUpdate(booking.id, "PENDING");
+                                          }}
+                                          disabled={processingId === booking.id}
+                                          className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <Undo className="h-4 w-4" />
+                                        </button>
+                                      </Tooltip>
+                                    )}
+
+                                    {/* Cancel Booking: always last */}
                                     {booking.status !== "CANCELLED" && (
                                       <Tooltip content="Cancel" position="bottom">
                                         <button 
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            handleStatusUpdate(booking.id, "CANCELLED");
+                                            setCancelConfirmId(booking.id);
                                           }}
                                           disabled={processingId === booking.id}
                                           className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-450 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
@@ -1384,20 +1370,6 @@ export function BookingsClient({
                                         </button>
                                       </Tooltip>
                                     )}
-
-                                    {/* Delete Booking: Always */}
-                                    <Tooltip content="Delete" position="bottom">
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setDeleteConfirmId(booking.id);
-                                        }}
-                                        disabled={processingId === booking.id}
-                                        className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                    </Tooltip>
                                   </>
                                 )}
                               </div>
@@ -1491,7 +1463,6 @@ export function BookingsClient({
                 }
               }}
               onStatusUpdate={handleStatusUpdate}
-              onDeleteBooking={(id) => setDeleteConfirmId(id)}
               zoomLevel={zoomLevel}
               weekStart={tenant?.weekStart || "sunday"}
             />

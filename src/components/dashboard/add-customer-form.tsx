@@ -86,7 +86,7 @@ export function AddCustomerForm({
       <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
               {labels.customer} Name <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -107,7 +107,7 @@ export function AddCustomerForm({
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
               Email Address <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -128,7 +128,7 @@ export function AddCustomerForm({
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Phone Number</label>
             <PhoneInput
               name="phone"
               defaultCountry={country || "US"}
@@ -138,7 +138,7 @@ export function AddCustomerForm({
           </div>
 
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Internal Notes</label>
             <div className="relative">
               <FileText className="absolute left-4 top-4 h-4 w-4 text-slate-400" />
               <textarea

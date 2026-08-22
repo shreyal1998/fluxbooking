@@ -346,7 +346,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
     <div className="space-y-6">
       {/* Step 1: Select Practitioner Targets (Multi-Select) */}
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
           Schedule Target(s)
         </label>
         <div className="relative" ref={targetRef}>
@@ -442,7 +442,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
 
       {/* Step 2: Day of Week Dropdown (Multi-Select) */}
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
           Day(s) of Week
         </label>
         <div className="relative" ref={dayRef}>
@@ -515,7 +515,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
       {/* Time Ranges Field */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
             Time Ranges
           </label>
           <button

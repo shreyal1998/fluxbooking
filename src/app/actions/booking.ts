@@ -20,7 +20,10 @@ import { authOptions } from "@/lib/auth";
 import { 
   sendBookingConfirmation, 
   sendBookingRescheduledEmail, 
-  sendBookingCancelledEmail 
+  sendBookingCancelledEmail,
+  sendPractitionerBookingRescheduledNotification,
+  sendPractitionerBookingCancelledNotification,
+  sendPractitionerBookingConfirmedNotification
 } from "@/lib/mail";
 import { getInTimezone, parseInTimezone, formatInTimezone } from "@/lib/timezone-utils";
 import { validatePhoneNumber } from "@/lib/utils";
@@ -193,6 +196,7 @@ export async function getAvailableSlots(
 
       // Check if the entire slot duration is covered by either weekly shifts or overrides (timezone-safe)
       let isFullyCovered = true;
+      let slotHasOverride = true;
       for (let offset = 0; offset < duration; offset += 15) {
         const checkTime = addMinutes(currentSlot, offset);
         const checkTimeEnd = isBefore(addMinutes(checkTime, 15), slotEnd)
@@ -213,14 +217,18 @@ export async function getAvailableSlots(
                  (isAfter(oEnd, checkTimeEnd) || isEqual(oEnd, checkTimeEnd));
         });
 
+        if (!isCoveredByOverride) {
+          slotHasOverride = false;
+        }
+
         if (!isCoveredByShift && !isCoveredByOverride) {
           isFullyCovered = false;
           break;
         }
       }
 
-      // Check if the entire slot is within business hours (timezone-safe)
-      const isWithinBusinessHours = bizShifts.length === 0 || bizShifts.some(shift => {
+      // Check if the entire slot is within business hours (timezone-safe) or opened via override
+      const isWithinBusinessHours = bizShifts.length === 0 || slotHasOverride || bizShifts.some(shift => {
         const bStart = parseInTimezone(dateStr, shift.start, businessTimezone);
         const bEnd = parseShiftEnd(dateStr, shift.end, businessTimezone);
         return (isBefore(bStart, currentSlot) || isEqual(bStart, currentSlot)) &&
@@ -299,6 +307,7 @@ export async function createBooking(formData: FormData) {
   const customerName = formData.get("customerName") as string;
   const customerEmail = formData.get("customerEmail") as string;
   const priceStr = formData.get("price") as string;
+  const notes = formData.get("notes") as string;
 
   if (session && session.user.role === "STAFF") {
     const userId = session.user.id;
@@ -390,7 +399,7 @@ export async function createBooking(formData: FormData) {
           status: "ACTIVE"
         }
       });
-    } else if (customerPhone && !customer.phone) {
+    } else if (customerPhone && customer.phone !== customerPhone) {
       customer = await prisma.customer.update({
         where: { id: customer.id },
         data: { phone: customerPhone }
@@ -409,10 +418,21 @@ export async function createBooking(formData: FormData) {
         endTime,
         status: "PENDING",
         price: priceStr ? new Prisma.Decimal(priceStr) : null,
+        notes: notes || null,
       },
       include: {
-        tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true } },
+        tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true, businessType: true } },
         service: { select: { name: true } },
+        staff: {
+          select: {
+            name: true,
+            user: {
+              select: {
+                email: true
+              }
+            }
+          }
+        },
       }
     });
 
@@ -425,8 +445,27 @@ export async function createBooking(formData: FormData) {
         businessName: booking.tenant.name,
         businessSlug: booking.tenant.slug,
         bookingId: booking.id,
-        timezone: businessTimezone
+        timezone: businessTimezone,
+        businessType: booking.tenant.businessType,
+        notes: booking.notes,
+        staffName: booking.staff.name
       });
+
+      if (booking.staff.user?.email) {
+        await sendPractitionerBookingConfirmedNotification({
+          practitionerName: booking.staff.name,
+          practitionerEmail: booking.staff.user.email,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: customer.phone,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          businessName: booking.tenant.name,
+          timezone: businessTimezone,
+          businessType: booking.tenant.businessType,
+          notes: booking.notes,
+        });
+      }
     }
     
     revalidatePath("/appointments");
@@ -458,6 +497,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
   const customerName = formData.get("customerName") as string;
   const customerEmail = formData.get("customerEmail") as string;
   const priceStr = formData.get("price") as string;
+  const notes = formData.get("notes") as string;
 
   try {
     const booking = await prisma.booking.findUnique({
@@ -518,7 +558,8 @@ export async function updateBooking(bookingId: string, formData: FormData) {
         customerEmail, 
         startTime, 
         endTime,
-        price: priceStr ? new Prisma.Decimal(priceStr) : null
+        price: priceStr ? new Prisma.Decimal(priceStr) : null,
+        notes: notes || null
       }
     });
 
@@ -582,8 +623,23 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
     const updatedBooking = await prisma.booking.findUnique({
        where: { id: bookingId },
        include: { 
-         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true, timezone: true } }, 
-         service: { select: { name: true } } 
+         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true, timezone: true, businessType: true } }, 
+         service: { select: { name: true } },
+         staff: {
+           select: {
+             name: true,
+             user: {
+               select: {
+                 email: true
+               }
+             }
+           }
+         },
+         customer: {
+           select: {
+             phone: true
+           }
+         }
        }
     });
 
@@ -596,8 +652,27 @@ export async function rescheduleBooking(bookingId: string, newStartTime: Date, n
         businessName: updatedBooking.tenant.name,
         businessSlug: updatedBooking.tenant.slug,
         bookingId: updatedBooking.id,
-        timezone: updatedBooking.tenant.timezone || "UTC"
+        timezone: updatedBooking.tenant.timezone || "UTC",
+        businessType: updatedBooking.tenant.businessType,
+        notes: updatedBooking.notes,
+        staffName: updatedBooking.staff.name
       });
+
+      if (updatedBooking.staff.user?.email) {
+        await sendPractitionerBookingRescheduledNotification({
+          practitionerName: updatedBooking.staff.name,
+          practitionerEmail: updatedBooking.staff.user.email,
+          customerName: updatedBooking.customerName,
+          customerEmail: updatedBooking.customerEmail,
+          customerPhone: updatedBooking.customer?.phone,
+          serviceName: updatedBooking.service.name,
+          newStartTime: updatedBooking.startTime,
+          businessName: updatedBooking.tenant.name,
+          timezone: updatedBooking.tenant.timezone || "UTC",
+          businessType: updatedBooking.tenant.businessType,
+          notes: updatedBooking.notes,
+        });
+      }
     }
 
     revalidatePath("/appointments");
@@ -615,7 +690,25 @@ export async function rescheduleBookingByCustomer(bookingId: string, newDateStr:
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { tenant: true, service: true }
+      include: {
+        tenant: true,
+        service: true,
+        staff: {
+          select: {
+            name: true,
+            user: {
+              select: {
+                email: true
+              }
+            }
+          }
+        },
+        customer: {
+          select: {
+            phone: true
+          }
+        }
+      }
     });
 
     if (!booking) return { error: "Booking not found" };
@@ -655,8 +748,27 @@ export async function rescheduleBookingByCustomer(bookingId: string, newDateStr:
         businessName: booking.tenant.name,
         businessSlug: booking.tenant.slug,
         bookingId: booking.id,
-        timezone: businessTimezone
+        timezone: businessTimezone,
+        businessType: booking.tenant.businessType,
+        notes: booking.notes,
+        staffName: booking.staff.name
       });
+
+      if (booking.staff.user?.email) {
+        await sendPractitionerBookingRescheduledNotification({
+          practitionerName: booking.staff.name,
+          practitionerEmail: booking.staff.user.email,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customer?.phone,
+          serviceName: booking.service.name,
+          newStartTime: newStartTime,
+          businessName: booking.tenant.name,
+          timezone: businessTimezone,
+          businessType: booking.tenant.businessType,
+          notes: booking.notes,
+        });
+      }
     }
 
     revalidatePath("/appointments");
@@ -706,7 +818,20 @@ export async function cancelBookingByCustomer(bookingId: string) {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { tenant: true, service: true }
+      include: {
+        tenant: true,
+        service: true,
+        staff: {
+          select: {
+            name: true,
+            user: {
+              select: {
+                email: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!booking) return { error: "Booking not found" };
@@ -718,11 +843,36 @@ export async function cancelBookingByCustomer(bookingId: string) {
         serviceName: booking.service.name,
         startTime: booking.startTime,
         businessName: booking.tenant.name,
-        timezone: booking.tenant.timezone || "UTC"
+        businessSlug: booking.tenant.slug,
+        timezone: booking.tenant.timezone || "UTC",
+        businessType: booking.tenant.businessType,
+        staffName: booking.staff.name
       });
+
+      if (booking.staff.user?.email) {
+        await sendPractitionerBookingCancelledNotification({
+          practitionerName: booking.staff.name,
+          practitionerEmail: booking.staff.user.email,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          businessName: booking.tenant.name,
+          timezone: booking.tenant.timezone || "UTC",
+          businessType: booking.tenant.businessType,
+        });
+      }
     }
 
-    await prisma.booking.delete({ where: { id: bookingId } });
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELLED" }
+    });
+    revalidatePath("/appointments");
+    revalidatePath("/bookings");
+    revalidatePath("/booking");
+    revalidatePath("/sessions");
+    revalidatePath("/b/[slug]", "layout");
     return { success: true };
   } catch {
     return { error: "Failed to cancel appointment" };
@@ -740,7 +890,20 @@ export async function deleteBooking(bookingId: string) {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId, tenantId: tenantId || "" },
-      include: { tenant: true, service: true }
+      include: {
+        tenant: true,
+        service: true,
+        staff: {
+          select: {
+            name: true,
+            user: {
+              select: {
+                email: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!booking) return { error: "Booking not found" };
@@ -750,7 +913,10 @@ export async function deleteBooking(bookingId: string) {
       if (!staffProfile || booking.staffId !== staffProfile.id) return { error: "Unauthorized" };
     }
 
-    await prisma.booking.delete({ where: { id: bookingId } });
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELLED" }
+    });
 
     if (booking.tenant.emailNotificationsEnabled) {
       await sendBookingCancelledEmail({
@@ -759,8 +925,25 @@ export async function deleteBooking(bookingId: string) {
         serviceName: booking.service.name,
         startTime: booking.startTime,
         businessName: booking.tenant.name,
-        timezone: booking.tenant.timezone || "UTC"
+        businessSlug: booking.tenant.slug,
+        timezone: booking.tenant.timezone || "UTC",
+        businessType: booking.tenant.businessType,
+        staffName: booking.staff.name
       });
+
+      if (booking.staff.user?.email) {
+        await sendPractitionerBookingCancelledNotification({
+          practitionerName: booking.staff.name,
+          practitionerEmail: booking.staff.user.email,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          businessName: booking.tenant.name,
+          timezone: booking.tenant.timezone || "UTC",
+          businessType: booking.tenant.businessType,
+        });
+      }
     }
 
     revalidatePath("/appointments");
@@ -784,6 +967,25 @@ export async function updateBookingStatus(bookingId: string, status: string) {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId, tenantId: tenantId || "" },
+      include: {
+        tenant: true,
+        service: true,
+        staff: {
+          select: {
+            name: true,
+            user: {
+              select: {
+                email: true
+              }
+            }
+          }
+        },
+        customer: {
+          select: {
+            phone: true
+          }
+        }
+      }
     });
     if (!booking) return { error: "Booking not found" };
     if (userRole === "STAFF") {
@@ -795,6 +997,50 @@ export async function updateBookingStatus(bookingId: string, status: string) {
       where: { id: bookingId },
       data: { status: status as BookingStatus }
     });
+
+    if (booking.tenant.emailNotificationsEnabled) {
+      if (status === "CANCELLED") {
+        await sendBookingCancelledEmail({
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          businessName: booking.tenant.name,
+          businessSlug: booking.tenant.slug,
+          timezone: booking.tenant.timezone || "UTC",
+          businessType: booking.tenant.businessType,
+          staffName: booking.staff.name
+        });
+
+        if (booking.staff.user?.email) {
+          await sendPractitionerBookingCancelledNotification({
+            practitionerName: booking.staff.name,
+            practitionerEmail: booking.staff.user.email,
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            serviceName: booking.service.name,
+            startTime: booking.startTime,
+            businessName: booking.tenant.name,
+            timezone: booking.tenant.timezone || "UTC",
+            businessType: booking.tenant.businessType,
+          });
+        }
+      } else if ((status === "CONFIRMED" || status === "PENDING") && booking.staff.user?.email) {
+        await sendPractitionerBookingConfirmedNotification({
+          practitionerName: booking.staff.name,
+          practitionerEmail: booking.staff.user.email,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customer?.phone,
+          serviceName: booking.service.name,
+          startTime: booking.startTime,
+          businessName: booking.tenant.name,
+          timezone: booking.tenant.timezone || "UTC",
+          businessType: booking.tenant.businessType,
+          notes: booking.notes,
+        });
+      }
+    }
 
     revalidatePath("/appointments");
     revalidatePath("/bookings");

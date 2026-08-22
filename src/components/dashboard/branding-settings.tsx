@@ -49,7 +49,7 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
 
       <div className="p-8 space-y-8">
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Primary Brand Color</label>
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-4">Primary Brand Color</label>
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-4">
             {colors.map((color) => (
               <button
@@ -68,7 +68,7 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
         </div>
 
         <div className="p-6 bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Preview</p>
+           <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4">Preview</p>
            <div className="flex flex-col sm:flex-row items-center gap-6">
               <button 
                 className="px-8 py-3 rounded-2xl text-white font-black text-sm shadow-xl dark:shadow-none border border-transparent dark:border-white/10"

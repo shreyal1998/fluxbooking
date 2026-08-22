@@ -400,6 +400,25 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
       // If we are filtering by staff, only show their items
       if (effectiveFilter !== "all" && s.id !== effectiveFilter) return;
       
+      s.leaveRequests?.forEach((leave: any) => {
+        const alreadyBlocked = s.blockedSlots.some((b: any) => 
+          new Date(b.startTime).getTime() === new Date(leave.startTime).getTime() &&
+          new Date(b.endTime).getTime() === new Date(leave.endTime).getTime()
+        );
+        if (!alreadyBlocked) {
+          allEvents.push({
+            id: leave.id,
+            title: leave.reason ? `Leave: ${leave.reason}` : `Leave: ${leave.type}`,
+            start: getInTimezone(new Date(leave.startTime), tz),
+            end: getInTimezone(new Date(leave.endTime), tz),
+            type: "blocked",
+            staffId: s.id,
+            resourceName: s.name,
+            color: s.color
+          });
+        }
+      });
+
       s.blockedSlots.forEach((block: any) => {
         allEvents.push({
           id: block.id,
@@ -429,7 +448,11 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     return allEvents;
   }, [staff, staffFilter, view, tenant?.timezone]);
 
-  const handleScheduleToggle = async (date: Date, type: 'block' | 'override' | 'remove-block' | 'remove-override', specificStaffId?: string) => {
+  const handleScheduleToggle = async (
+    date: Date, 
+    type: 'block' | 'override' | 'remove-block' | 'remove-override' | 'remove-block-and-override', 
+    specificStaffId?: string
+  ) => {
     const targetStaffId = specificStaffId || (staffFilter && staffFilter !== "all" ? staffFilter : null);
     
     if (!targetStaffId) {
@@ -440,6 +463,38 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     const endTime = addMinutes(date, slotDuration);
     const localStartStr = format(date, "yyyy-MM-dd'T'HH:mm:ss");
     const localEndStr = format(endTime, "yyyy-MM-dd'T'HH:mm:ss");
+
+    if (type === 'remove-block-and-override') {
+      // First remove the block
+      const removeBlockResult = await toggleSlotStatus({
+        staffId: targetStaffId,
+        startTime: localStartStr as any,
+        endTime: localEndStr as any,
+        type: 'remove-block'
+      });
+
+      if (removeBlockResult.error) {
+        toast.error(removeBlockResult.error);
+        return;
+      }
+
+      // Then add availability override
+      const overrideResult = await toggleSlotStatus({
+        staffId: targetStaffId,
+        startTime: localStartStr as any,
+        endTime: localEndStr as any,
+        type: 'override'
+      });
+
+      if (overrideResult.error) {
+        toast.error(overrideResult.error);
+      } else {
+        toast.success("Block removed and time opened for today");
+        router.refresh();
+      }
+      return;
+    }
+
     const result = await toggleSlotStatus({
       staffId: targetStaffId,
       startTime: localStartStr as any,
@@ -469,7 +524,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-black dark:text-white tracking-tight">Schedule Calendar</h2>
+            <h2 className="text-xl font-medium text-black dark:text-slate-200 tracking-tight">Schedule Calendar</h2>
             {(() => {
               const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
               if (formattedHours.length === 0) return null;
@@ -813,7 +868,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
               <div className="p-8 space-y-6 bg-white dark:bg-slate-900 rounded-b-[2.5rem]">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0 space-y-2" ref={startDropdownRef}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Start Time</label>
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Start Time</label>
                     <div className="relative group">
                       <button 
                         type="button"
@@ -858,7 +913,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                     </div>
                   </div>
                   <div className="flex-1 min-w-0 space-y-2" ref={endDropdownRef}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">End Time</label>
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">End Time</label>
                     <div className="relative group">
                       <button 
                         type="button"

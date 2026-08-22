@@ -17,11 +17,13 @@ interface LocationListProps {
   locations: Location[];
   isPro: boolean;
   businessType?: any;
+  userRole?: string;
 }
 
-export function LocationList({ locations: initialLocations, isPro, businessType }: LocationListProps) {
+export function LocationList({ locations: initialLocations, isPro, businessType, userRole }: LocationListProps) {
   const [locations, setLocations] = useState(initialLocations);
   const labels = getLabels(businessType);
+  const isAdmin = userRole === "ADMIN";
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -30,7 +32,7 @@ export function LocationList({ locations: initialLocations, isPro, businessType 
           <MapPin className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           <h3 className="font-bold text-slate-900 dark:text-white">Business Locations</h3>
         </div>
-        {isPro && (
+        {isPro && isAdmin && (
           <button className="h-9 px-4 bg-indigo-600 text-white rounded-lg text-xs font-black transition-all hover:bg-indigo-700 flex items-center gap-2">
             <Plus className="h-3.5 w-3.5" />
             Add Location
@@ -57,7 +59,7 @@ export function LocationList({ locations: initialLocations, isPro, businessType 
                   <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">{loc.phone || "No phone number"}</p>
                 </div>
               </div>
-              {isPro && !loc.isPrimary && (
+              {isPro && isAdmin && !loc.isPrimary && (
                 <button className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all">
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -74,7 +76,7 @@ export function LocationList({ locations: initialLocations, isPro, businessType 
         )}
       </div>
 
-      {!isPro && (
+      {!isPro && isAdmin && (
         <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border-t border-indigo-100 dark:border-indigo-800 flex items-center justify-between">
            <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300">Upgrade to Pro for multiple location support</p>
            <button 

@@ -28,8 +28,16 @@ export default async function ServicesPage() {
   ]);
 
   const serializedServices = services.map(s => ({ 
-    ...s, 
-    price: s.price.toString() 
+    id: s.id,
+    tenantId: s.tenantId,
+    name: s.name,
+    durationMinutes: s.durationMinutes,
+    bufferTime: s.bufferTime,
+    price: s.price.toString(),
+    color: s.color,
+    capacity: s.capacity,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt
   }));
 
   // Smart currency fallback

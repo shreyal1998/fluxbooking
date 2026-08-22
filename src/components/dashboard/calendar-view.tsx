@@ -64,6 +64,8 @@ interface Event {
   staffId?: string;
   status?: string;
   serviceDuration?: number;
+  customerName?: string;
+  serviceName?: string;
 }
 
 interface DaySchedule {
@@ -222,7 +224,7 @@ export function CalendarView({
   onSlotDurationChange?: (duration: 15 | 30 | 60) => void,
   staffFilter?: string | string[],
   mode?: "booking" | "schedule",
-  onScheduleToggle?: (date: Date, type: 'block' | 'override' | 'remove-block' | 'remove-override', staffId?: string) => void,
+  onScheduleToggle?: (date: Date, type: 'block' | 'override' | 'remove-block' | 'remove-override' | 'remove-block-and-override', staffId?: string) => void,
   scheduleViewStart?: string,
   scheduleViewEnd?: string,
   onEventClick?: (event: Event) => void,
@@ -345,7 +347,7 @@ export function CalendarView({
   }, []);
 
   // Unified Availability Check
-  const checkIsClosed = useCallback((date: Date, specificStaffId?: string | string[]) => {
+  const checkIsClosed = useCallback((date: Date, specificStaffId?: string | string[], ignoreBlocks = false) => {
     const isAll = !staffFilter || 
                   staffFilter === "all" || 
                   (Array.isArray(staffFilter) && (staffFilter.includes("all") || staffFilter.length === 0));
@@ -355,6 +357,32 @@ export function CalendarView({
     const targetIds = targetStaffId 
       ? (Array.isArray(targetStaffId) ? targetStaffId : [targetStaffId])
       : (staffList.map(s => s.id));
+
+    // Check if any practitioner has an override for this slot (and is not blocked)
+    // This allows slots to be opened even outside business hours or normal weekly schedules.
+    let hasActiveOverride = false;
+    for (const id of targetIds) {
+      const isBlocked = ignoreBlocks ? false : events.some(e => {
+        if (e.type !== "blocked") return false;
+        if (e.staffId !== id) return false;
+        return date >= e.start && date < e.end;
+      });
+
+      if (isBlocked) continue;
+
+      const hasOverride = events.some(e => {
+        if ((e.type as any) !== "availability-override") return false;
+        if (e.staffId !== id) return false;
+        return date >= e.start && date < e.end;
+      });
+
+      if (hasOverride) {
+        hasActiveOverride = true;
+        break;
+      }
+    }
+
+    if (hasActiveOverride) return false; // Slot is open/available (clear background)
 
     // If no staff list, fallback to business hours
     if (targetIds.length === 0) {
@@ -414,7 +442,7 @@ export function CalendarView({
 
     for (const id of targetIds) {
       // A. Check if explicitly blocked for this staff
-      const isBlocked = events.some(e => {
+      const isBlocked = ignoreBlocks ? false : events.some(e => {
         if (e.type !== "blocked") return false;
         if (e.staffId !== id) return false;
         return date >= e.start && date < e.end;
@@ -675,7 +703,7 @@ export function CalendarView({
                         className={`text-[10px] px-2 py-0.5 rounded-md border truncate font-normal flex-shrink-0 cursor-pointer transition-all active:scale-95 ${typeof styleData === 'string' ? styleData : styleData.className}`}
                         style={typeof styleData === 'object' ? styleData.style : {}}
                       >
-                        {format(event.start, timeDisplayFormat)} {event.title.split(" - ")[0]}
+                        {format(event.start, timeDisplayFormat)} {event.customerName || event.title.split(" - ")[0]}
                       </div>
                     );
                   })}
@@ -761,14 +789,19 @@ export function CalendarView({
                             
                             return Array.from({ length: subSlotsCount }).map((_, subIdx) => {
                               const subSlotTime = addMinutes(currentSlotTime, subIdx * 15);
-                              const existing = mode === "schedule" ? events.find(e => {
-                                 if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
-                                 const isTimeMatch = subSlotTime >= e.start && subSlotTime < e.end;
-                                 const isStaffMatch = isStaffFiltered
-                                    ? (Array.isArray(staffFilter) ? staffFilter.includes(e.staffId || "") : e.staffId === staffFilter)
-                                    : true;
-                                 return isTimeMatch && isStaffMatch;
-                              }) : null;
+                              const existing = mode === "schedule" ? (() => {
+                                 const matches = events.filter(e => {
+                                   if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
+                                   const isTimeMatch = subSlotTime >= e.start && subSlotTime < e.end;
+                                   const isStaffMatch = isStaffFiltered
+                                      ? (Array.isArray(staffFilter) ? staffFilter.includes(e.staffId || "") : e.staffId === staffFilter)
+                                      : true;
+                                   return isTimeMatch && isStaffMatch;
+                                 });
+                                 if (matches.length === 0) return null;
+                                 const leaveMatch = matches.find(m => m.title?.toLowerCase().includes("leave"));
+                                 return leaveMatch || matches[0];
+                              })() : null;
 
                                const isClosed = mode === "schedule" && existing
                                  ? existing.type === 'blocked'
@@ -785,7 +818,7 @@ export function CalendarView({
                                    onClick={() => {
                                      if (mode === "schedule") {
                                        if (existing?.type === 'blocked') {
-                                         onScheduleToggle?.(subSlotTime, 'remove-block', singleStaffParam);
+                                         onScheduleToggle?.(subSlotTime, checkIsClosed(subSlotTime, singleStaffParam, true) ? 'remove-block-and-override' : 'remove-block', singleStaffParam);
                                        } else if ((existing?.type as any) === 'availability-override') {
                                          onScheduleToggle?.(subSlotTime, 'remove-override', singleStaffParam);
                                        } else if (isClosed) {
@@ -812,7 +845,7 @@ export function CalendarView({
                                                   </div>
                                                   {existing?.type === 'blocked' && (
                                                     <span className="text-[9px] font-black text-rose-600 dark:text-rose-450 bg-white/90 dark:bg-slate-900/90 px-2 py-0.5 rounded shadow-sm border border-rose-200/50 dark:border-rose-900/30">
-                                                      Blocked: {existing.title}
+                                                      Blocked: {existing.title?.toLowerCase().includes("leave") ? "Leave" : existing.title}
                                                     </span>
                                                   )}
                                                 </>
@@ -874,7 +907,7 @@ export function CalendarView({
                     onDragEnd={handleDragEnd} 
                     onClick={() => {
                       if (mode === "schedule" && event.type === 'blocked') {
-                        onScheduleToggle?.(event.start, 'remove-block');
+                        onScheduleToggle?.(event.start, checkIsClosed(event.start, event.staffId, true) ? 'remove-block-and-override' : 'remove-block', event.staffId);
                       } else if (mode === "booking" && event.type === 'booking') {
                         onEventClick?.(event);
                       }
@@ -894,12 +927,12 @@ export function CalendarView({
                     {event.type !== 'blocked' && (
                       duration >= 60 ? (
                         <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
-                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.title.split(" - ")[0]}</span>
+                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
                           <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
                         </div>
                       ) : (
                         <div className="flex items-center truncate h-full w-full py-0.5">
-                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
                           <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
                         </div>
                       )
@@ -1078,12 +1111,17 @@ export function CalendarView({
 
                                return Array.from({ length: subSlotsCount }).map((_, subIdx) => {
                                  const subSlotTime = addMinutes(currentSlotTime, subIdx * 15);
-                                 const existing = mode === "schedule" ? events.find(e => {
-                                    if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
-                                    const isTimeMatch = subSlotTime >= e.start && subSlotTime < e.end;
-                                    const isStaffMatch = staffMember ? e.staffId === staffMember.id : true;
-                                    return isTimeMatch && isStaffMatch;
-                                  }) : null;
+                                 const existing = mode === "schedule" ? (() => {
+                                     const matches = events.filter(e => {
+                                       if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
+                                       const isTimeMatch = subSlotTime >= e.start && subSlotTime < e.end;
+                                       const isStaffMatch = staffMember ? e.staffId === staffMember.id : true;
+                                       return isTimeMatch && isStaffMatch;
+                                     });
+                                     if (matches.length === 0) return null;
+                                     const leaveMatch = matches.find(m => m.title?.toLowerCase().includes("leave"));
+                                     return leaveMatch || matches[0];
+                                   })() : null;
 
                                  const isClosed = mode === "schedule" && existing
                                    ? existing.type === 'blocked'
@@ -1102,7 +1140,7 @@ export function CalendarView({
                                       onClick={() => {
                                         if (mode === "schedule") {
                                           if (existing?.type === 'blocked') {
-                                            onScheduleToggle?.(subSlotTime, 'remove-block', activeStaffParam);
+                                            onScheduleToggle?.(subSlotTime, checkIsClosed(subSlotTime, activeStaffParam, true) ? 'remove-block-and-override' : 'remove-block', activeStaffParam);
                                           } else if ((existing?.type as any) === 'availability-override') {
                                             onScheduleToggle?.(subSlotTime, 'remove-override', activeStaffParam);
                                           } else if (isClosed) {
@@ -1129,7 +1167,7 @@ export function CalendarView({
                                                   </div>
                                                   {existing?.type === 'blocked' && (
                                                     <span className="text-[9px] font-black text-rose-600 dark:text-rose-450 bg-white/90 dark:bg-slate-900/90 px-2 py-0.5 rounded shadow-sm border border-rose-200/50 dark:border-rose-900/30">
-                                                      Blocked: {existing.title}
+                                                      Blocked: {existing.title?.toLowerCase().includes("leave") ? "Leave" : existing.title}
                                                     </span>
                                                   )}
                                                 </>
@@ -1210,12 +1248,12 @@ export function CalendarView({
                              {event.type !== 'blocked' && (
                                duration >= 60 ? (
                                  <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
-                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.title.split(" - ")[0]}</span>
+                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
                                    <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
                                  </div>
                                ) : (
                                  <div className="flex items-center truncate h-full w-full py-0.5">
-                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
                                    <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
                                  </div>
                                )
@@ -1354,12 +1392,17 @@ export function CalendarView({
 
                                return Array.from({ length: subSlotsCount }).map((_, subIdx) => {
                                  const subSlotTime = addMinutes(currentSlotTime, subIdx * 15);
-                                 const existing = mode === "schedule" ? events.find(e => {
-                                    if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
-                                    const isTimeMatch = subSlotTime >= e.start && subSlotTime < e.end;
-                                    const isStaffMatch = e.staffId === staff.id;
-                                    return isTimeMatch && isStaffMatch;
-                                 }) : null;
+                                 const existing = mode === "schedule" ? (() => {
+                                     const matches = events.filter(e => {
+                                       if (e.type !== 'blocked' && (e.type as any) !== 'availability-override') return false;
+                                       const isTimeMatch = subSlotTime >= e.start && subSlotTime < e.end;
+                                       const isStaffMatch = e.staffId === staff.id;
+                                       return isTimeMatch && isStaffMatch;
+                                     });
+                                     if (matches.length === 0) return null;
+                                     const leaveMatch = matches.find(m => m.title?.toLowerCase().includes("leave"));
+                                     return leaveMatch || matches[0];
+                                  })() : null;
 
                                  const isClosed = mode === "schedule" && existing
                                    ? existing.type === 'blocked'
@@ -1376,7 +1419,7 @@ export function CalendarView({
                                      onClick={() => {
                                        if (mode === "schedule") {
                                          if (existing?.type === 'blocked') {
-                                           onScheduleToggle?.(subSlotTime, 'remove-block', staff.id);
+                                           onScheduleToggle?.(subSlotTime, checkIsClosed(subSlotTime, staff.id, true) ? 'remove-block-and-override' : 'remove-block', staff.id);
                                          } else if ((existing?.type as any) === 'availability-override') {
                                            onScheduleToggle?.(subSlotTime, 'remove-override', staff.id);
                                          } else if (isClosed) {
@@ -1403,7 +1446,7 @@ export function CalendarView({
                                                   </div>
                                                   {existing?.type === 'blocked' && (
                                                     <span className="text-[9px] font-black text-rose-600 dark:text-rose-450 bg-white/90 dark:bg-slate-900/90 px-2 py-0.5 rounded shadow-sm border border-rose-200/50 dark:border-rose-900/30">
-                                                      Blocked: {existing.title}
+                                                      Blocked: {existing.title?.toLowerCase().includes("leave") ? "Leave" : existing.title}
                                                     </span>
                                                   )}
                                                 </>
@@ -1488,12 +1531,12 @@ export function CalendarView({
                             {event.type !== 'blocked' && (
                               duration >= 60 ? (
                                 <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
-                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.title.split(" - ")[0]}</span>
+                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
                                   <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center truncate h-full w-full py-0.5">
-                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.title.split(" - ")[0]}</span>
+                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
                                   <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
                                 </div>
                               )
@@ -1549,19 +1592,19 @@ export function CalendarView({
         onMouseLeave={hideTooltip}
       >
 
-        <p className={`font-bold truncate text-sm mb-0.5 ${boldTextColorClass}`}>
-          {tooltipInfo.event.title.split(" - ")[0]}
+        <p className={`font-semibold truncate text-sm mb-0.5 ${boldTextColorClass}`}>
+          {tooltipInfo.event.customerName || tooltipInfo.event.title.split(" - ")[0]}
         </p>
-        {tooltipInfo.event.title.split(" - ")[1] && (
-          <div className={`flex items-center gap-1.5 text-[11px] mb-2 ${textColorClass}`}>
+        {(tooltipInfo.event.serviceName || tooltipInfo.event.title.split(" - ")[1]) && (
+          <div className={`flex items-center gap-1.5 text-xs mb-2 ${textColorClass}`}>
             <Sparkles className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
-            <span className="font-normal">{tooltipInfo.event.title.split(" - ")[1]}</span>
+            <span className="font-normal">{tooltipInfo.event.serviceName || tooltipInfo.event.title.split(" - ")[1]}</span>
           </div>
         )}
-        <div className={`flex flex-col gap-1 text-[10px] ${textColorClass}`}>
+        <div className={`flex flex-col gap-1 text-xs ${textColorClass}`}>
           <div className="flex items-center gap-1.5">
             <Clock className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
-            <span>{format(tooltipInfo.event.start, "EEEE, MMMM d")}</span>
+            <span>{format(tooltipInfo.event.start, "EEEE, MMMM d, yyyy")}</span>
           </div>
           <div className="flex items-center gap-1.5 font-normal">
             <span>{format(tooltipInfo.event.start, bookingTimeFormat)} – {format(tooltipInfo.event.end, bookingTimeFormat)}</span>
@@ -1593,7 +1636,6 @@ export function CalendarView({
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
-                  setTooltipInfo(null);
                   await onStatusUpdate(tooltipInfo.event.id, "PENDING");
                 }}
                 className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
@@ -1606,7 +1648,6 @@ export function CalendarView({
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
-                  setTooltipInfo(null);
                   await onStatusUpdate(tooltipInfo.event.id, "COMPLETED");
                 }}
                 className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-emerald-600 dark:text-emerald-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
@@ -1619,10 +1660,9 @@ export function CalendarView({
               <button
                 onClick={async (e) => {
                   e.stopPropagation();
-                  setTooltipInfo(null);
                   await onStatusUpdate(tooltipInfo.event.id, "CANCELLED");
                 }}
-                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-450 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

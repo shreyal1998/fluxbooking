@@ -44,7 +44,6 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
     const errors: Record<string, string> = {};
     if (!name) errors.name = `${labels.service} name is required`;
     if (!duration) errors.duration = "Duration is required";
-    if (!price) errors.price = "Price is required";
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -83,7 +82,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
     <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
       <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
             {labels.service} Name <span className="text-rose-500">*</span>
           </label>
           <input
@@ -103,7 +102,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
               Duration (min) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -124,7 +123,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
             <InputError message={fieldErrors.duration} />
           </div>
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Buffer Time (min)</label>
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Buffer Time (min)</label>
             <div className="relative">
               <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -140,8 +139,8 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
         </div>
 
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
-            Price ({currency}) <span className="text-rose-500">*</span>
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
+            Price ({currency})
           </label>
           <div className="relative">
             <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -149,9 +148,9 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
               name="price"
               type="number"
               step="0.01"
-              required
+              autoComplete="off"
               onChange={() => clearFieldError("price")}
-              placeholder="50.00"
+              placeholder="0.00"
               className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
                 fieldErrors.price 
                   ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
@@ -163,7 +162,7 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
         </div>
 
         <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-3 flex items-center gap-2">
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-3 flex items-center gap-2">
             <Palette className="h-4 w-4 text-slate-400" />
             Brand Color
           </label>

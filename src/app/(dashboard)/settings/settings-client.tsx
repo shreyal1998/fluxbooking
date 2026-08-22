@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search, Calendar } from "lucide-react";
+import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search, Calendar, FileText, Copy } from "lucide-react";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
 import { LocationList } from "@/components/dashboard/location-list";
+import { Tooltip } from "@/components/ui/tooltip";
 import { getLabels } from "@/lib/labels";
 import { timezones } from "@/config/timezones";
 import { COUNTRIES } from "@/config/countries";
@@ -12,7 +13,7 @@ import { updateTenantTimezone, updateTenantCountry, updateTenantTimeFormat, upda
 import { toast } from "sonner";
 import { useRouter, useParams } from "next/navigation";
 
-type TabType = "business" | "billing" | "appearance" | "security";
+type TabType = "business" | "billing" | "appearance" | "invoices" | "security";
 
 interface Tab {
   id: TabType;
@@ -35,6 +36,16 @@ export function SettingsClient({
   const params = useParams();
   const tabParam = params.tab as TabType;
   const [isPending, startTransition] = useTransition();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUrl = () => {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://fluxbooking.com");
+    const fullUrl = `${appUrl}/b/${tenant?.slug}`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopied(true);
+    toast.success("Public booking URL copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
   
   const [activeTab, setActiveTab] = useState<TabType>(
     (tabParam && ["business", "billing", "appearance", "security"].includes(tabParam)) 
@@ -73,6 +84,7 @@ export function SettingsClient({
   const [isUpdatingWeekStart, setIsUpdatingWeekStart] = useState(false);
   
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [countrySearch, setCountrySearch] = useState("");
   const [timezoneSearch, setTimezoneSearch] = useState("");
 
@@ -210,6 +222,12 @@ export function SettingsClient({
       icon: Building 
     },
     { 
+      id: "appearance", 
+      label: "Branding", 
+      description: "Business visuals",
+      icon: Palette
+    },
+    { 
       id: "billing", 
       label: "Billing", 
       description: "Plans and subscription",
@@ -217,19 +235,298 @@ export function SettingsClient({
       adminOnly: true 
     },
     { 
-      id: "appearance", 
-      label: "Branding", 
-      description: "Business visuals",
-      icon: Palette,
-      adminOnly: true
-    },
-    { 
       id: "security", 
       label: "Security", 
       description: "Account and safety",
-      icon: Shield 
+      icon: Shield,
+      adminOnly: true
     },
   ].filter(tab => !tab.adminOnly || userRole === "ADMIN") as Tab[];
+
+  const invoices = (() => {
+    if (!tenant || tenant.plan === "FREE") return [];
+    
+    const list = [];
+    const planName = tenant.plan === "PRO" ? "Pro Plan" : "Starter Plan";
+    const amount = tenant.plan === "PRO" 
+      ? (tenant.planInterval === "YEAR" ? 149.90 : 14.99)
+      : (tenant.planInterval === "YEAR" ? 69.90 : 6.99);
+    
+    const intervalStr = tenant.planInterval === "YEAR" ? "Yearly" : "Monthly";
+    
+    const startDate = new Date(tenant.createdAt || "2026-01-10T10:00:00Z");
+    const currentDate = new Date();
+    
+    let tempDate = new Date(currentDate);
+    for (let i = 0; i < 6; i++) {
+      if (tempDate < startDate) break;
+      
+      const invoiceNum = `INV-2026-${(6 - i).toString().padStart(3, "0")}`;
+      list.push({
+        id: invoiceNum,
+        number: invoiceNum,
+        date: new Date(tempDate),
+        planName,
+        interval: intervalStr,
+        amount: `$${amount.toFixed(2)}`,
+        status: "PAID",
+        paymentMethod: "Card ending in 4242",
+        description: `FluxBooking ${planName} - ${intervalStr} Subscription`
+      });
+      
+      if (tenant.planInterval === "YEAR") {
+        tempDate.setFullYear(tempDate.getFullYear() - 1);
+      } else {
+        tempDate.setMonth(tempDate.getMonth() - 1);
+      }
+    }
+    return list;
+  })();
+
+  const handleDownloadInvoice = (invoice: any) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Popup blocked! Please allow popups to download the invoice PDF.");
+      return;
+    }
+
+    const primaryColor = tenant?.primaryColor || "#6366f1";
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice ${invoice.number}</title>
+          <style>
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              color: #1e293b;
+              margin: 0;
+              padding: 40px;
+              line-height: 1.5;
+            }
+            .invoice-box {
+              max-width: 800px;
+              margin: auto;
+              background: #fff;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .logo-text {
+              font-size: 24px;
+              font-weight: 800;
+              color: ${primaryColor};
+              letter-spacing: -0.5px;
+            }
+            .invoice-title {
+              font-size: 28px;
+              font-weight: 700;
+              text-align: right;
+              color: #0f172a;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-cols: 1fr 1fr;
+              gap: 40px;
+              margin-bottom: 40px;
+            }
+            .section-title {
+              font-size: 11px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #64748b;
+              margin-bottom: 8px;
+            }
+            .info-text {
+              font-size: 14px;
+              color: #334155;
+            }
+            .info-text strong {
+              color: #0f172a;
+            }
+            .table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 40px;
+            }
+            .table th {
+              background: #f8fafc;
+              border-bottom: 2px solid #e2e8f0;
+              padding: 12px 16px;
+              text-align: left;
+              font-size: 11px;
+              font-weight: 850;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              color: #475569;
+            }
+            .table td {
+              border-bottom: 1px solid #f1f5f9;
+              padding: 16px;
+              font-size: 14px;
+              color: #334155;
+            }
+            .table td.right, .table th.right {
+              text-align: right;
+            }
+            .totals-container {
+              display: flex;
+              justify-content: flex-end;
+              margin-bottom: 60px;
+            }
+            .totals-table {
+              width: 250px;
+              border-collapse: collapse;
+            }
+            .totals-table td {
+              padding: 8px 12px;
+              font-size: 14px;
+              color: #475569;
+            }
+            .totals-table tr.grand-total td {
+              font-weight: 700;
+              font-size: 16px;
+              color: #0f172a;
+              border-top: 2px solid #e2e8f0;
+              padding-top: 12px;
+            }
+            .footer {
+              text-align: center;
+              font-size: 12px;
+              color: #94a3b8;
+              border-top: 1px solid #f1f5f9;
+              padding-top: 20px;
+              margin-top: 60px;
+            }
+            .btn-print {
+              background: ${primaryColor};
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+              margin-bottom: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="text-align: right; max-width: 800px; margin: auto;">
+            <button class="btn-print" onclick="window.print()">Print / Save PDF</button>
+          </div>
+          <div class="invoice-box">
+            <div class="header">
+              <div>
+                <span class="logo-text">FluxBooking</span>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Automated Booking Platform</div>
+              </div>
+              <div class="invoice-title">INVOICE</div>
+            </div>
+            
+            <div class="details-grid">
+              <div>
+                <div class="section-title">Billed From</div>
+                <div class="info-text">
+                  <strong>FluxBooking Inc.</strong><br/>
+                  100 Tech Way, Suite 400<br/>
+                  San Francisco, CA 94107<br/>
+                  billing@fluxbooking.com
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div class="section-title">Invoice Details</div>
+                <div class="info-text">
+                  <strong>Invoice Number:</strong> ${invoice.number}<br/>
+                  <strong>Date:</strong> ${invoice.date.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}<br/>
+                  <strong>Status:</strong> <span style="color: #10b981; font-weight: 700;">PAID</span><br/>
+                  <strong>Payment Method:</strong> ${invoice.paymentMethod}
+                </div>
+              </div>
+            </div>
+
+            <div class="details-grid" style="margin-bottom: 30px;">
+              <div>
+                <div class="section-title">Billed To</div>
+                <div class="info-text">
+                  <strong>${tenant?.name || "Business Owner"}</strong><br/>
+                  ${sessionUser?.email || ""}<br/>
+                  ${sessionUser?.phone ? `Phone: ${sessionUser.phone}<br/>` : ""}
+                  Country: ${tenant?.country || "US"}
+                </div>
+              </div>
+            </div>
+
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="right">Qty</th>
+                  <th class="right">Unit Price</th>
+                  <th class="right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${invoice.description}</td>
+                  <td class="right">1</td>
+                  <td class="right">${invoice.amount}</td>
+                  <td class="right">${invoice.amount}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="totals-container">
+              <table class="totals-table">
+                <tr>
+                  <td>Subtotal</td>
+                  <td class="right">${invoice.amount}</td>
+                </tr>
+                <tr>
+                  <td>Tax (0%)</td>
+                  <td class="right">$0.00</td>
+                </tr>
+                <tr class="grand-total">
+                  <td>Total Paid</td>
+                  <td class="right">${invoice.amount}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="footer">
+              Thank you for choosing FluxBooking! If you have any questions about this invoice, please reach out to billing@fluxbooking.com.
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 300);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -246,7 +543,7 @@ export function SettingsClient({
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest ml-1 mb-2">Business Name</label>
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Business Name</label>
                     <input
                       type="text"
                       disabled
@@ -255,7 +552,7 @@ export function SettingsClient({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest ml-1 mb-2">Business Type</label>
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Business Type</label>
                     <input
                       type="text"
                       disabled
@@ -265,272 +562,298 @@ export function SettingsClient({
                   </div>
                 </div>
 
-                {userRole === "ADMIN" && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Country</label>
-                        <div className="relative group" ref={countryRef}>
-                          <button
-                            type="button"
-                            onClick={() => toggleDropdown("country")}
-                            disabled={isUpdatingCountry}
-                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
-                              openDropdown === "country" 
-                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              {isUpdatingCountry ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                              ) : (
-                                <Globe className="h-4 w-4 text-slate-400" />
-                              )}
-                              <span>{COUNTRIES.find(c => c.code === country)?.name || "Select Country"}</span>
-                            </div>
-                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "country" ? "rotate-180" : ""}`} />
-                          </button>
 
-                          {openDropdown === "country" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
-                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-100 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
-                                <div className="relative group">
-                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                  <input 
-                                    ref={countrySearchRef}
-                                    type="text"
-                                    placeholder="Search country..."
-                                    value={countrySearch}
-                                    onChange={(e) => setCountrySearch(e.target.value)}
-                                    autoComplete="off"
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
-                                  />
-                                </div>
-                              </div>
-                              <div className="overflow-y-auto flex-1 custom-scrollbar">
-                                {filteredCountries.length === 0 ? (
-                                  <div className="px-5 py-8 text-center">
-                                    <p className="text-xs font-bold text-slate-400 italic">No countries found</p>
-                                  </div>
-                                ) : (
-                                  filteredCountries.map((c) => (
-                                    <button
-                                      key={c.code}
-                                      type="button"
-                                      onClick={() => handleCountryChange(c.code)}
-                                      className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                                        country === c.code ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                      }`}
-                                    >
-                                      {c.name}
-                                      {country === c.code && <Check className="h-4 w-4" />}
-                                    </button>
-                                  ))
-                                )}
-                              </div>
-                            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Business Country</label>
+                    <div className="relative group" ref={countryRef}>
+                      <button
+                        type="button"
+                        onClick={() => toggleDropdown("country")}
+                        disabled={isUpdatingCountry || userRole !== "ADMIN"}
+                        className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                          userRole !== "ADMIN"
+                            ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
+                            : openDropdown === "country" 
+                              ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isUpdatingCountry ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                          ) : (
+                            <Globe className="h-4 w-4 text-slate-400" />
                           )}
+                          <span>{COUNTRIES.find(c => c.code === country)?.name || "Select Country"}</span>
                         </div>
-                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
-                          <Globe className="h-3 w-3" /> Syncs your currency and primary timezone automatically.
-                        </p>
-                      </div>
+                        {userRole === "ADMIN" && (
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "country" ? "rotate-180" : ""}`} />
+                        )}
+                      </button>
 
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Business Timezone</label>
-                        <div className="relative group" ref={timezoneRef}>
-                          <button
-                            type="button"
-                            onClick={() => toggleDropdown("timezone")}
-                            disabled={isUpdatingTimezone || isUpdatingCountry}
-                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
-                              openDropdown === "timezone" 
-                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              {isUpdatingTimezone ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                              ) : (
-                                <Clock className="h-4 w-4 text-slate-400" />
-                              )}
-                              <span className="truncate max-w-[200px] md:max-w-[250px]">{timezones.find(tz => tz.value === timezone)?.label || "Select Timezone"}</span>
+                      {userRole === "ADMIN" && openDropdown === "country" && (
+                        <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
+                          <div className="px-3 pb-2 pt-1 border-b-2 border-slate-100 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                            <div className="relative group">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                              <input 
+                                ref={countrySearchRef}
+                                type="text"
+                                placeholder="Search country..."
+                                value={countrySearch}
+                                onChange={(e) => setCountrySearch(e.target.value)}
+                                autoComplete="off"
+                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                              />
                             </div>
-                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "timezone" ? "rotate-180" : ""}`} />
-                          </button>
-
-                          {openDropdown === "timezone" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
-                              <div className="px-3 pb-2 pt-1 border-b-2 border-slate-100 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
-                                <div className="relative group">
-                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                  <input 
-                                    ref={timezoneSearchRef}
-                                    type="text"
-                                    placeholder="Search timezone..."
-                                    value={timezoneSearch}
-                                    onChange={(e) => setTimezoneSearch(e.target.value)}
-                                    autoComplete="off"
-                                    className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
-                                  />
-                                </div>
+                          </div>
+                          <div className="overflow-y-auto flex-1 custom-scrollbar">
+                            {filteredCountries.length === 0 ? (
+                              <div className="px-5 py-8 text-center">
+                                <p className="text-xs font-bold text-slate-400 italic">No countries found</p>
                               </div>
-                              <div className="overflow-y-auto flex-1 custom-scrollbar">
-                                {filteredTimezones.length === 0 ? (
-                                  <div className="px-5 py-8 text-center">
-                                    <p className="text-xs font-bold text-slate-400 italic">No timezones found</p>
-                                  </div>
-                                ) : (
-                                  filteredTimezones.map((tz) => (
-                                    <button
-                                      key={tz.value}
-                                      type="button"
-                                      onClick={() => handleTimezoneChange(tz.value)}
-                                      className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                                        timezone === tz.value ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                      }`}
-                                    >
-                                      <span className="truncate">{tz.label}</span>
-                                      {timezone === tz.value && <Check className="h-4 w-4" />}
-                                    </button>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-                          )}
+                            ) : (
+                              filteredCountries.map((c) => (
+                                <button
+                                  key={c.code}
+                                  type="button"
+                                  onClick={() => handleCountryChange(c.code)}
+                                  className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                    country === c.code ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                  }`}
+                                >
+                                  {c.name}
+                                  {country === c.code && <Check className="h-4 w-4" />}
+                                </button>
+                              ))
+                            )}
+                          </div>
                         </div>
-                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" /> Controls the "Current Time" line on your calendar.
-                        </p>
-                      </div>
+                      )}
                     </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                      <Globe className="h-3 w-3" /> Syncs your currency and primary timezone automatically.
+                    </p>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">Time Format</label>
-                        <div className="relative group" ref={timeFormatRef}>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Business Timezone</label>
+                    <div className="relative group" ref={timezoneRef}>
+                      <button
+                        type="button"
+                        onClick={() => toggleDropdown("timezone")}
+                        disabled={isUpdatingTimezone || isUpdatingCountry || userRole !== "ADMIN"}
+                        className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                          userRole !== "ADMIN"
+                            ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
+                            : openDropdown === "timezone" 
+                              ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isUpdatingTimezone ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                          ) : (
+                            <Clock className="h-4 w-4 text-slate-400" />
+                          )}
+                          <span className="truncate max-w-[200px] md:max-w-[250px]">{timezones.find(tz => tz.value === timezone)?.label || "Select Timezone"}</span>
+                        </div>
+                        {userRole === "ADMIN" && (
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "timezone" ? "rotate-180" : ""}`} />
+                        )}
+                      </button>
+
+                      {userRole === "ADMIN" && openDropdown === "timezone" && (
+                        <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 max-h-72 flex flex-col animate-in fade-in zoom-in duration-200">
+                          <div className="px-3 pb-2 pt-1 border-b-2 border-slate-100 dark:border-slate-800 mb-1 sticky top-0 bg-white dark:bg-slate-900 z-10">
+                            <div className="relative group">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+                              <input 
+                                ref={timezoneSearchRef}
+                                type="text"
+                                placeholder="Search timezone..."
+                                value={timezoneSearch}
+                                onChange={(e) => setTimezoneSearch(e.target.value)}
+                                autoComplete="off"
+                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="overflow-y-auto flex-1 custom-scrollbar">
+                            {filteredTimezones.length === 0 ? (
+                              <div className="px-5 py-8 text-center">
+                                <p className="text-xs font-bold text-slate-400 italic">No timezones found</p>
+                              </div>
+                            ) : (
+                              filteredTimezones.map((tz) => (
+                                <button
+                                  key={tz.value}
+                                  type="button"
+                                  onClick={() => handleTimezoneChange(tz.value)}
+                                  className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                                    timezone === tz.value ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                  }`}
+                                >
+                                  <span className="truncate">{tz.label}</span>
+                                  {timezone === tz.value && <Check className="h-4 w-4" />}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                      <Clock className="h-3 w-3" /> Controls the "Current Time" line on your calendar.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Time Format</label>
+                    <div className="relative group" ref={timeFormatRef}>
+                      <button
+                        type="button"
+                        onClick={() => toggleDropdown("format")}
+                        disabled={isUpdatingTimeFormat || userRole !== "ADMIN"}
+                        className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                          userRole !== "ADMIN"
+                            ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
+                            : openDropdown === "format" 
+                              ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isUpdatingTimeFormat ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                          ) : (
+                            <Clock className="h-4 w-4 text-slate-400" />
+                          )}
+                          <span>{timeFormat === "12h" ? "12-hour (e.g. 2:00 PM)" : "24-hour (e.g. 14:00)"}</span>
+                        </div>
+                        {userRole === "ADMIN" && (
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "format" ? "rotate-180" : ""}`} />
+                        )}
+                      </button>
+
+                      {userRole === "ADMIN" && openDropdown === "format" && (
+                        <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
                           <button
                             type="button"
-                            onClick={() => toggleDropdown("format")}
-                            disabled={isUpdatingTimeFormat}
-                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
-                              openDropdown === "format" 
-                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                            onClick={() => handleTimeFormatChange("12h")}
+                            className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                              timeFormat === "12h" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                             }`}
                           >
-                            <div className="flex items-center gap-3">
-                              {isUpdatingTimeFormat ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                              ) : (
-                                <Clock className="h-4 w-4 text-slate-400" />
-                              )}
-                              <span>{timeFormat === "12h" ? "12-hour (e.g. 2:00 PM)" : "24-hour (e.g. 14:00)"}</span>
-                            </div>
-                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "format" ? "rotate-180" : ""}`} />
+                            <span>12-hour (e.g. 2:00 PM)</span>
+                            {timeFormat === "12h" && <Check className="h-4 w-4" />}
                           </button>
-
-                          {openDropdown === "format" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
-                              <button
-                                type="button"
-                                onClick={() => handleTimeFormatChange("12h")}
-                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                                  timeFormat === "12h" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                }`}
-                              >
-                                <span>12-hour (e.g. 2:00 PM)</span>
-                                {timeFormat === "12h" && <Check className="h-4 w-4" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleTimeFormatChange("24h")}
-                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                                  timeFormat === "24h" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                }`}
-                              >
-                                <span>24-hour (e.g. 14:00)</span>
-                                {timeFormat === "24h" && <Check className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" /> Changes how time is displayed across your dashboard and booking page.
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-2">First Day of Week</label>
-                        <div className="relative group" ref={weekStartRef}>
                           <button
                             type="button"
-                            onClick={() => toggleDropdown("weekstart")}
-                            disabled={isUpdatingWeekStart || userRole !== "ADMIN"}
-                            className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
-                              openDropdown === "weekstart"
-                                ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                                : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
-                            } ${userRole !== "ADMIN" ? "opacity-60 cursor-not-allowed" : ""}`}
+                            onClick={() => handleTimeFormatChange("24h")}
+                            className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                              timeFormat === "24h" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            }`}
                           >
-                            <div className="flex items-center gap-3">
-                              {isUpdatingWeekStart ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
-                              ) : (
-                                <Calendar className="h-4 w-4 text-slate-400" />
-                              )}
-                              <span>{weekStart === "monday" ? "Monday" : "Sunday"}</span>
-                            </div>
-                            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "weekstart" ? "rotate-180" : ""}`} />
+                            <span>24-hour (e.g. 14:00)</span>
+                            {timeFormat === "24h" && <Check className="h-4 w-4" />}
                           </button>
-
-                          {openDropdown === "weekstart" && (
-                            <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
-                              <button
-                                type="button"
-                                onClick={() => handleWeekStartChange("sunday")}
-                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                                  weekStart === "sunday" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                }`}
-                              >
-                                <span>Sunday</span>
-                                {weekStart === "sunday" && <Check className="h-4 w-4" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleWeekStartChange("monday")}
-                                className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
-                                  weekStart === "monday" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                }`}
-                              >
-                                <span>Monday</span>
-                                {weekStart === "monday" && <Check className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          )}
                         </div>
-                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
-                          <Calendar className="h-3 w-3" /> Sets the first day shown on your calendar and date picker.
-                        </p>
-                      </div>
+                      )}
                     </div>
-                  </>
-                )}
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                      <Clock className="h-3 w-3" /> Changes how time is displayed across your dashboard and booking page.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">First Day of Week</label>
+                    <div className="relative group" ref={weekStartRef}>
+                      <button
+                        type="button"
+                        onClick={() => toggleDropdown("weekstart")}
+                        disabled={isUpdatingWeekStart || userRole !== "ADMIN"}
+                        className={`flex items-center justify-between w-full rounded-2xl border-2 px-5 py-4 text-sm font-bold transition-all shadow-sm ${
+                          userRole !== "ADMIN"
+                            ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
+                            : openDropdown === "weekstart"
+                              ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isUpdatingWeekStart ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                          ) : (
+                            <Calendar className="h-4 w-4 text-slate-400" />
+                          )}
+                          <span>{weekStart === "monday" ? "Monday" : "Sunday"}</span>
+                        </div>
+                        {userRole === "ADMIN" && (
+                          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-300 ${openDropdown === "weekstart" ? "rotate-180" : ""}`} />
+                        )}
+                      </button>
+
+                      {userRole === "ADMIN" && openDropdown === "weekstart" && (
+                        <div className="absolute z-50 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 mt-2 flex flex-col animate-in fade-in zoom-in duration-200">
+                          <button
+                            type="button"
+                            onClick={() => handleWeekStartChange("sunday")}
+                            className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                              weekStart === "sunday" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            }`}
+                          >
+                            <span>Sunday</span>
+                            {weekStart === "sunday" && <Check className="h-4 w-4" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleWeekStartChange("monday")}
+                            className={`flex items-center justify-between w-full px-5 py-3 text-sm font-bold transition-colors text-left ${
+                              weekStart === "monday" ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            }`}
+                          >
+                            <span>Monday</span>
+                            {weekStart === "monday" && <Check className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3" /> Sets the first day shown on your calendar and date picker.
+                    </p>
+                  </div>
+                </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest ml-1 mb-2">Public URL Slug</label>
-                  <div className="flex rounded-2xl shadow-sm overflow-hidden border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50">
-                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950/60 px-5 text-slate-500 dark:text-slate-500 text-xs font-bold border-r-2 border-slate-100 dark:border-slate-800">
+                  <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Public URL Slug</label>
+                  <div className="flex rounded-2xl shadow-sm overflow-hidden border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 items-center pr-2">
+                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-950/60 px-5 py-4 text-slate-500 dark:text-slate-500 text-xs font-bold border-r-2 border-slate-100 dark:border-slate-800 self-stretch">
                       {process.env.NEXT_PUBLIC_APP_URL || 'fluxbooking.com'}/b/
                     </span>
                     <input
                       type="text"
                       disabled
                       value={tenant?.slug}
-                      className="block w-full min-w-0 flex-1 border-none bg-transparent px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black cursor-not-allowed"
+                      className="block w-full min-w-0 flex-1 border-none bg-transparent px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black cursor-not-allowed focus:outline-none focus:ring-0"
                     />
+                    <Tooltip content="Copy" position="bottom" delay={100}>
+                      <button
+                        type="button"
+                        onClick={handleCopyUrl}
+                        className="p-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer mr-1"
+                      >
+                        {copied ? (
+                          <Check className="h-4 w-4 text-emerald-500 animate-fade-in" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                    </Tooltip>
                   </div>
                   <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium ml-1 flex items-center gap-1.5">
                     <Globe className="h-3 w-3" /> Your unique identifier used for your public booking page.
@@ -539,13 +862,12 @@ export function SettingsClient({
               </div>
             </div>
 
-            {userRole === "ADMIN" && (
-              <LocationList 
-                locations={tenant?.locations || []} 
-                isPro={tenant?.plan === "PRO"} 
-                businessType={tenant?.businessType}
-              />
-            )}
+            <LocationList 
+              locations={tenant?.locations || []} 
+              isPro={tenant?.plan === "PRO"} 
+              businessType={tenant?.businessType}
+              userRole={userRole}
+            />
           </div>
         );
       case "billing":
@@ -559,6 +881,9 @@ export function SettingsClient({
                 subscriptionId={tenant?.lemonSqueezySubscriptionId}
                 subscriptionEndsAt={tenant?.subscriptionEndsAt}
                 trialEndsAt={tenant?.trialEndsAt}
+                invoices={invoices}
+                onViewInvoice={setSelectedInvoice}
+                onDownloadInvoice={handleDownloadInvoice}
               />
             )}
           </div>
@@ -587,7 +912,7 @@ export function SettingsClient({
               </div>
               <div className="p-8 space-y-8">
                 <div>
-                  <label className="block text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest ml-1 mb-2">Admin Email</label>
+                  <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Admin Email</label>
                   <input
                     type="text"
                     disabled
@@ -595,7 +920,11 @@ export function SettingsClient({
                     className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black shadow-sm cursor-not-allowed"
                   />
                 </div>
-                <button className="text-sm font-black text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-widest flex items-center gap-2 group transition-all">
+                <button 
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-profile-modal", { detail: { mode: "security" } }))}
+                  className="text-sm font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-2 group transition-all"
+                >
                   Change Password
                   <span className="h-1 w-0 group-hover:w-8 bg-indigo-600 dark:bg-indigo-400 transition-all duration-300"></span>
                 </button>
@@ -622,15 +951,15 @@ export function SettingsClient({
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-4">
+    <div className="flex-1 flex flex-col space-y-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Settings</h2>
+          <h2 className="text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">Settings</h2>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex-shrink-0 mb-10 px-4">
+      <div className="flex-shrink-0 px-2">
         <div className="flex flex-wrap items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm self-start inline-flex">
           {tabs.map((tab) => (
             <button
@@ -654,9 +983,122 @@ export function SettingsClient({
         </div>
       </div>
 
-      <div className="flex-1 px-4">
+      <div className="flex-1 px-2">
         {renderTabContent()}
       </div>
+
+      {selectedInvoice && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-905 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative flex flex-col space-y-6">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <FileText className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Invoice Details</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedInvoice(null)}
+                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 text-sm font-black p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Invoice Info */}
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Billed From</span>
+                <span className="block font-bold text-slate-850 dark:text-slate-200 mt-1">FluxBooking Inc.</span>
+                <span className="block text-xs text-slate-550 dark:text-slate-450 mt-0.5">100 Tech Way, Suite 400<br/>San Francisco, CA 94107</span>
+              </div>
+              <div className="text-right">
+                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Billed To</span>
+                <span className="block font-bold text-slate-850 dark:text-slate-200 mt-1">{tenant?.name}</span>
+                <span className="block text-xs text-slate-550 dark:text-slate-450 mt-0.5">{sessionUser?.email}</span>
+                {sessionUser?.phone && (
+                  <span className="block text-xs text-slate-550 dark:text-slate-455 mt-0.5">Phone: {sessionUser.phone}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <span className="block text-slate-400 font-medium">Invoice Number</span>
+                <span className="block font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedInvoice.number}</span>
+              </div>
+              <div>
+                <span className="block text-slate-400 font-medium">Billing Date</span>
+                <span className="block font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedInvoice.date.toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </div>
+              <div>
+                <span className="block text-slate-400 font-medium">Payment Method</span>
+                <span className="block font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedInvoice.paymentMethod}</span>
+              </div>
+              <div>
+                <span className="block text-slate-400 font-medium">Status</span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 mt-0.5">
+                  Paid
+                </span>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800">
+                    <th className="p-4 font-black text-slate-505 uppercase tracking-wider">Description</th>
+                    <th className="p-4 font-black text-slate-505 uppercase tracking-wider text-right">Qty</th>
+                    <th className="p-4 font-black text-slate-505 uppercase tracking-wider text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="p-4 text-slate-700 dark:text-slate-300 font-bold">{selectedInvoice.description}</td>
+                    <td className="p-4 text-slate-700 dark:text-slate-300 text-right font-bold">1</td>
+                    <td className="p-4 text-slate-700 dark:text-slate-300 text-right font-black">{selectedInvoice.amount}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div className="flex justify-end text-sm">
+              <div className="w-48 space-y-1.5">
+                <div className="flex justify-between text-slate-505 text-xs">
+                  <span>Subtotal</span>
+                  <span className="font-bold">{selectedInvoice.amount}</span>
+                </div>
+                <div className="flex justify-between text-slate-505 text-xs">
+                  <span>Tax (0%)</span>
+                  <span>$0.00</span>
+                </div>
+                <div className="flex justify-between text-slate-900 dark:text-white font-bold pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <span>Total Paid</span>
+                  <span>{selectedInvoice.amount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setSelectedInvoice(null)}
+                className="px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleDownloadInvoice(selectedInvoice)}
+                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md cursor-pointer"
+              >
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

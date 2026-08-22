@@ -423,6 +423,10 @@ export function ManualBooking({
     initialData?.price ? initialData.price.toString() : ""
   );
 
+  const [specialRequest, setSpecialRequest] = useState<string>(
+    initialData?.notes || ""
+  );
+
   const [customerInfo, setCustomerInfo] = useState({
     id: initialData?.customerId || "",
     name: initialData?.customerName || "",
@@ -1255,6 +1259,7 @@ export function ManualBooking({
     formData.append("customerEmail", customerInfo.email);
     if (customerInfo.id) formData.append("customerId", customerInfo.id);
     if (customPrice) formData.append("price", customPrice);
+    formData.append("notes", specialRequest);
 
     let result;
     if (mode === "edit") {
@@ -1292,6 +1297,7 @@ export function ManualBooking({
       setSelectedStaffId(staff.length > 0 ? staff[0].id : "");
       setCustomerInfo({ id: "", name: "", email: "", phone: "" });
       setCustomerSearch("");
+      setSpecialRequest("");
     }
   };
 
@@ -1308,7 +1314,7 @@ export function ManualBooking({
             <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
               {mode === 'edit' ? `Edit ${labels.appointment}` : `Add ${labels.appointment}`}
             </h2>
-            <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Manual Booking Form</p>
+            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Manual Booking Form</p>
           </div>
         </div>
         <button 
@@ -1325,7 +1331,7 @@ export function ManualBooking({
       >
         {/* Service Selector */}
         <div className="space-y-2 relative" ref={serviceRef}>
-          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select {labels.service} <span className="text-rose-500">*</span></label>
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Select {labels.service} <span className="text-rose-500">*</span></label>
           <button 
             type="button"
             onClick={() => {
@@ -1388,7 +1394,7 @@ export function ManualBooking({
 
         {/* Team Member Selector */}
         <div className="space-y-2 relative" ref={staffRef}>
-          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select {labels.staff} <span className="text-rose-500">*</span></label>
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Select {labels.staff} <span className="text-rose-500">*</span></label>
           <button 
             type="button"
             onClick={() => {
@@ -1452,7 +1458,7 @@ export function ManualBooking({
 
         {/* Date Selector */}
         <div className="space-y-2 relative" ref={datePickerRef}>
-          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Booking Date <span className="text-rose-500">*</span></label>
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Booking Date <span className="text-rose-500">*</span></label>
           <div className="relative">
             <input
               type="text"
@@ -1604,7 +1610,7 @@ export function ManualBooking({
         <div className="grid grid-cols-2 gap-4">
           {/* Start Time Selector */}
           <div className="space-y-2 relative" ref={startTimeRef}>
-            <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Start Time <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Start Time <span className="text-rose-500">*</span></label>
             <div 
               onClick={() => {
                 if (!isStartTimeOpen) {
@@ -1735,7 +1741,7 @@ export function ManualBooking({
 
           {/* End Time Selector */}
           <div className="space-y-2 relative" ref={endTimeRef}>
-            <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">End Time <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">End Time <span className="text-rose-500">*</span></label>
             <div 
               onClick={() => {
                 if (!isEndTimeOpen) {
@@ -1865,7 +1871,7 @@ export function ManualBooking({
 
         {/* Service Price Field */}
         <div className="space-y-2">
-          <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Price</label>
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Price</label>
           <div className={`flex items-center gap-3 bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-bold hover:border-indigo-200 dark:hover:border-slate-600 transition-all ${selectedService ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}>
             <span className="text-base font-bold text-indigo-600 dark:text-indigo-400 w-5 text-center select-none">{getCurrencySymbol(currency)}</span>
             <div className="flex-1">
@@ -1886,7 +1892,7 @@ export function ManualBooking({
         {/* Customer Section */}
         <div className="space-y-4 pt-2 border-t border-indigo-100/30 dark:border-slate-800">
           <div>
-            <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select {labels.customer} <span className="text-rose-500">*</span></label>
+            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Select {labels.customer} <span className="text-rose-500">*</span></label>
           </div>
 
           {!customerInfo.name ? (
@@ -2004,6 +2010,17 @@ export function ManualBooking({
           )}
         </div>
 
+        {/* Special Request / Notes */}
+        <div className="space-y-2">
+          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Special Request / Notes</label>
+          <textarea
+            value={specialRequest}
+            onChange={(e) => setSpecialRequest(e.target.value)}
+            placeholder="Any special instructions or requests (optional)..."
+            rows={3}
+            className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 hover:border-indigo-200 dark:hover:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none resize-none transition-all"
+          />
+        </div>
 
       </div>
 

@@ -177,7 +177,7 @@ export function CustomersClient({
         {/* Unified Dashboard Header */}
         <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{labels.customer}s</h2>
+            <h2 className="text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">{labels.customer}s</h2>
             <div className="flex items-center gap-2 mt-1">
               <div className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{customers.length} Total {labels.customer}s</p>
@@ -414,7 +414,7 @@ export function CustomersClient({
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                            Add {labels.customer}
                         </h2>
-                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">New Patient File</p>
+                        <p className="text-xs font-bold text-slate-500">New Patient File</p>
                      </div>
                   </div>
                   <button 
@@ -455,7 +455,7 @@ export function CustomersClient({
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                            Edit {labels.customer}
                         </h2>
-                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Configuring {editingCustomer.name}</p>
+                        <p className="text-xs font-bold text-slate-500">Configuring {editingCustomer.name}</p>
                      </div>
                   </div>
                   <button 
@@ -469,7 +469,7 @@ export function CustomersClient({
                <form onSubmit={handleUpdate} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate={false}>
                  <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                         Full Name <span className="text-rose-500">*</span>
                       </label>
                       <input 
@@ -482,7 +482,7 @@ export function CustomersClient({
                     </div>
                     
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                         Email Address <span className="text-rose-500">*</span>
                       </label>
                       <input 
@@ -496,7 +496,7 @@ export function CustomersClient({
                     </div>
                     
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Phone Number</label>
+                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Phone Number</label>
                       <PhoneInput 
                         name="phone" 
                         defaultValue={editingCustomer.phone || ""} 
@@ -506,7 +506,7 @@ export function CustomersClient({
                     </div>
                     
                     <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">Internal Notes</label>
+                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Internal Notes</label>
                       <textarea 
                         name="notes" 
                         rows={3} 
