@@ -11,8 +11,8 @@ const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 };
@@ -104,7 +104,7 @@ export default function ForgotPasswordPage() {
             )}
             <div className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                <label htmlFor="email" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                   Email address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
@@ -118,10 +118,10 @@ export default function ForgotPasswordPage() {
                       setEmail(e.target.value);
                       setFieldError(null);
                     }}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm pl-11 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none transition-all sm:text-sm font-medium shadow-sm pl-11 ${
                       fieldError 
-                        ? "border-rose-100 bg-rose-50 focus:border-rose-500 focus:ring-rose-500/10" 
-                        : "border-indigo-100/50 bg-indigo-50/30 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200"
+                        ? "border-rose-100 bg-rose-50 focus:border-rose-500" 
+                        : "border-indigo-100/50 bg-indigo-50/30 focus:border-indigo-600 hover:border-indigo-200"
                     }`}
                     placeholder="john@example.com"
                   />

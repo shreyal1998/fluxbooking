@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserCircle, Mail, FileText, Loader2, Check } from "lucide-react";
+import { UserCircle, Mail, FileText, Loader2, Check, AlertCircle } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { addCustomer } from "@/app/actions/customer";
 import { toast } from "sonner";
@@ -29,6 +29,16 @@ export function AddCustomerForm({
   const labels = getLabels(businessType);
   const countryData = COUNTRIES.find(c => c.code === (country || "US"));
   const dialCode = countryData?.phoneCode ? `+${countryData.phoneCode} ` : "+1 ";
+
+  const clearFieldError = (field: string) => {
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,7 +86,8 @@ export function AddCustomerForm({
     if (!message) return null;
     return (
       <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-semibold">{message}</span>
       </div>
     );
   };
@@ -95,6 +106,8 @@ export function AddCustomerForm({
                 name="name"
                 type="text"
                 required
+                onChange={() => clearFieldError("name")}
+                onFocus={() => clearFieldError("name")}
                 placeholder={labels.customerPlaceholder}
                 className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
                   fieldErrors.name 
@@ -116,6 +129,8 @@ export function AddCustomerForm({
                 name="email"
                 type="email"
                 required
+                onChange={() => clearFieldError("email")}
+                onFocus={() => clearFieldError("email")}
                 placeholder="customer@example.com"
                 className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
                   fieldErrors.email 
@@ -134,7 +149,11 @@ export function AddCustomerForm({
               defaultCountry={country || "US"}
               defaultValue=""
               placeholder="234 567 890"
+              hasError={!!fieldErrors.phone}
+              onChange={() => clearFieldError("phone")}
+              onFocus={() => clearFieldError("phone")}
             />
+            <InputError message={fieldErrors.phone} />
           </div>
 
           <div>

@@ -647,7 +647,8 @@ export function BookingsClient({
           color: b.service.color,
           serviceDuration: b.service.durationMinutes,
           customerName: displayCustomerName,
-          serviceName: b.service.name
+          serviceName: b.service.name,
+          bufferTime: b.service?.bufferTime || 0
         };
       }) || []),
       ...(filteredBlocked?.map((s) => ({
@@ -1499,7 +1500,7 @@ export function BookingsClient({
               <div className="p-8 space-y-6 bg-white dark:bg-slate-900 rounded-b-[2.5rem]">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0 space-y-2" ref={startDropdownRef}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Start Time</label>
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Start Time</label>
                     <div className="relative group">
                       <button 
                         type="button"
@@ -1544,7 +1545,7 @@ export function BookingsClient({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0 space-y-2" ref={endDropdownRef}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">End Time</label>
+                    <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">End Time</label>
                     <div className="relative group">
                       <button 
                         type="button"

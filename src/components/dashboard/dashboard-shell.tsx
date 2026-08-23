@@ -17,7 +17,8 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
-  CalendarCheck
+  CalendarCheck,
+  Headphones
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -165,6 +166,7 @@ export function DashboardShell({
       { name: labels.customer + "s", href: `/${labels.customerSlug}`, icon: labels.customerIcon },
       { name: "My Schedule", href: "/my-schedule", icon: Clock },
       { name: "Settings", href: "/settings/business", icon: Settings },
+      { name: "Support", href: "/support", icon: Headphones },
     ];
     return items;
   }, [labels]);

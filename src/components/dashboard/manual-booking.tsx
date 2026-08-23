@@ -38,8 +38,8 @@ function InputError({ message }: { message?: string }) {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 }

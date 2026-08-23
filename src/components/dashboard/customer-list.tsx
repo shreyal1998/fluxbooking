@@ -28,13 +28,14 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { getLabels } from "@/lib/labels";
 import { Tooltip } from "@/components/ui/tooltip";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 };
@@ -350,7 +351,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                    <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                              <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Status</label>
+                              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Status</label>
                               <select 
                                   name="status" 
                                   defaultValue={editingCustomer.status} 
@@ -362,7 +363,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                               </select>
                           </div>
                           <div>
-                              <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Full Name</label>
+                              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Full Name</label>
                               <input 
                                 name="name" 
                                 defaultValue={editingCustomer.name} 
@@ -379,7 +380,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                           </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Email Address</label>
+                        <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Email Address</label>
                         <input 
                           name="email" 
                           type="email" 
@@ -395,11 +396,17 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                         <InputError message={fieldErrors.email} />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Phone Number</label>
-                        <input name="phone" defaultValue={editingCustomer.phone || ""} placeholder="+1 234 567 890" className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-transparent hover:border-indigo-200 focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all" />
+                        <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Phone Number</label>
+                        <PhoneInput 
+                          name="phone" 
+                          defaultValue={editingCustomer.phone || ""} 
+                          hasError={!!fieldErrors.phone}
+                          onChange={() => clearFieldError("phone")}
+                          onFocus={() => clearFieldError("phone")}
+                        />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest mb-2 opacity-40">Internal Notes</label>
+                        <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Internal Notes</label>
                         <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-transparent hover:border-indigo-200 focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
                       </div>
                    </div>
@@ -434,7 +441,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 </p>
 
                 <div className="space-y-4 text-left">
-                  <label className="block text-xs font-medium text-slate-900 dark:text-white uppercase tracking-widest ml-1 opacity-40">Reason for Inactivating</label>
+                  <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Reason for Inactivating</label>
                   <select 
                     value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}

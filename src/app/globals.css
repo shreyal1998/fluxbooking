@@ -112,30 +112,30 @@ body {
 .liquid-blob {
   width: 14px !important;
   height: 14px !important;
-  background-color: #4f46e5 !important;
+  background-color: var(--liquid-blob-1, #4f46e5);
   border-radius: 50% !important;
-  box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
+  box-shadow: var(--liquid-blob-shadow, 0 0 15px rgba(79, 70, 229, 0.4));
   animation: liquidBounce 1.4s infinite ease-in-out !important;
 }
 
 .liquid-blob:nth-child(2) {
   animation-delay: 0.2s !important;
-  background-color: #6366f1 !important;
+  background-color: var(--liquid-blob-2, #6366f1);
 }
 
 .liquid-blob:nth-child(3) {
   animation-delay: 0.4s !important;
-  background-color: #818cf8 !important;
+  background-color: var(--liquid-blob-3, #818cf8);
 }
 
 /* Dark Mode High-Visibility Overrides */
-.dark .liquid-blob {
-  background-color: #818cf8 !important;
-  box-shadow: 0 0 20px rgba(129, 140, 248, 0.5);
+.dark .liquid-blob:not([style*="--liquid"]) {
+  background-color: var(--liquid-blob-1, #818cf8);
+  box-shadow: var(--liquid-blob-shadow, 0 0 20px rgba(129, 140, 248, 0.5));
 }
 
-.dark .liquid-blob:nth-child(2) { background-color: #a5b4fc !important; }
-.dark .liquid-blob:nth-child(3) { background-color: #c7d2fe !important; }
+.dark .liquid-blob:nth-child(2):not([style*="--liquid"]) { background-color: var(--liquid-blob-2, #a5b4fc); }
+.dark .liquid-blob:nth-child(3):not([style*="--liquid"]) { background-color: var(--liquid-blob-3, #c7d2fe); }
 
 @keyframes liquidBounce {
   0%, 100% { 

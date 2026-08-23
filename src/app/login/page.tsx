@@ -12,8 +12,8 @@ const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 };
@@ -84,7 +84,7 @@ function LoginForm() {
           </h2>
           <p className="mt-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-bold text-indigo-600 dark:text-indigo-400 underline-offset-4 hover:underline">
+            <Link href="/register" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
               Register business
             </Link>
           </p>
@@ -93,8 +93,8 @@ function LoginForm() {
         {registered && (
           <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl text-sm font-bold border border-emerald-100 dark:border-emerald-900/30 text-center animate-fade-in">
             {registered === "password_reset_success" 
-              ? "Password reset successful! Please log in with your new password."
-              : "Registration successful! Please log in."}
+              ? "Password reset successfully! Please log in with your new password."
+              : "Registration successful! Please log in to continue."}
           </div>
         )}
 
@@ -113,7 +113,7 @@ function LoginForm() {
           )}
           <div className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <label htmlFor="email" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Email address <span className="text-rose-500">*</span>
               </label>
               <input
@@ -122,17 +122,17 @@ function LoginForm() {
                 type="email"
                 required
                 onChange={() => clearFieldError("email")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
                   fieldErrors.email 
-                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                 }`}
                 placeholder="john@example.com"
               />
               <InputError message={fieldErrors.email} />
             </div>
             <div>
-              <label htmlFor="password" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <label htmlFor="password" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -142,10 +142,10 @@ function LoginForm() {
                     type={showPassword ? "text" : "password"}
                     required
                     onChange={() => clearFieldError("password")}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm pr-10 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm pr-10 ${
                       fieldErrors.password 
-                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                     }`}
                     placeholder="••••••••"
                   />
@@ -160,7 +160,7 @@ function LoginForm() {
               <InputError message={fieldErrors.password} />
 
               <div className="flex justify-end mt-2.5 mr-1 text-xs font-bold">
-                <Link href="/forgot-password" className="text-indigo-600 hover:text-indigo-500 underline-offset-4 hover:underline transition-colors">
+                <Link href="/forgot-password" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors font-medium">
                   Forgot password?
                 </Link>
               </div>

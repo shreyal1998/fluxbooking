@@ -133,7 +133,10 @@ export default async function PublicBookingPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden">
+    <div 
+      data-brand-color={tenant.primaryColor || "#6366f1"}
+      className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden"
+    >
       <ThemeCleaner />
       {/* Background Decorative Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/20 rounded-full blur-[120px]"></div>
@@ -185,12 +188,12 @@ export default async function PublicBookingPage({
           />
         </div>
 
-        <div className="mt-12 text-center space-y-4 animate-fade-in">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Powered by FluxBooking SaaS</p>
+        <div className="mt-12 text-center space-y-3 animate-fade-in">
+          <p className="text-xs font-normal text-slate-500">Powered by FluxBooking</p>
           <div className="flex items-center justify-center gap-6">
-             <Link href="/privacy" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Privacy</Link>
-             <Link href="/terms" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Terms</Link>
-             <Link href="/help" className="text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors">Support</Link>
+             <Link href="/privacy" className="text-xs font-normal text-slate-500 hover:text-slate-900 transition-colors">Privacy</Link>
+             <Link href="/terms" className="text-xs font-normal text-slate-500 hover:text-slate-900 transition-colors">Terms</Link>
+             <Link href="/help" className="text-xs font-normal text-slate-500 hover:text-slate-900 transition-colors">Support</Link>
           </div>
         </div>
       </div>

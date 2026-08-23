@@ -14,8 +14,8 @@ const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 };
@@ -31,6 +31,7 @@ function RegisterContent() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [countrySearch, setCountrySearch] = useState("");
   const [dropdownDirection, setDropdownDirection] = useState<"up" | "down">("down");
+  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   
   // Specific Refs for each dropdown to ensure "Click Outside" works perfectly
   const countryRef = useRef<HTMLDivElement>(null);
@@ -181,7 +182,7 @@ function RegisterContent() {
           </h2>
           <p className="mt-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-indigo-600 dark:text-indigo-400 underline-offset-4 hover:underline">
+            <Link href="/login" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
               Log in
             </Link>
           </p>
@@ -199,7 +200,7 @@ function RegisterContent() {
 
           <div className="space-y-5">
             <div>
-              <label htmlFor="name" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <label htmlFor="name" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Full Name <span className="text-rose-500">*</span>
               </label>
               <input
@@ -207,10 +208,10 @@ function RegisterContent() {
                 name="name"
                 type="text"
                 onChange={() => clearFieldError("name")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
                   fieldErrors.name 
-                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                 }`}
                 placeholder="John Doe"
               />
@@ -218,7 +219,7 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <label htmlFor="email" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Email address <span className="text-rose-500">*</span>
               </label>
               <input
@@ -226,10 +227,10 @@ function RegisterContent() {
                 name="email"
                 type="email"
                 onChange={() => clearFieldError("email")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
                   fieldErrors.email 
-                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                 }`}
                 placeholder="john@example.com"
               />
@@ -238,7 +239,7 @@ function RegisterContent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="password" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                <label htmlFor="password" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                   Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
@@ -247,10 +248,10 @@ function RegisterContent() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     onChange={() => clearFieldError("password")}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm pr-10 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm pr-10 ${
                       fieldErrors.password 
-                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                     }`}
                     placeholder="••••••••"
                   />
@@ -265,7 +266,7 @@ function RegisterContent() {
                 <InputError message={fieldErrors.password} />
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                   Confirm Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
@@ -274,10 +275,10 @@ function RegisterContent() {
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     onChange={() => clearFieldError("confirmPassword")}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm pr-10 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm pr-10 ${
                       fieldErrors.confirmPassword 
-                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                        : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                     }`}
                     placeholder="••••••••"
                   />
@@ -294,7 +295,7 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label htmlFor="businessName" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <label htmlFor="businessName" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Business Name <span className="text-rose-500">*</span>
               </label>
               <input
@@ -302,10 +303,10 @@ function RegisterContent() {
                 name="businessName"
                 type="text"
                 onChange={() => clearFieldError("businessName")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
                   fieldErrors.businessName 
-                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                 }`}
                 placeholder="My Awesome Salon"
               />
@@ -313,7 +314,7 @@ function RegisterContent() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Country <span className="text-rose-500">*</span>
               </label>
               <div className="relative" ref={countryRef}>
@@ -348,7 +349,7 @@ function RegisterContent() {
                           value={countrySearch}
                           onChange={(e) => setCountrySearch(e.target.value)}
                           autoComplete="off"
-                          className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                          className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
                         />
                       </div>
                     </div>
@@ -378,23 +379,48 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+              <label htmlFor="phone" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Phone Number <span className="text-rose-500">*</span>
               </label>
-              <div className="flex gap-2">
-                <div className="w-20 bg-slate-100 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-center text-sm font-black text-slate-500 shadow-sm">
+              <div 
+                className={`relative flex items-center w-full rounded-2xl border-2 transition-colors duration-75 shadow-sm cursor-text ${
+                  fieldErrors.phone 
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus-within:border-rose-500" 
+                    : isPhoneFocused
+                      ? "border-indigo-600 dark:border-indigo-500 bg-white dark:bg-slate-900"
+                      : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-indigo-800"
+                }`}
+              >
+                <div className="flex items-center px-4 py-3 text-sm font-mono text-slate-800 dark:text-slate-200 border-r border-indigo-100/50 dark:border-indigo-900/50 select-none">
                    +{selectedCountry?.phoneCode || "--"}
                 </div>
                 <input
                   id="phone"
                   name="phone"
                   type="tel"
-                  onChange={() => clearFieldError("phone")}
-                  className={`flex-1 rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 transition-all sm:text-sm font-medium shadow-sm ${
-                    fieldErrors.phone 
-                      ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500 focus:ring-rose-500/10" 
-                      : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
-                  }`}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  onFocus={() => {
+                    setIsPhoneFocused(true);
+                    clearFieldError("phone");
+                  }}
+                  onBlur={() => setIsPhoneFocused(false)}
+                  onKeyDown={(e) => {
+                    if (
+                      !/^\d$/.test(e.key) &&
+                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
+                      !e.ctrlKey &&
+                      !e.metaKey
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    e.target.value = digits;
+                    clearFieldError("phone");
+                  }}
+                  className="flex-1 bg-transparent px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none sm:text-sm font-medium"
                   placeholder="234 567 890"
                 />
               </div>
@@ -403,7 +429,7 @@ function RegisterContent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+                <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                   Type <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative" ref={typeRef}>
@@ -453,7 +479,7 @@ function RegisterContent() {
               </div>
 
               <div>
-                <label htmlFor="slug" className="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1 mb-2">
+                <label htmlFor="slug" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                   Custom URL <span className="text-rose-500">*</span>
                 </label>
                 <div className={`flex rounded-2xl shadow-sm overflow-hidden border-2 transition-all ${

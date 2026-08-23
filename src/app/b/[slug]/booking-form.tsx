@@ -47,8 +47,8 @@ const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 };
@@ -103,6 +103,7 @@ export function BookingForm({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const clearFieldError = (field: string) => {
@@ -157,7 +158,7 @@ export function BookingForm({
   if (!hasMounted) {
     return (
       <div className="flex justify-center items-center p-24">
-        <LiquidLoader />
+        <LiquidLoader color={primaryColor} />
       </div>
     );
   }
@@ -260,7 +261,7 @@ export function BookingForm({
     <div className="flex flex-col h-full">
       {/* Reschedule Badge */}
       {isRescheduling && (
-        <div className="px-8 py-3 bg-indigo-600 text-white flex items-center justify-center gap-2">
+        <div className="px-8 py-3 text-white flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor }}>
            <RefreshCcw className="h-4 w-4 animate-spin-slow" />
            <span className="text-xs font-black uppercase tracking-widest">Rescheduling Mode Active</span>
         </div>
@@ -440,7 +441,7 @@ export function BookingForm({
 
             {loadingSlots ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <LiquidLoader />
+                <LiquidLoader color={primaryColor} />
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Searching available slots...</p>
               </div>
             ) : slots.length > 0 ? (
@@ -536,43 +537,69 @@ export function BookingForm({
               {!isRescheduling && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                    <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">
                       Your Name <span className="text-rose-500">*</span>
                     </label>
                     <input
                       name="customerName"
                       type="text"
                       required
+                      onFocus={() => {
+                        setFocusedField("name");
+                        clearFieldError("customerName");
+                      }}
+                      onBlur={() => setFocusedField(null)}
                       onChange={() => clearFieldError("customerName")}
-                      className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
+                      style={{
+                        borderColor: fieldErrors.customerName
+                          ? undefined
+                          : (focusedField === "name" ? primaryColor : `${primaryColor}25`),
+                        backgroundColor: fieldErrors.customerName
+                          ? undefined
+                          : (focusedField === "name" ? "#ffffff" : `${primaryColor}08`),
+                      }}
+                      className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-colors duration-75 font-medium text-slate-900 shadow-sm ${
                         fieldErrors.customerName 
                           ? "border-rose-100 bg-rose-50 focus:border-rose-500" 
-                          : "border-slate-300 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-slate-300"
+                          : ""
                       }`}
                       placeholder="Enter your full name"
                     />
                     <InputError message={fieldErrors.customerName} />
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                    <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">
                       Email Address <span className="text-rose-500">*</span>
                     </label>
                     <input
                       name="customerEmail"
                       type="email"
                       required
+                      onFocus={() => {
+                        setFocusedField("email");
+                        clearFieldError("customerEmail");
+                      }}
+                      onBlur={() => setFocusedField(null)}
                       onChange={() => clearFieldError("customerEmail")}
-                      className={`w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 ${
+                      style={{
+                        borderColor: fieldErrors.customerEmail
+                          ? undefined
+                          : (focusedField === "email" ? primaryColor : `${primaryColor}25`),
+                        backgroundColor: fieldErrors.customerEmail
+                          ? undefined
+                          : (focusedField === "email" ? "#ffffff" : `${primaryColor}08`),
+                      }}
+                      className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-colors duration-75 font-medium text-slate-900 shadow-sm ${
                         fieldErrors.customerEmail 
                           ? "border-rose-100 bg-rose-50 focus:border-rose-500" 
-                          : "border-slate-300 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-slate-300"
+                          : ""
                       }`}
                       placeholder="name@example.com"
                     />
                     <InputError message={fieldErrors.customerEmail} />
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                    <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">
                       Phone Number
                     </label>
                     <PhoneInput
@@ -580,17 +607,27 @@ export function BookingForm({
                       defaultValue=""
                       defaultCountry={country || "US"}
                       placeholder="234 567 890"
+                      hasError={!!fieldErrors.customerPhone}
+                      primaryColor={primaryColor}
+                      onChange={() => clearFieldError("customerPhone")}
+                      onFocus={() => clearFieldError("customerPhone")}
                     />
                     <InputError message={fieldErrors.customerPhone} />
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1 mb-2">
+                    <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">
                       Special Request / Notes
                     </label>
                     <textarea
                       name="notes"
                       rows={3}
-                      className="w-full border-2 rounded-2xl px-5 py-4 focus:bg-white focus:outline-none focus:ring-4 transition-all font-medium text-slate-900 border-slate-300 bg-slate-50 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-slate-300 resize-none placeholder-slate-400"
+                      onFocus={() => setFocusedField("notes")}
+                      onBlur={() => setFocusedField(null)}
+                      style={{
+                        borderColor: focusedField === "notes" ? primaryColor : `${primaryColor}25`,
+                        backgroundColor: focusedField === "notes" ? "#ffffff" : `${primaryColor}08`,
+                      }}
+                      className="w-full rounded-2xl border-2 p-5 text-sm focus:outline-none transition-colors duration-75 font-medium text-slate-900 shadow-sm resize-none placeholder-slate-400"
                       placeholder="Any special instructions or requests (optional)..."
                     />
                   </div>

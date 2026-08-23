@@ -137,6 +137,8 @@ export function ServicesClient({
     const errors: Record<string, string> = {};
     if (!name) errors.name = "Service name is required";
     if (!duration) errors.duration = "Duration is required";
+    const bufferTimeVal = parseInt(formData.get("bufferTime") as string) || 0;
+    if (bufferTimeVal > 0 && bufferTimeVal < 5) errors.bufferTime = "Buffer time must be at least 5 minutes";
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -159,8 +161,8 @@ export function ServicesClient({
     if (!message) return null;
     return (
       <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-semibold">{message}</span>
       </div>
     );
   };
@@ -529,9 +531,15 @@ export function ServicesClient({
                             min="0"
                             defaultValue={editingService.bufferTime || 0}
                             placeholder="10"
-                            className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                            onChange={() => clearFieldError("bufferTime")}
+                            className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
+                              fieldErrors.bufferTime
+                                ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500"
+                                : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                            }`}
                           />
                         </div>
+                        <InputError message={fieldErrors.bufferTime} />
                       </div>
                     </div>
 

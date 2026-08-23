@@ -27,8 +27,8 @@ function InputError({ message }: { message?: string }) {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200 text-left">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 }
@@ -563,7 +563,7 @@ export function QuickBlockForm({
               placeholder="e.g., Lunch Break, Errand"
               onChange={() => clearFieldError("reason")}
               className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
-                fieldErrors.reason ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-200/80 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-300 dark:hover:border-slate-600"
+                fieldErrors.reason ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
               }`}
             />
             <InputError message={fieldErrors.reason} />
@@ -607,7 +607,7 @@ export function QuickBlockForm({
                   setFieldErrors(prev => ({ ...prev, blockDate: "Please enter a valid date in dd/mm/yyyy format." }));
                 }}
                 className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
-                  fieldErrors.blockDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-200/80 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-300 dark:hover:border-slate-600"
+                  fieldErrors.blockDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
                 }`}
               />
               <button
@@ -731,7 +731,7 @@ export function QuickBlockForm({
                   setIsStartTimeOpen(!isStartTimeOpen);
                 }}
                 className={`relative flex items-center w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl shadow-sm transition-all px-4 py-2.5 gap-2 cursor-pointer ${
-                  fieldErrors.startTime ? "border-rose-200 bg-rose-50/30 focus-within:border-rose-500" : "border-indigo-200/80 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
+                  fieldErrors.startTime ? "border-rose-200 bg-rose-50/30 focus-within:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
                 }`}
               >
                 <div className="relative w-14 flex-shrink-0" onClick={e => e.stopPropagation()}>
@@ -844,7 +844,7 @@ export function QuickBlockForm({
                   setIsEndTimeOpen(!isEndTimeOpen);
                 }}
                 className={`relative flex items-center w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl shadow-sm transition-all px-4 py-2.5 gap-2 cursor-pointer ${
-                  fieldErrors.endTime ? "border-rose-200 bg-rose-50/30 focus-within:border-rose-500" : "border-indigo-200/80 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
+                  fieldErrors.endTime ? "border-rose-200 bg-rose-50/30 focus-within:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
                 }`}
               >
                 <div className="relative w-14 flex-shrink-0" onClick={e => e.stopPropagation()}>

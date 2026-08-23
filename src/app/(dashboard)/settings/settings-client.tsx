@@ -576,7 +576,7 @@ export function SettingsClient({
                             ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
                             : openDropdown === "country" 
                               ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -604,7 +604,7 @@ export function SettingsClient({
                                 value={countrySearch}
                                 onChange={(e) => setCountrySearch(e.target.value)}
                                 autoComplete="off"
-                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
                               />
                             </div>
                           </div>
@@ -649,7 +649,7 @@ export function SettingsClient({
                             ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
                             : openDropdown === "timezone" 
                               ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -677,7 +677,7 @@ export function SettingsClient({
                                 value={timezoneSearch}
                                 onChange={(e) => setTimezoneSearch(e.target.value)}
                                 autoComplete="off"
-                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
+                                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-950 outline-none transition-all focus:border-indigo-500/40 shadow-sm"
                               />
                             </div>
                           </div>
@@ -724,7 +724,7 @@ export function SettingsClient({
                             ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
                             : openDropdown === "format" 
                               ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" 
-                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -782,7 +782,7 @@ export function SettingsClient({
                             ? "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 text-slate-700 dark:text-slate-400 cursor-not-allowed"
                             : openDropdown === "weekstart"
                               ? "border-indigo-600 shadow-lg shadow-indigo-500/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 focus:ring-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-800"
+                              : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -973,7 +973,7 @@ export function SettingsClient({
             >
               <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-400"}`} />
               <div className="text-left">
-                <div className="text-xs font-medium uppercase leading-none mb-0.5">{tab.label}</div>
+                <div className="text-xs font-semibold leading-none mb-0.5">{tab.label}</div>
                 <div className={`text-xs font-medium whitespace-nowrap hidden sm:block ${activeTab === tab.id ? "text-indigo-400 dark:text-indigo-300/60" : "text-slate-600 dark:text-slate-400"}`}>
                   {tab.description}
                 </div>

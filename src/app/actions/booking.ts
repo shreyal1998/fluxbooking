@@ -156,7 +156,7 @@ export async function getAvailableSlots(
     const duration = service.durationMinutes;
     const buffer = service.bufferTime || 0;
     const totalDuration = duration + buffer;
-    const stepMinutes = duration > 0 ? duration : 15;
+    const stepMinutes = 15; // Step by 15-minute intervals for flexible start times (Option 1)
 
     // Generate potential slots from all staff shifts
     for (const shift of staffShifts) {

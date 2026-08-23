@@ -88,15 +88,15 @@ export function BrandingSettings({ initialColor, initialLogo }: { initialColor: 
         <div className="flex gap-4">
           <button
             onClick={() => setSelectedColor(initialColor)}
-            disabled={loading || selectedColor === initialColor}
-            className="flex-1 py-4 rounded-2xl font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-transparent disabled:border-slate-100 dark:disabled:border-slate-800 disabled:bg-slate-50/50 dark:disabled:bg-slate-900/50"
+            disabled={loading}
+            className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl border border-slate-200/60 dark:border-slate-700/60 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            disabled={loading || selectedColor === initialColor}
-            className="flex-[2] bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl dark:shadow-none border border-transparent dark:border-white/10 disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:border-slate-100 dark:disabled:border-slate-800 flex items-center justify-center gap-2"
+            disabled={loading}
+            className="flex-[2] bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-4 rounded-2xl font-bold transition-all shadow-xl shadow-indigo-100 dark:shadow-none disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save Branding Changes"}
           </button>

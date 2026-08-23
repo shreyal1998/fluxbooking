@@ -132,8 +132,8 @@ export function AddStaffForm({
     if (!message) return null;
     return (
       <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-        <AlertCircle className="h-3 w-3" />
-        <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs font-semibold">{message}</span>
       </div>
     );
   };
@@ -151,6 +151,7 @@ export function AddStaffForm({
             type="text"
             required
             onChange={() => clearFieldError("name")}
+            onFocus={() => clearFieldError("name")}
             placeholder={labels.staffPlaceholder}
             className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
               fieldErrors.name 
@@ -170,6 +171,7 @@ export function AddStaffForm({
             name="email"
             type="email"
             onChange={() => clearFieldError("email")}
+            onFocus={() => clearFieldError("email")}
             placeholder="practitioner@example.com"
             className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm ${
               fieldErrors.email 
@@ -189,6 +191,9 @@ export function AddStaffForm({
             name="phone"
             defaultValue=""
             defaultCountry={country || "US"}
+            hasError={!!fieldErrors.phone}
+            onChange={() => clearFieldError("phone")}
+            onFocus={() => clearFieldError("phone")}
           />
           <InputError message={fieldErrors.phone} />
         </div>
@@ -200,7 +205,7 @@ export function AddStaffForm({
             name="bio"
             rows={2}
             placeholder={`Describe this ${labels.staffLower}'s expertise...`}
-            className="w-full bg-indigo-50/30 dark:bg-slate-900 border-2 border-indigo-100/50 dark:border-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none focus:ring-4 focus:ring-indigo-500/5 transition-all focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 shadow-sm resize-none"
+            className="w-full bg-indigo-50/30 dark:bg-slate-900 border-2 border-indigo-100/50 dark:border-slate-800 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none transition-all focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 shadow-sm resize-none"
           />
         </div>
 
@@ -214,6 +219,7 @@ export function AddStaffForm({
                   name="password"
                   type={showPassword ? "text" : "password"}
                   onChange={() => clearFieldError("password")}
+                  onFocus={() => clearFieldError("password")}
                   placeholder="Password *"
                   className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
                     showPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"

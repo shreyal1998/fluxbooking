@@ -554,7 +554,7 @@ export function CustomersClient({
                 </p>
 
                 <div className="space-y-4 text-left">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason for Inactivating</label>
+                  <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Reason for Inactivating</label>
                   <select 
                     value={archiveReason}
                     onChange={(e) => setArchiveReason(e.target.value)}

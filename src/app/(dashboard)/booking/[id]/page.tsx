@@ -333,7 +333,9 @@ export default async function BookingDetailPage({ params }: PageProps) {
               <div className="space-y-1 text-sm">
                 <p className="font-medium text-black dark:text-slate-300">{formattedDate}</p>
                 <p className="font-medium text-black dark:text-slate-300">{formattedStart} – {formattedEnd}</p>
-                <p className="text-xs font-medium text-black dark:text-slate-400 mt-1 tracking-wide">{actualDuration} Min</p>
+                <p className="text-xs font-medium text-black dark:text-slate-400 mt-1 tracking-wide">
+                  {actualDuration} Min {booking.service?.bufferTime ? `(+ ${booking.service.bufferTime} Min Buffer)` : ""}
+                </p>
               </div>
             </div>
 

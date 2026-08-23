@@ -66,6 +66,7 @@ interface Event {
   serviceDuration?: number;
   customerName?: string;
   serviceName?: string;
+  bufferTime?: number;
 }
 
 interface DaySchedule {
@@ -93,12 +94,14 @@ interface PositionedEvent {
 function getPositionedEvents(columnEvents: Event[]): PositionedEvent[] {
   if (columnEvents.length === 0) return [];
 
-  // Sort by start time, then duration descending
+  const getVisualEnd = (ev: Event) => ev.end.getTime() + (ev.bufferTime || 0) * 60 * 1000;
+
+  // Sort by start time, then total visual duration descending
   const sorted = [...columnEvents].sort((a, b) => {
     const aStart = a.start.getTime();
     const bStart = b.start.getTime();
     if (aStart !== bStart) return aStart - bStart;
-    return (b.end.getTime() - b.start.getTime()) - (a.end.getTime() - a.start.getTime());
+    return (getVisualEnd(b) - b.start.getTime()) - (getVisualEnd(a) - a.start.getTime());
   });
 
   const clusters: Event[][] = [];
@@ -106,18 +109,19 @@ function getPositionedEvents(columnEvents: Event[]): PositionedEvent[] {
   let clusterEnd = 0;
 
   for (const ev of sorted) {
+    const visualEnd = getVisualEnd(ev);
     if (currentCluster.length === 0) {
       currentCluster.push(ev);
-      clusterEnd = ev.end.getTime();
+      clusterEnd = visualEnd;
     } else if (ev.start.getTime() < clusterEnd) {
       currentCluster.push(ev);
-      if (ev.end.getTime() > clusterEnd) {
-        clusterEnd = ev.end.getTime();
+      if (visualEnd > clusterEnd) {
+        clusterEnd = visualEnd;
       }
     } else {
       clusters.push(currentCluster);
       currentCluster = [ev];
-      clusterEnd = ev.end.getTime();
+      clusterEnd = visualEnd;
     }
   }
   if (currentCluster.length > 0) {
@@ -131,10 +135,11 @@ function getPositionedEvents(columnEvents: Event[]): PositionedEvent[] {
 
     for (const ev of cluster) {
       let placed = false;
+      const evStart = ev.start.getTime();
       for (let colIdx = 0; colIdx < columns.length; colIdx++) {
         const colEvents = columns[colIdx];
         const lastEv = colEvents[colEvents.length - 1];
-        if (ev.start.getTime() >= lastEv.end.getTime()) {
+        if (evStart >= getVisualEnd(lastEv)) {
           colEvents.push(ev);
           placed = true;
           break;
@@ -899,6 +904,10 @@ export function CalendarView({
                 const styleData = getEventStyle(event);
                 const isPastEvent = isPast(event.end);
 
+                const hasBuffer = event.type === 'booking' && typeof event.bufferTime === 'number' && event.bufferTime > 0;
+                const bufferHeight = hasBuffer ? (event.bufferTime! * pixelsPerMinute) : 0;
+                const totalHeight = height + bufferHeight;
+
                 return (
                   <div 
                     key={event.id} 
@@ -912,29 +921,75 @@ export function CalendarView({
                         onEventClick?.(event);
                       }
                     }}
-                    className={`absolute pointer-events-auto ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                    className={hasBuffer
+                      ? `absolute pointer-events-auto rounded-md overflow-hidden border border-slate-300 dark:border-slate-600 border-l-4 shadow-sm z-[5] transition-all cursor-pointer ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''}`
+                      : `absolute pointer-events-auto ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
                     style={{ 
                       top: `${top}px`, 
-                      height: `${height}px`, 
+                      height: `${totalHeight}px`, 
                       minHeight: '4px', 
                       left: `calc(80px + (100% - 80px) * ${left / 100})`,
                       width: `calc((100% - 80px) * ${width / 100})`,
-                      ...(typeof styleData === 'object' ? styleData.style : {}) 
+                      ...(hasBuffer && typeof styleData === 'object' ? { borderLeftColor: styleData.style?.borderLeftColor } : {}),
+                      ...(!hasBuffer && typeof styleData === 'object' ? styleData.style : {}) 
                     }}
                     onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
                     onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                   >
-                    {event.type !== 'blocked' && (
-                      duration >= 60 ? (
-                        <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
-                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
-                          <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                    {hasBuffer ? (
+                      <div className="flex flex-col h-full w-full">
+                        {/* Core Booking Part */}
+                        <div 
+                          className="w-full py-0.5 pl-1 pr-2 overflow-hidden flex flex-col justify-center"
+                          style={{ 
+                            height: `${height}px`,
+                            backgroundColor: typeof styleData === 'object' ? styleData.style?.backgroundColor : undefined,
+                            borderBottom: resolvedTheme === 'dark' ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed rgba(0, 0, 0, 0.1)'
+                          }}
+                        >
+                          {duration >= 60 ? (
+                            <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                              <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
+                              <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center truncate h-full w-full py-0.5">
+                              <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
+                              <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="flex items-center truncate h-full w-full py-0.5">
-                          <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
-                          <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                        {/* Buffer Part */}
+                        <div 
+                          className="w-full bg-zebra py-0.5 pl-1 pr-2 flex items-center overflow-hidden text-[10px] font-medium leading-none text-slate-700 dark:text-slate-300"
+                          style={{ 
+                            height: `${bufferHeight}px`,
+                            backgroundColor: (() => {
+                              const isDark = resolvedTheme === 'dark';
+                              const baseBg = isDark ? '#1e293b' : '#ffffff';
+                              const themeColor = isPastEvent ? '#94a3b8' : (event.color || "#6366f1");
+                              return blendColors(themeColor, baseBg, isDark ? 0.12 : 0.08);
+                            })()
+                          }}
+                        >
+                          {bufferHeight >= 6 && (
+                            <span className="truncate">Buffer (+{event.bufferTime}m)</span>
+                          )}
                         </div>
+                      </div>
+                    ) : (
+                      event.type !== 'blocked' && (
+                        duration >= 60 ? (
+                          <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                            <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
+                            <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center truncate h-full w-full py-0.5">
+                            <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
+                            <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                          </div>
+                        )
                       )
                     )}
                   </div>
@@ -1226,6 +1281,10 @@ export function CalendarView({
                         const styleData = getEventStyle(event);
                         const isPastEvent = isPast(event.end);
 
+                        const hasBuffer = event.type === 'booking' && typeof event.bufferTime === 'number' && event.bufferTime > 0;
+                        const bufferHeight = hasBuffer ? (event.bufferTime! * pixelsPerMinute) : 0;
+                        const totalHeight = height + bufferHeight;
+
                         return (
                           <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd}
                             onClick={() => {
@@ -1233,31 +1292,77 @@ export function CalendarView({
                                  onEventClick?.(event);
                                }
                             }}
-                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-1.5' : 'p-2'} shadow-sm z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
+                            className={hasBuffer
+                              ? `absolute pointer-events-auto rounded-md overflow-hidden border border-slate-300 dark:border-slate-600 border-l-4 shadow-sm z-[5] transition-all cursor-pointer ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''}`
+                              : `absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-1.5' : 'p-2'} shadow-sm z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
                             style={{ 
                               top: `${top}px`, 
-                              height: `${height}px`, 
+                              height: `${totalHeight}px`, 
                               minHeight: '4px', 
                               left: `${left}%`,
                               width: `${width}%`,
-                              ...(typeof styleData === 'object' ? styleData.style : {}) 
+                              ...(hasBuffer && typeof styleData === 'object' ? { borderLeftColor: styleData.style?.borderLeftColor } : {}),
+                              ...(!hasBuffer && typeof styleData === 'object' ? styleData.style : {})
                             }}
                             onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
                             onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                           >
-                             {event.type !== 'blocked' && (
-                               duration >= 60 ? (
-                                 <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
-                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
-                                   <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
-                                 </div>
-                               ) : (
-                                 <div className="flex items-center truncate h-full w-full py-0.5">
-                                   <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
-                                   <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
-                                 </div>
-                               )
-                             )}
+                            {hasBuffer ? (
+                              <div className="flex flex-col h-full w-full">
+                                {/* Core Booking Part */}
+                                <div 
+                                  className="w-full py-0.5 pl-1 pr-1.5 overflow-hidden flex flex-col justify-center"
+                                  style={{ 
+                                    height: `${height}px`,
+                                    backgroundColor: typeof styleData === 'object' ? styleData.style?.backgroundColor : undefined,
+                                    borderBottom: resolvedTheme === 'dark' ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed rgba(0, 0, 0, 0.1)'
+                                  }}
+                                >
+                                  {duration >= 60 ? (
+                                    <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                                      <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
+                                      <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center truncate h-full w-full py-0.5">
+                                      <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
+                                      <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Buffer Part */}
+                                <div 
+                                  className="w-full bg-zebra py-0.5 pl-1 pr-1.5 flex items-center overflow-hidden text-[10px] font-medium leading-none text-slate-700 dark:text-slate-300"
+                                  style={{ 
+                                    height: `${bufferHeight}px`,
+                                    backgroundColor: (() => {
+                                      const isDark = resolvedTheme === 'dark';
+                                      const baseBg = isDark ? '#1e293b' : '#ffffff';
+                                      const themeColor = isPastEvent ? '#94a3b8' : (event.color || "#6366f1");
+                                      return blendColors(themeColor, baseBg, isDark ? 0.12 : 0.08);
+                                    })()
+                                  }}
+                                >
+                                  {bufferHeight >= 6 && (
+                                    <span className="truncate">Buffer (+{event.bufferTime}m)</span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              event.type !== 'blocked' && (
+                                duration >= 60 ? (
+                                  <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                                    <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
+                                    <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center truncate h-full w-full py-0.5">
+                                    <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
+                                    <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                                  </div>
+                                )
+                              )
+                            )}
                           </div>
                         );
                       })}
@@ -1505,40 +1610,86 @@ export function CalendarView({
                         const styleData = getEventStyle(event);
                         const isPastEvent = isPast(event.end);
 
+                        const hasBuffer = event.type === 'booking' && typeof event.bufferTime === 'number' && event.bufferTime > 0;
+                        const bufferHeight = hasBuffer ? (event.bufferTime! * pixelsPerMinute) : 0;
+                        const totalHeight = height + bufferHeight;
+
                         return (
-                          <div 
-                            key={event.id} 
-                            draggable={event.type !== 'blocked'} 
-                            onDragStart={(e) => handleDragStart(e, event.id)} 
-                            onDragEnd={handleDragEnd} 
+                          <div key={event.id} draggable={event.type !== 'blocked'} onDragStart={(e) => handleDragStart(e, event.id)} onDragEnd={handleDragEnd}
                             onClick={() => {
-                              if (mode === "booking" && event.type === 'booking') {
-                                onEventClick?.(event);
-                              }
+                               if (mode === "booking" && event.type === 'booking') {
+                                 onEventClick?.(event);
+                               }
                             }}
-                            className={`absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden hover:z-[60]'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-2' : 'p-2'} shadow-sm z-[5] transition-all ${mode === 'booking' || event.type === 'blocked' ? 'cursor-pointer' : 'cursor-move'} ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`} 
+                            className={hasBuffer
+                              ? `absolute pointer-events-auto rounded-md overflow-hidden border border-slate-300 dark:border-slate-600 border-l-4 shadow-sm z-[5] transition-all cursor-pointer ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''}`
+                              : `absolute ${mode === 'booking' ? 'rounded-md overflow-hidden' : 'rounded-xl overflow-hidden'} border ${mode === 'booking' ? 'py-0.5 pl-1 pr-1.5' : 'p-2'} shadow-sm z-[5] ${mode === 'booking' ? 'cursor-pointer' : 'cursor-move'} transition-all ${draggedEventId === event.id ? 'opacity-50 ring-2 ring-indigo-500' : ''} ${typeof styleData === 'string' ? styleData : styleData.className}`}
                             style={{ 
                               top: `${top}px`, 
-                              height: `${height}px`, 
+                              height: `${totalHeight}px`, 
                               minHeight: '4px', 
                               left: `${left}%`,
                               width: `${width}%`,
-                              ...(typeof styleData === 'object' ? styleData.style : {}) 
+                              ...(hasBuffer && typeof styleData === 'object' ? { borderLeftColor: styleData.style?.borderLeftColor } : {}),
+                              ...(!hasBuffer && typeof styleData === 'object' ? styleData.style : {})
                             }}
                             onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
                             onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                           >
-                            {event.type !== 'blocked' && (
-                              duration >= 60 ? (
-                                <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
-                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
-                                  <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                            {hasBuffer ? (
+                              <div className="flex flex-col h-full w-full">
+                                {/* Core Booking Part */}
+                                <div 
+                                  className="w-full py-0.5 pl-1 pr-1.5 overflow-hidden flex flex-col justify-center"
+                                  style={{ 
+                                    height: `${height}px`,
+                                    backgroundColor: typeof styleData === 'object' ? styleData.style?.backgroundColor : undefined,
+                                    borderBottom: resolvedTheme === 'dark' ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed rgba(0, 0, 0, 0.1)'
+                                  }}
+                                >
+                                  {duration >= 60 ? (
+                                    <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                                      <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
+                                      <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center truncate h-full w-full py-0.5">
+                                      <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
+                                      <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                                    </div>
+                                  )}
                                 </div>
-                              ) : (
-                                <div className="flex items-center truncate h-full w-full py-0.5">
-                                  <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
-                                  <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                                {/* Buffer Part */}
+                                <div 
+                                  className="w-full bg-zebra py-0.5 pl-1 pr-1.5 flex items-center overflow-hidden text-[10px] font-medium text-slate-700 dark:text-slate-300"
+                                  style={{ 
+                                    height: `${bufferHeight}px`,
+                                    backgroundColor: (() => {
+                                      const isDark = resolvedTheme === 'dark';
+                                      const baseBg = isDark ? '#1e293b' : '#ffffff';
+                                      const themeColor = isPastEvent ? '#94a3b8' : (event.color || "#6366f1");
+                                      return blendColors(themeColor, baseBg, isDark ? 0.12 : 0.08);
+                                    })()
+                                  }}
+                                >
+                                  {bufferHeight >= 6 && (
+                                    <span className="truncate">Buffer (+{event.bufferTime}m)</span>
+                                  )}
                                 </div>
+                              </div>
+                            ) : (
+                              event.type !== 'blocked' && (
+                                duration >= 60 ? (
+                                  <div className="flex flex-col justify-center h-full w-full py-1 gap-0.5 leading-normal">
+                                    <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate block w-full">{event.customerName || event.title.split(" - ")[0]}</span>
+                                    <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 block w-full">{format(event.start, bookingTimeFormat)}</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center truncate h-full w-full py-0.5">
+                                    <span className="text-[12px] font-semibold text-slate-950 dark:text-slate-50 truncate shrink-0">{event.customerName || event.title.split(" - ")[0]}</span>
+                                    <span className="text-[11px] font-normal text-slate-950 dark:text-slate-50 shrink">, {format(event.start, bookingTimeFormat)}</span>
+                                  </div>
+                                )
                               )
                             )}
                           </div>
@@ -1607,7 +1758,10 @@ export function CalendarView({
             <span>{format(tooltipInfo.event.start, "EEEE, MMMM d, yyyy")}</span>
           </div>
           <div className="flex items-center gap-1.5 font-normal">
-            <span>{format(tooltipInfo.event.start, bookingTimeFormat)} – {format(tooltipInfo.event.end, bookingTimeFormat)}</span>
+            <span>
+              {format(tooltipInfo.event.start, bookingTimeFormat)} – {format(tooltipInfo.event.end, bookingTimeFormat)}
+              {tooltipInfo.event.bufferTime ? ` (+${tooltipInfo.event.bufferTime}m buffer)` : ""}
+            </span>
           </div>
           {tooltipInfo.event.resourceName && (
             <div className="flex items-center gap-1.5">

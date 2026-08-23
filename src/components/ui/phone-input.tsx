@@ -26,6 +26,10 @@ interface PhoneInputProps {
   placeholder?: string;
   className?: string;
   required?: boolean;
+  hasError?: boolean;
+  primaryColor?: string;
+  onChange?: (value: string) => void;
+  onFocus?: () => void;
 }
 
 const getMaxDigits = (code: string) => {
@@ -50,10 +54,16 @@ export function PhoneInput({
   placeholder = "234 567 890",
   className = "",
   required = false,
+  hasError = false,
+  primaryColor,
+  onChange,
+  onFocus,
 }: PhoneInputProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const triggerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const dropdownContentRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -163,12 +173,6 @@ export function PhoneInput({
   };
 
   useEffect(() => {
-    if (touched) {
-      handleValidation(localNumber);
-    }
-  }, [localNumber, selectedCountry, touched]);
-
-  useEffect(() => {
     setSelectedCountry(initialData.country);
     setLocalNumber(initialData.local);
     setError(null);
@@ -235,21 +239,44 @@ export function PhoneInput({
     return `+${selectedCountry.phoneCode} ${cleanLocal}`;
   }, [selectedCountry, localNumber]);
 
+  const isError = Boolean(error || (hasError && !isFocused));
+
   return (
     <div className="w-full flex flex-col gap-1.5">
       <div 
         ref={triggerRef}
-        className={`relative flex items-center w-full rounded-2xl border-2 bg-indigo-50/30 dark:bg-slate-900 transition-all hover:border-indigo-200 dark:hover:border-slate-800 focus-within:border-indigo-600 dark:focus-within:border-indigo-500 focus-within:bg-white dark:focus-within:bg-slate-900 shadow-sm ${
-          error 
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (!target.closest("button") && !isOpen) {
+            inputRef.current?.focus();
+          }
+        }}
+        style={
+          primaryColor
+            ? {
+                borderColor: isError ? undefined : (isFocused ? primaryColor : `${primaryColor}25`),
+                backgroundColor: isError ? undefined : (isFocused ? "#ffffff" : `${primaryColor}08`),
+              }
+            : undefined
+        }
+        className={`relative flex items-center w-full rounded-2xl border-2 transition-colors duration-75 shadow-sm cursor-text ${
+          isError 
             ? "border-rose-200 bg-rose-50/10 dark:bg-rose-900/10 focus-within:border-rose-500 hover:border-rose-300" 
-            : "border-indigo-100/50 dark:border-slate-800"
+            : isFocused
+              ? "border-indigo-600 dark:border-indigo-500 bg-white dark:bg-slate-900"
+              : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800"
         } ${className}`}
       >
         {/* Country Select Button */}
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-4 py-3 text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-l-2xl border-r border-indigo-100/50 dark:border-slate-800 transition-colors cursor-pointer select-none"
+          style={primaryColor ? { borderColor: `${primaryColor}25` } : undefined}
+          className={`flex items-center gap-1.5 px-4 py-3 text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-l-2xl border-r transition-colors cursor-pointer select-none ${
+            isError 
+              ? "border-rose-200 dark:border-rose-900/30" 
+              : "border-indigo-100/50 dark:border-slate-800"
+          }`}
         >
           <span className="text-base leading-none select-none">{getFlagEmoji(selectedCountry.code)}</span>
           <span className="font-mono text-xs select-none">+{selectedCountry.phoneCode}</span>
@@ -258,17 +285,39 @@ export function PhoneInput({
 
         {/* Main input for local part */}
         <input
+          ref={inputRef}
           type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={localNumber}
-          onChange={(e) => {
-            const val = e.target.value;
-            const digits = val.replace(/\D/g, "");
-            const max = getMaxDigits(selectedCountry.code);
-            if (digits.length <= max) {
-              setLocalNumber(val);
+          onFocus={() => {
+            setIsFocused(true);
+            setError(null);
+            setTouched(false);
+            onFocus?.();
+          }}
+          onKeyDown={(e) => {
+            if (
+              !/^\d$/.test(e.key) &&
+              !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key) &&
+              !e.ctrlKey &&
+              !e.metaKey
+            ) {
+              e.preventDefault();
             }
           }}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "");
+            const max = getMaxDigits(selectedCountry.code);
+            const limited = digits.slice(0, max);
+            setLocalNumber(limited);
+            setError(null);
+            setTouched(false);
+            const fullNum = limited ? `+${selectedCountry.phoneCode} ${limited}` : "";
+            onChange?.(fullNum);
+          }}
           onBlur={() => {
+            setIsFocused(false);
             setTouched(true);
             handleValidation(localNumber);
           }}
@@ -316,9 +365,19 @@ export function PhoneInput({
                         setSelectedCountry(c);
                         setIsOpen(false);
                         setSearchQuery("");
+                        setError(null);
+                        setTouched(false);
+                        const cleanLocal = localNumber.replace(/[^\d\s-]/g, "").trim();
+                        const fullNum = cleanLocal ? `+${c.phoneCode} ${cleanLocal}` : "";
+                        onChange?.(fullNum);
                       }}
+                      style={
+                        selectedCountry.code === c.code && primaryColor
+                          ? { backgroundColor: `${primaryColor}18`, color: primaryColor }
+                          : undefined
+                      }
                       className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                        selectedCountry.code === c.code
+                        selectedCountry.code === c.code && !primaryColor
                           ? "bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
                           : "text-slate-700 dark:text-slate-300"
                       }`}
@@ -342,7 +401,7 @@ export function PhoneInput({
       </div>
       {error && (
         <div className="flex items-center gap-1.5 ml-1 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-          <span className="text-[10px] font-black uppercase tracking-wider">{error}</span>
+          <span className="text-xs font-semibold">{error}</span>
         </div>
       )}
     </div>

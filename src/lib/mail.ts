@@ -142,7 +142,7 @@ export async function sendBookingConfirmation({
     </div>
   `;
 
-  return sendEmail({ to: customerEmail, subject: `Booking Confirmed: ${serviceName}`, html, fromName: businessName });
+  return sendEmail({ to: customerEmail, subject: `Booking Confirmed - ${serviceName}`, html, fromName: businessName });
 }
 
 /**
@@ -204,7 +204,7 @@ export async function sendPractitionerBookingRescheduledNotification({
     </div>
   `;
 
-  return sendEmail({ to: practitionerEmail, subject: `Booking Rescheduled: ${customerName} - ${serviceName}`, html, fromName: businessName });
+  return sendEmail({ to: practitionerEmail, subject: `Booking Rescheduled - Client: ${customerName} - ${serviceName}`, html, fromName: businessName });
 }
 
 /**
@@ -254,7 +254,7 @@ export async function sendPractitionerBookingCancelledNotification({
     </div>
   `;
 
-  return sendEmail({ to: practitionerEmail, subject: `Booking Cancelled: ${customerName} - ${serviceName}`, html, fromName: businessName });
+  return sendEmail({ to: practitionerEmail, subject: `Booking Cancelled - Client: ${customerName} - ${serviceName}`, html, fromName: businessName });
 }
 
 /**
@@ -316,7 +316,7 @@ export async function sendPractitionerBookingConfirmedNotification({
     </div>
   `;
 
-  return sendEmail({ to: practitionerEmail, subject: `Booking Confirmed: ${customerName} - ${serviceName}`, html, fromName: businessName });
+  return sendEmail({ to: practitionerEmail, subject: `Booking Confirmed - Client: ${customerName} - ${serviceName}`, html, fromName: businessName });
 }
 
 /**
@@ -388,7 +388,7 @@ export async function sendBookingRescheduledEmail({
     </div>
   `;
 
-  return sendEmail({ to: customerEmail, subject: `Booking Rescheduled: ${serviceName}`, html, fromName: businessName });
+  return sendEmail({ to: customerEmail, subject: `Booking Rescheduled - ${serviceName}`, html, fromName: businessName });
 }
 
 /**
@@ -447,7 +447,7 @@ export async function sendBookingCancelledEmail({
       ${getFooter(businessName)}
     </div>
   `;
-  return sendEmail({ to: customerEmail, subject: `Booking Cancelled: ${serviceName}`, html, fromName: businessName });
+  return sendEmail({ to: customerEmail, subject: `Booking Cancelled - ${serviceName}`, html, fromName: businessName });
 }
 
 /**

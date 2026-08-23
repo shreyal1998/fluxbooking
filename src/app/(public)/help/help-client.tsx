@@ -36,8 +36,8 @@ const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
   return (
     <div className="flex items-center gap-1.5 mt-1.5 text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
-      <AlertCircle className="h-3 w-3" />
-      <span className="text-[10px] font-black uppercase tracking-wider">{message}</span>
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+      <span className="text-xs font-semibold">{message}</span>
     </div>
   );
 };
@@ -174,7 +174,7 @@ export default function HelpClient() {
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10" noValidate>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Your Name</label>
+                <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">Your Name</label>
                 <input 
                   name="name"
                   required 
@@ -188,7 +188,7 @@ export default function HelpClient() {
                 <InputError message={fieldErrors.name} />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Email Address</label>
+                <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">Email Address</label>
                 <input 
                   name="email"
                   required 
@@ -203,7 +203,7 @@ export default function HelpClient() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Reason for Inquiry</label>
+              <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">Reason for Inquiry</label>
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
@@ -228,7 +228,7 @@ export default function HelpClient() {
 
                 {isDropdownOpen && (
                   <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden animate-in fade-in zoom-in duration-200">
-                    <div className="max-h-64 overflow-y-auto">
+                    <div className="max-h-64 overflow-y-auto" style={{ colorScheme: "light" }}>
                       {REASONS.map((reason) => (
                         <button
                           key={reason.id}
@@ -255,7 +255,7 @@ export default function HelpClient() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Subject / Title</label>
+              <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">Subject / Title</label>
               <input 
                 name="subject"
                 required 
@@ -269,7 +269,7 @@ export default function HelpClient() {
               <InputError message={fieldErrors.subject} />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Message</label>
+              <label className="block text-sm font-bold text-slate-500 ml-1 mb-2">Message</label>
               <textarea 
                 name="message"
                 required 
