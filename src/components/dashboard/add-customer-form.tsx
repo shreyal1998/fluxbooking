@@ -25,6 +25,7 @@ export function AddCustomerForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [notes, setNotes] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const labels = getLabels(businessType);
   const countryData = COUNTRIES.find(c => c.code === (country || "US"));
@@ -163,10 +164,21 @@ export function AddCustomerForm({
               <textarea
                 name="notes"
                 rows={3}
-                placeholder="Any specific preferences or history..."
-                className="w-full pl-11 rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white resize-none shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                value={notes}
+                onFocus={() => clearFieldError("notes")}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                  clearFieldError("notes");
+                }}
+                placeholder="Add internal notes, history or preferences..."
+                className={`w-full pl-11 rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white resize-none shadow-sm ${
+                  fieldErrors.notes
+                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500"
+                    : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                }`}
               />
             </div>
+            <InputError message={fieldErrors.notes} />
           </div>
         </div>
       </div>
@@ -175,7 +187,7 @@ export function AddCustomerForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Check className="h-5 w-5" /> Add {labels.customer}</>}
         </button>

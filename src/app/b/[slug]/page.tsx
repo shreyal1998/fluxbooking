@@ -78,9 +78,13 @@ export default async function PublicBookingPage({
       staff: {
         orderBy: { createdAt: "asc" },
         include: {
-          services: true
+          services: true,
+          locations: true
         }
       },
+      locations: {
+        orderBy: [{ isPrimary: "desc" }, { name: "asc" }]
+      }
     },
   });
 
@@ -132,10 +136,17 @@ export default async function PublicBookingPage({
     if (countryData) currency = countryData.currency;
   }
 
+  const isPro = tenant.plan === "PRO";
+  const activeLocations = isPro 
+    ? tenant.locations 
+    : (tenant.locations.filter(l => l.isPrimary).length > 0 
+        ? tenant.locations.filter(l => l.isPrimary).slice(0, 1) 
+        : tenant.locations.slice(0, 1));
+
   return (
     <div 
       data-brand-color={tenant.primaryColor || "#6366f1"}
-      className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden"
+      className="min-h-screen bg-[#F8FAFC] py-6 md:py-8 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden"
     >
       <ThemeCleaner />
       {/* Background Decorative Glows */}
@@ -143,24 +154,24 @@ export default async function PublicBookingPage({
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-200/20 rounded-full blur-[120px]"></div>
 
       <div className="max-w-3xl mx-auto relative z-10">
-        <div className="flex flex-col items-center mb-16 animate-fade-in">
-          <div className="h-20 w-20 bg-white rounded-[2rem] flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/10 border border-slate-100 transform hover:rotate-6 transition-transform">
-            <Calendar className="h-10 w-10 text-indigo-600" />
+        <div className="flex flex-col items-center mb-5 md:mb-6 animate-fade-in">
+          <div 
+            className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center mb-2.5 shadow-md border border-slate-100"
+            style={{ color: tenant.primaryColor || "#6366f1" }}
+          >
+            <Calendar className="h-6 w-6" />
           </div>
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{tenant.name}</h1>
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{tenant.name}</h1>
             {(() => {
               const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
               return (
-                <div className="flex items-center justify-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-1 text-amber-500 font-bold text-sm bg-amber-50 px-2 py-0.5 rounded-full">
-                    <Star className="h-3.5 w-3.5 fill-current" /> 4.9
+                <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
+                  <div className="flex items-center gap-1 text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                    <Star className="h-3 w-3 fill-current" /> 4.9
                   </div>
-                  
-
-
-                  <div className="flex items-center gap-1 text-slate-400 font-semibold text-sm">
-                    <ShieldCheck className="h-4 w-4 text-emerald-500" /> Secure Booking
+                  <div className="flex items-center gap-1 text-slate-500 font-medium">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Secure Booking
                   </div>
                 </div>
               );
@@ -168,15 +179,31 @@ export default async function PublicBookingPage({
           </div>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden animate-fade-in-up">
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden animate-fade-in-up flex flex-col">
           <BookingForm 
             tenantId={tenant.id} 
+            tenantName={tenant.name}
+            logoUrl={tenant.logoUrl}
             services={tenant.services.map(s => ({ ...s, price: s.price.toString() }))} 
+            locations={activeLocations.map(l => ({
+              id: l.id,
+              name: l.name,
+              address: l.address,
+              phone: l.phone,
+              isPrimary: l.isPrimary
+            }))}
             staff={activeStaff.map(s => ({
               ...s,
               services: s.services?.map(srv => ({
                 ...srv,
                 price: srv.price.toString()
+              })),
+              locations: s.locations?.map(l => ({
+                id: l.id,
+                name: l.name,
+                address: l.address,
+                phone: l.phone,
+                isPrimary: l.isPrimary
               }))
             }))} 
             primaryColor={tenant.primaryColor}
@@ -184,16 +211,37 @@ export default async function PublicBookingPage({
             timezone={tenant.timezone}
             currency={currency}
             timeFormat={tenant.timeFormat}
+            weekStart={tenant.weekStart || "sunday"}
             country={tenant.country}
           />
-        </div>
 
-        <div className="mt-12 text-center space-y-3 animate-fade-in">
-          <p className="text-xs font-normal text-slate-500">Powered by FluxBooking</p>
-          <div className="flex items-center justify-center gap-6">
-             <Link href="/privacy" className="text-xs font-normal text-slate-500 hover:text-slate-900 transition-colors">Privacy</Link>
-             <Link href="/terms" className="text-xs font-normal text-slate-500 hover:text-slate-900 transition-colors">Terms</Link>
-             <Link href="/help" className="text-xs font-normal text-slate-500 hover:text-slate-900 transition-colors">Support</Link>
+          {/* Always Visible Bottom Booking Footer */}
+          <div className="px-6 py-3.5 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-slate-900">
+            {tenant.plan === "FREE" ? (
+              <p className="text-[12px] font-normal text-slate-900">
+                Powered by{" "}
+                <a 
+                  href={process.env.NEXT_PUBLIC_APP_URL || "/"} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold no-underline"
+                  style={{ color: tenant.primaryColor || "#6366f1" }}
+                >
+                  FluxBooking
+                </a>
+              </p>
+            ) : (
+              <p className="text-[12px] font-medium text-slate-700">
+                {tenant.name}
+              </p>
+            )}
+            <div className="flex items-center gap-4 text-[12px] font-normal text-slate-900">
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-slate-900 no-underline">Privacy</a>
+              <span className="h-1 w-1 rounded-full bg-slate-400" />
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-slate-900 no-underline">Terms</a>
+              <span className="h-1 w-1 rounded-full bg-slate-400" />
+              <a href="/help" target="_blank" rel="noopener noreferrer" className="text-slate-900 no-underline">Support</a>
+            </div>
           </div>
         </div>
       </div>

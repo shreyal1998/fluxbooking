@@ -118,7 +118,7 @@ export default function ForgotPasswordPage() {
                       setEmail(e.target.value);
                       setFieldError(null);
                     }}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none transition-all sm:text-sm font-medium shadow-sm pl-11 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:bg-white focus:outline-none transition-all sm:text-sm font-normal shadow-sm pl-11 ${
                       fieldError 
                         ? "border-rose-100 bg-rose-50 focus:border-rose-500" 
                         : "border-indigo-100/50 bg-indigo-50/30 focus:border-indigo-600 hover:border-indigo-200"

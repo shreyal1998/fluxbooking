@@ -6,8 +6,19 @@ import { COUNTRIES } from "@/config/countries";
  * @param currencyCode - The ISO currency code (e.g., USD, INR)
  * @returns A formatted string (e.g., $10.00, ₹500.00)
  */
-export function formatCurrency(amount: number | string, currencyCode: string = "USD") {
+export function formatCurrency(
+  amount: number | string, 
+  currencyCode: string = "USD",
+  options?: { showFree?: boolean }
+) {
   const numericAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+  const showFree = options?.showFree ?? true;
+
+  if (showFree && (isNaN(numericAmount) || numericAmount === 0)) {
+    return "Free";
+  }
+
+  const validAmount = isNaN(numericAmount) ? 0 : numericAmount;
   const code = currencyCode.toUpperCase();
 
   try {
@@ -18,12 +29,15 @@ export function formatCurrency(amount: number | string, currencyCode: string = "
       style: "currency",
       currency: code,
       currencyDisplay: "symbol",
-    }).format(numericAmount);
+      minimumFractionDigits: validAmount % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(validAmount);
   } catch {
     // Fallback if Intl fails
     const country = COUNTRIES.find(c => c.currency === code);
     const symbol = country?.symbol || "$";
-    return `${symbol}${numericAmount.toFixed(2)}`;
+    const formattedNum = validAmount % 1 === 0 ? validAmount.toString() : validAmount.toFixed(2);
+    return `${symbol}${formattedNum}`;
   }
 }
 

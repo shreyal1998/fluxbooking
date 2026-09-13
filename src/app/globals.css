@@ -179,12 +179,22 @@ body {
 
 /* --- Modal Backdrop Animations --- */
 @keyframes glassPulse {
-  from { backdrop-filter: blur(6px); background-color: rgba(15, 23, 42, 0.4); }
-  to { backdrop-filter: blur(12px); background-color: rgba(15, 23, 42, 0.6); }
+  from { 
+    backdrop-filter: blur(8px); 
+    -webkit-backdrop-filter: blur(8px); 
+    background-color: rgba(15, 23, 42, 0.5); 
+  }
+  to { 
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px); 
+    background-color: rgba(15, 23, 42, 0.7); 
+  }
 }
 
 .animate-glass-pulse {
   animation: glassPulse 3s ease-in-out infinite alternate !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 /* --- Scrollbar Utilities --- */

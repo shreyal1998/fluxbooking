@@ -308,6 +308,7 @@ export async function createBooking(formData: FormData) {
   const customerEmail = formData.get("customerEmail") as string;
   const priceStr = formData.get("price") as string;
   const notes = formData.get("notes") as string;
+  const locationId = (formData.get("locationId") as string) || null;
 
   if (session && session.user.role === "STAFF") {
     const userId = session.user.id;
@@ -411,6 +412,7 @@ export async function createBooking(formData: FormData) {
         tenantId,
         serviceId,
         staffId,
+        locationId: locationId || null,
         customerId: customer.id,
         customerName,
         customerEmail,
@@ -423,6 +425,7 @@ export async function createBooking(formData: FormData) {
       include: {
         tenant: { select: { name: true, slug: true, emailNotificationsEnabled: true, timeFormat: true, businessType: true } },
         service: { select: { name: true } },
+        location: true,
         staff: {
           select: {
             name: true,
@@ -1050,5 +1053,50 @@ export async function updateBookingStatus(bookingId: string, status: string) {
     return { success: true };
   } catch {
     return { error: "Failed to update booking status" };
+  }
+}
+
+export async function getNextAvailableDate(
+  tenantId: string, 
+  serviceId: string, 
+  startDateStr: string,
+  staffId?: string
+) {
+  try {
+    const tenant = await prisma.tenant.findUnique({ 
+      where: { id: tenantId },
+      select: { timezone: true }
+    });
+    const businessTimezone = tenant?.timezone || "UTC";
+    const start = parseInTimezone(startDateStr, "00:00", businessTimezone);
+
+    // Check next 60 days in parallel batches of 7 days
+    for (let batch = 0; batch < 8; batch++) {
+      const batchPromises = [];
+      const batchDates: string[] = [];
+
+      for (let d = 1; d <= 7; d++) {
+        const offset = batch * 7 + d;
+        if (offset > 60) break;
+        const checkDate = addDays(start, offset);
+        const checkDateStr = formatInTimezone(checkDate, businessTimezone, "yyyy-MM-dd");
+        batchDates.push(checkDateStr);
+        batchPromises.push(getAvailableSlots(tenantId, serviceId, checkDateStr, staffId));
+      }
+
+      const results = await Promise.all(batchPromises);
+
+      for (let i = 0; i < results.length; i++) {
+        const slots = results[i];
+        if (Array.isArray(slots) && slots.length > 0) {
+          return { success: true, date: batchDates[i] };
+        }
+      }
+    }
+
+    return { success: true, date: null };
+  } catch (error: any) {
+    console.error("Error finding next available date:", error);
+    return { success: false, error: error.message };
   }
 }

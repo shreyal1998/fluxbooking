@@ -208,7 +208,7 @@ function RegisterContent() {
                 name="name"
                 type="text"
                 onChange={() => clearFieldError("name")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm ${
                   fieldErrors.name 
                     ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
                     : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
@@ -227,7 +227,7 @@ function RegisterContent() {
                 name="email"
                 type="email"
                 onChange={() => clearFieldError("email")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm ${
                   fieldErrors.email 
                     ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
                     : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
@@ -248,7 +248,7 @@ function RegisterContent() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     onChange={() => clearFieldError("password")}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm pr-10 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm pr-10 ${
                       fieldErrors.password 
                         ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
                         : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
@@ -275,7 +275,7 @@ function RegisterContent() {
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     onChange={() => clearFieldError("confirmPassword")}
-                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm pr-10 ${
+                    className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal placeholder:text-xl placeholder:tracking-[0.25em] focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm pr-10 ${
                       fieldErrors.confirmPassword 
                         ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
                         : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
@@ -303,7 +303,7 @@ function RegisterContent() {
                 name="businessName"
                 type="text"
                 onChange={() => clearFieldError("businessName")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-medium shadow-sm ${
+                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm ${
                   fieldErrors.businessName 
                     ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
                     : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
@@ -420,7 +420,7 @@ function RegisterContent() {
                     e.target.value = digits;
                     clearFieldError("phone");
                   }}
-                  className="flex-1 bg-transparent px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none sm:text-sm font-medium"
+                  className="flex-1 bg-transparent px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:outline-none sm:text-sm font-normal"
                   placeholder="234 567 890"
                 />
               </div>
@@ -496,7 +496,7 @@ function RegisterContent() {
                     type="text"
                     required
                     onChange={() => clearFieldError("slug")}
-                    className="block w-full min-w-0 flex-1 bg-transparent px-3 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all text-xs font-bold"
+                    className="block w-full min-w-0 flex-1 bg-transparent px-3 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all text-xs font-normal"
                     placeholder="my-salon"
                   />
                 </div>

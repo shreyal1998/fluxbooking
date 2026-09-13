@@ -31,7 +31,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    if (eventName === "subscription_created" || eventName === "subscription_updated") {
+    if (
+      eventName === "subscription_created" || 
+      eventName === "subscription_updated" || 
+      eventName === "subscription_resumed" || 
+      eventName === "subscription_unpaused" ||
+      eventName === "subscription_restarted"
+    ) {
       const attributes = payload.data.attributes;
       const variantId = attributes.variant_id.toString();
       const status = attributes.status; // active, trialing, past_due, etc.

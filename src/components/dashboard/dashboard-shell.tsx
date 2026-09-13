@@ -285,7 +285,7 @@ export function DashboardShell({
           <Tooltip content={isSidebarCollapsed ? "Expand" : "Collapse"} position="right" delay={100}>
             <button
               onClick={toggleSidebar}
-              className="w-7 h-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white shadow-md hover:scale-105 transition-all outline-none"
+              className="w-7 h-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white shadow-md hover:scale-105 transition-all outline-none cursor-pointer"
             >
               {isSidebarCollapsed ? (
                 <ChevronRight className="h-4 w-4" />
@@ -310,7 +310,7 @@ export function DashboardShell({
           {filteredNavItems.map((item) => {
             const isActive = isLinkActive(item.href);
             
-            const className = `flex items-center transition-all group relative overflow-hidden ${
+            const className = `flex items-center transition-all group relative overflow-hidden cursor-pointer ${
               isSidebarCollapsed 
                 ? `w-11 h-11 mx-auto justify-center rounded-xl ${
                     isActive 
@@ -344,9 +344,7 @@ export function DashboardShell({
               </>
             );
 
-            const buttonEl = isActive ? (
-              <div key={item.name} className={className}>{content}</div>
-            ) : (
+            const buttonEl = (
               <Link key={item.name} href={item.href} className={className}>
                 {content}
               </Link>
@@ -400,7 +398,7 @@ export function DashboardShell({
         <header className="h-16 lg:h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 flex items-center justify-between px-6 lg:px-10 z-[500] sticky top-0 transition-all duration-500">
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            className="lg:hidden p-2 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="lg:hidden p-2 rounded-xl bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -415,7 +413,7 @@ export function DashboardShell({
               placeholder={`Search ${labels.appointmentLower}s, ${labels.customerLower}s...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
+              className="w-full pl-12 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-sm font-medium focus:outline-none focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-4 focus:ring-indigo-500/5 shadow-sm"
              />
 
              {/* Search Results Dropdown */}
@@ -552,7 +550,7 @@ export function DashboardShell({
                 <Logo size="xl" textClassName="text-slate-900 dark:text-white" />
                 <div className="flex items-center gap-2">
                   <CompactThemeToggle />
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 cursor-pointer">
                     <X className="h-6 w-6 text-slate-900 dark:text-white" />
                   </button>
                 </div>
@@ -573,10 +571,6 @@ export function DashboardShell({
                       <span className="text-base font-medium whitespace-nowrap">{item.name}</span>
                     </>
                   );
-
-                  if (isActive) {
-                    return <div key={item.name} {...commonProps}>{content}</div>;
-                  }
 
                   return (
                     <Link
@@ -639,14 +633,14 @@ export function DashboardShell({
                     <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                       {profileModalMode === "security" ? "Security Settings" : "My Profile"}
                     </h2>
-                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                       {profileModalMode === "security" ? "Update your credentials" : "Configuring your settings"}
                     </p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setIsProfileModalOpen(false)} 
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                 </button>
@@ -656,7 +650,9 @@ export function DashboardShell({
                 {loadingProfile ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading profile information...</p>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                      {profileModalMode === "security" ? "Loading security settings..." : "Loading profile information..."}
+                    </p>
                   </div>
                 ) : profileData?.staff ? (
                   <EditStaffForm 
@@ -699,16 +695,16 @@ export function DashboardShell({
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
               onClick={() => setShowLogoutConfirm(false)}
             />
             <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 animate-in zoom-in-95 duration-200 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500" />
               
               <div className="flex flex-col items-center text-center">
-                <div className="h-16 w-16 rounded-3xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-6">
+                <div className="h-16 w-16 rounded-3xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center mb-6 animate-bounce">
                   <LogOut className="h-8 w-8 text-rose-600 dark:text-rose-400" />
                 </div>
                 
@@ -717,14 +713,16 @@ export function DashboardShell({
                 
                 <div className="flex flex-col w-full gap-3">
                   <button
+                    type="button"
                     onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold shadow-lg shadow-rose-600/20 transition-all active:scale-[0.98]"
+                    className="w-full py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold shadow-lg shadow-rose-600/20 transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Yes, Logout
                   </button>
                   <button
+                    type="button"
                     onClick={() => setShowLogoutConfirm(false)}
-                    className="w-full py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-2xl font-bold transition-all active:scale-[0.98]"
+                    className="w-full py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-2xl font-bold transition-all active:scale-[0.98] cursor-pointer"
                   >
                     Cancel
                   </button>

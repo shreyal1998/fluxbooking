@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { SettingsClient } from "../settings-client";
+import { getLemonSqueezyInvoices, syncLemonSqueezySubscription } from "@/app/actions/lemonsqueezy";
 
 export default async function SettingsTabPage({ params }: { params: Promise<{ tab: string }> }) {
   const { tab } = await params;
@@ -20,10 +21,27 @@ export default async function SettingsTabPage({ params }: { params: Promise<{ ta
   }
 
   const tenantId = (session.user as any).tenantId;
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-    include: { locations: true }
-  });
+  const userId = (session.user as any).id;
+
+  if (tab === "billing") {
+    try {
+      await syncLemonSqueezySubscription();
+    } catch (e) {
+      console.error("Auto sync on page load error:", e);
+    }
+  }
+
+  const [tenant, dbUser, initialInvoices] = await Promise.all([
+    prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: { locations: true }
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, phone: true, role: true, tenantId: true }
+    }),
+    getLemonSqueezyInvoices()
+  ]);
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in pt-4 pb-6 px-6 md:pt-5 md:pb-8 md:px-8 lg:pt-6 lg:pb-10 lg:px-10 space-y-5 overflow-y-auto custom-scrollbar">
@@ -31,7 +49,8 @@ export default async function SettingsTabPage({ params }: { params: Promise<{ ta
         <SettingsClient 
           tenant={tenant} 
           userRole={userRole} 
-          sessionUser={session.user} 
+          sessionUser={dbUser || session.user} 
+          initialInvoices={initialInvoices}
         />
       </div>
     </div>

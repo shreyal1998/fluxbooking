@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search, Calendar, FileText, Copy } from "lucide-react";
+import { Building, Globe, Shield, Clock, Palette, CreditCard, Lock, Check, Loader2, ChevronDown, Search, Calendar, FileText, Copy, X, AlertCircle } from "lucide-react";
 import { BillingSettings } from "@/components/dashboard/billing-settings";
 import { BrandingSettings } from "@/components/dashboard/branding-settings";
 import { LocationList } from "@/components/dashboard/location-list";
@@ -9,9 +9,13 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { getLabels } from "@/lib/labels";
 import { timezones } from "@/config/timezones";
 import { COUNTRIES } from "@/config/countries";
-import { updateTenantTimezone, updateTenantCountry, updateTenantTimeFormat, updateTenantWeekStart } from "@/app/actions/dashboard";
+import { updateTenantTimezone, updateTenantCountry, updateTenantTimeFormat, updateTenantWeekStart, deleteBusiness } from "@/app/actions/dashboard";
+import { syncLemonSqueezySubscription } from "@/app/actions/lemonsqueezy";
 import { toast } from "sonner";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { Portal } from "@/components/ui/portal";
+import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 
 type TabType = "business" | "billing" | "appearance" | "invoices" | "security";
 
@@ -26,17 +30,36 @@ interface Tab {
 export function SettingsClient({ 
   tenant, 
   userRole, 
-  sessionUser 
+  sessionUser,
+  initialInvoices = []
 }: { 
   tenant: any, 
   userRole: string, 
-  sessionUser: any 
+  sessionUser: any,
+  initialInvoices?: any[]
 }) {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const tabParam = params.tab as TabType;
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const [confirmDeleteBusiness, setConfirmDeleteBusiness] = useState(false);
+  const [deleteBusinessLoading, setDeleteBusinessLoading] = useState(false);
+
+  // Handle successful checkout return and sync subscription
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      syncLemonSqueezySubscription().then((res) => {
+        if (res.success) {
+          toast.success(`Subscription upgraded! Active plan: ${res.plan}`);
+        } else {
+          toast.success("Payment received! Refreshing subscription...");
+        }
+        window.location.href = "/settings/billing";
+      });
+    }
+  }, [searchParams]);
 
   const handleCopyUrl = () => {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://fluxbooking.com");
@@ -116,6 +139,9 @@ export function SettingsClient({
       setTimeout(() => timezoneSearchRef.current?.focus(), 100);
     }
   }, [openDropdown]);
+
+  // Lock background and page scrolling when invoice or delete business modal is open
+  useLockBodyScroll(!!(selectedInvoice || confirmDeleteBusiness));
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -217,34 +243,31 @@ export function SettingsClient({
   const tabs: Tab[] = [
     { 
       id: "business", 
-      label: "Business", 
-      description: "Profile and locations",
+      label: "Business Profile", 
       icon: Building 
     },
     { 
       id: "appearance", 
-      label: "Branding", 
-      description: "Business visuals",
+      label: "Business Branding", 
       icon: Palette
     },
     { 
       id: "billing", 
-      label: "Billing", 
-      description: "Plans and subscription",
+      label: "Billing & Subscription", 
       icon: CreditCard, 
       adminOnly: true 
     },
     { 
       id: "security", 
-      label: "Security", 
-      description: "Account and safety",
+      label: "Account Security", 
       icon: Shield,
       adminOnly: true
     },
   ].filter(tab => !tab.adminOnly || userRole === "ADMIN") as Tab[];
 
   const invoices = (() => {
-    if (!tenant || tenant.plan === "FREE") return [];
+    if (!tenant) return [];
+    if (tenant.plan === "FREE" && !tenant.lemonSqueezySubscriptionId && !tenant.lemonSqueezyCustomerId && tenant.planStatus !== "CANCELLED") return [];
     
     const list = [];
     const planName = tenant.plan === "PRO" ? "Pro Plan" : "Starter Plan";
@@ -253,33 +276,111 @@ export function SettingsClient({
       : (tenant.planInterval === "YEAR" ? 69.90 : 6.99);
     
     const intervalStr = tenant.planInterval === "YEAR" ? "Yearly" : "Monthly";
-    
-    const startDate = new Date(tenant.createdAt || "2026-01-10T10:00:00Z");
     const currentDate = new Date();
-    
-    let tempDate = new Date(currentDate);
-    for (let i = 0; i < 6; i++) {
-      if (tempDate < startDate) break;
-      
-      const invoiceNum = `INV-2026-${(6 - i).toString().padStart(3, "0")}`;
+
+    // Next renewal cycle date
+    const nextRenewalDate = new Date(currentDate);
+    if (tenant.planInterval === "YEAR") {
+      nextRenewalDate.setFullYear(nextRenewalDate.getFullYear() + 1);
+    } else {
+      nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+    }
+
+    // 1. Upcoming renewal invoice entry (Non-downloadable / Non-viewable, shows adjustment amounts + / -)
+    if (tenant.plan !== "FREE" && tenant.planStatus !== "CANCELLED" && tenant.planStatus !== "CANCELED") {
       list.push({
-        id: invoiceNum,
-        number: invoiceNum,
-        date: new Date(tempDate),
+        id: "INV-UPCOMING",
+        number: "Upcoming",
+        date: nextRenewalDate,
         planName,
         interval: intervalStr,
         amount: `$${amount.toFixed(2)}`,
-        status: "PAID",
+        adjustments: "+$0.00",
+        baseAmount: `$${amount.toFixed(2)}`,
+        status: "UPCOMING",
+        isUpcoming: true,
         paymentMethod: "Card ending in 4242",
-        description: `FluxBooking ${planName} - ${intervalStr} Subscription`
+        description: `FluxBooking ${planName} - Next ${intervalStr} Renewal`
       });
-      
-      if (tenant.planInterval === "YEAR") {
-        tempDate.setFullYear(tempDate.getFullYear() - 1);
-      } else {
-        tempDate.setMonth(tempDate.getMonth() - 1);
-      }
     }
+
+    // 2. Paid invoices for current and past cycles
+    const startYear = currentDate.getFullYear();
+    const pastDate1 = new Date(currentDate.getTime() - 15 * 24 * 60 * 60 * 1000);
+    const pastDate2 = new Date(currentDate.getTime() - 45 * 24 * 60 * 60 * 1000);
+
+    if (tenant.plan === "PRO") {
+      // Paid Invoice 3: Pro Plan (Monthly) - $14.99 (Recent switch)
+      list.push({
+        id: `INV-${startYear}-003`,
+        number: `INV-${startYear}-003`,
+        date: new Date(currentDate.getTime() - 5 * 24 * 60 * 60 * 1000),
+        planName: "Pro Plan",
+        interval: intervalStr,
+        amount: intervalStr === "Yearly" ? "$149.90" : "$14.99",
+        status: "PAID",
+        isUpcoming: false,
+        paymentMethod: "Card ending in 4242",
+        description: `FluxBooking Pro Plan - ${intervalStr} Subscription`
+      });
+
+      // Paid Invoice 2: Starter Plan (Monthly) - $6.99 (Past switch)
+      list.push({
+        id: `INV-${startYear}-002`,
+        number: `INV-${startYear}-002`,
+        date: pastDate1,
+        planName: "Starter Plan",
+        interval: "Monthly",
+        amount: "$6.99",
+        status: "PAID",
+        isUpcoming: false,
+        paymentMethod: "Card ending in 4242",
+        description: `FluxBooking Starter Plan - Monthly Subscription`
+      });
+
+      // Paid Invoice 1: Pro Plan (Monthly) - $14.99 (Previous billing date)
+      list.push({
+        id: `INV-${startYear}-001`,
+        number: `INV-${startYear}-001`,
+        date: pastDate2,
+        planName: "Pro Plan",
+        interval: "Monthly",
+        amount: "$14.99",
+        status: "PAID",
+        isUpcoming: false,
+        paymentMethod: "Card ending in 4242",
+        description: `FluxBooking Pro Plan - Monthly Subscription`
+      });
+    } else {
+      // Paid Invoice 2: Starter Plan (Monthly) - $6.99 (Recent switch)
+      list.push({
+        id: `INV-${startYear}-002`,
+        number: `INV-${startYear}-002`,
+        date: new Date(currentDate.getTime() - 5 * 24 * 60 * 60 * 1000),
+        planName: "Starter Plan",
+        interval: intervalStr,
+        amount: intervalStr === "Yearly" ? "$69.90" : "$6.99",
+        status: "PAID",
+        isUpcoming: false,
+        paymentMethod: "Card ending in 4242",
+        description: `FluxBooking Starter Plan - ${intervalStr} Subscription`
+      });
+
+      // Paid Invoice 1: Pro Plan (Monthly) - $14.99 (Previous billing date)
+      list.push({
+        id: `INV-${startYear}-001`,
+        number: `INV-${startYear}-001`,
+        date: pastDate2,
+        planName: "Pro Plan",
+        interval: "Monthly",
+        amount: "$14.99",
+        status: "PAID",
+        isUpcoming: false,
+        paymentMethod: "Card ending in 4242",
+        description: `FluxBooking Pro Plan - Monthly Subscription`
+      });
+    }
+    
     return list;
   })();
 
@@ -291,6 +392,9 @@ export function SettingsClient({
     }
 
     const primaryColor = tenant?.primaryColor || "#6366f1";
+    const userPhone = sessionUser?.phone || (tenant?.locations && tenant.locations.find((l: any) => l.isPrimary)?.phone) || tenant?.locations?.[0]?.phone;
+    const countryObj = COUNTRIES.find(c => c.code.toUpperCase() === (tenant?.country || "").toUpperCase());
+    const displayCountry = countryObj ? countryObj.name : (tenant?.country || "United States");
     
     const htmlContent = `
       <!DOCTYPE html>
@@ -328,10 +432,10 @@ export function SettingsClient({
               margin-bottom: 30px;
             }
             .logo-text {
-              font-size: 24px;
-              font-weight: 800;
+              font-size: 22px;
+              font-weight: 500;
               color: ${primaryColor};
-              letter-spacing: -0.5px;
+              letter-spacing: -0.3px;
             }
             .invoice-title {
               font-size: 28px;
@@ -341,17 +445,15 @@ export function SettingsClient({
             }
             .details-grid {
               display: grid;
-              grid-template-cols: 1fr 1fr;
+              grid-template-columns: 1fr 1fr;
               gap: 40px;
-              margin-bottom: 40px;
+              margin-bottom: 30px;
             }
             .section-title {
-              font-size: 11px;
-              font-weight: 800;
-              text-transform: uppercase;
-              letter-spacing: 1px;
+              font-size: 12px;
+              font-weight: 700;
               color: #64748b;
-              margin-bottom: 8px;
+              margin-bottom: 6px;
             }
             .info-text {
               font-size: 14px;
@@ -370,10 +472,8 @@ export function SettingsClient({
               border-bottom: 2px solid #e2e8f0;
               padding: 12px 16px;
               text-align: left;
-              font-size: 11px;
-              font-weight: 850;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
+              font-size: 12px;
+              font-weight: 700;
               color: #475569;
             }
             .table td {
@@ -388,23 +488,33 @@ export function SettingsClient({
             .totals-container {
               display: flex;
               justify-content: flex-end;
-              margin-bottom: 60px;
+              margin-bottom: 50px;
             }
             .totals-table {
-              width: 250px;
+              width: 300px;
               border-collapse: collapse;
             }
             .totals-table td {
-              padding: 8px 12px;
-              font-size: 14px;
+              padding: 6px 0;
+              font-size: 13px;
               color: #475569;
+            }
+            .totals-table td.right {
+              text-align: right;
+              font-weight: 600;
+              color: #0f172a;
             }
             .totals-table tr.grand-total td {
               font-weight: 700;
-              font-size: 16px;
+              font-size: 14px;
               color: #0f172a;
-              border-top: 2px solid #e2e8f0;
-              padding-top: 12px;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 10px;
+            }
+            .totals-table tr.grand-total td.right {
+              font-weight: 700;
+              font-size: 14px;
+              color: #0f172a;
             }
             .footer {
               text-align: center;
@@ -434,43 +544,55 @@ export function SettingsClient({
           </div>
           <div class="invoice-box">
             <div class="header">
-              <div>
-                <span class="logo-text">FluxBooking</span>
-                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Automated Booking Platform</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; background: ${primaryColor}; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg viewBox="0 0 32 32" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 8H22V11H13V15H20V18H13V24H10V8Z" fill="#ffffff"/>
+                    <path d="M18 20L21 23L26 18" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="logo-text" style="font-size: 22px; font-weight: 500; line-height: 1;">FluxBooking</span>
               </div>
-              <div class="invoice-title">INVOICE</div>
+              <div class="invoice-title">Invoice</div>
             </div>
             
-            <div class="details-grid">
+            <!-- Billed from & Billed to side by side -->
+            <div class="details-grid" style="margin-bottom: 24px;">
               <div>
-                <div class="section-title">Billed From</div>
+                <div class="section-title">Billed from</div>
                 <div class="info-text">
-                  <strong>FluxBooking Inc.</strong><br/>
-                  100 Tech Way, Suite 400<br/>
-                  San Francisco, CA 94107<br/>
-                  billing@fluxbooking.com
+                  <strong>FluxBooking</strong><br/>
+                  <a href="mailto:support@fluxbooking.com?subject=Inquiry%20regarding%20Invoice%20${encodeURIComponent(invoice.number)}" style="color: ${primaryColor}; text-decoration: none; font-weight: 500;">support@fluxbooking.com</a>
                 </div>
               </div>
               <div style="text-align: right;">
-                <div class="section-title">Invoice Details</div>
+                <div class="section-title">Billed to</div>
                 <div class="info-text">
-                  <strong>Invoice Number:</strong> ${invoice.number}<br/>
-                  <strong>Date:</strong> ${invoice.date.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}<br/>
-                  <strong>Status:</strong> <span style="color: #10b981; font-weight: 700;">PAID</span><br/>
-                  <strong>Payment Method:</strong> ${invoice.paymentMethod}
+                  <strong>${tenant?.name || "Business Owner"}</strong><br/>
+                  ${userPhone ? `Phone: ${userPhone}<br/>` : ""}
+                  ${sessionUser?.email || ""}<br/>
+                  Country: ${displayCountry}
                 </div>
               </div>
             </div>
 
-            <div class="details-grid" style="margin-bottom: 30px;">
+            <!-- Invoice Details Strip -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; font-size: 12px;">
               <div>
-                <div class="section-title">Billed To</div>
-                <div class="info-text">
-                  <strong>${tenant?.name || "Business Owner"}</strong><br/>
-                  ${sessionUser?.email || ""}<br/>
-                  ${sessionUser?.phone ? `Phone: ${sessionUser.phone}<br/>` : ""}
-                  Country: ${tenant?.country || "US"}
-                </div>
+                <div style="color: #64748b; font-size: 11px; font-weight: 600; margin-bottom: 2px;">Invoice number</div>
+                <div style="font-weight: 700; color: #0f172a;">${invoice.number}</div>
+              </div>
+              <div>
+                <div style="color: #64748b; font-size: 11px; font-weight: 600; margin-bottom: 2px;">Billing date</div>
+                <div style="font-weight: 700; color: #0f172a;">${new Date(invoice.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+              </div>
+              <div>
+                <div style="color: #64748b; font-size: 11px; font-weight: 600; margin-bottom: 2px;">Payment method</div>
+                <div style="font-weight: 700; color: #0f172a;">${invoice.paymentMethod}</div>
+              </div>
+              <div>
+                <div style="color: #64748b; font-size: 11px; font-weight: 600; margin-bottom: 2px;">Status</div>
+                <span style="display: inline-block; background: #ecfdf5; color: #059669; font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">Paid</span>
               </div>
             </div>
 
@@ -479,7 +601,7 @@ export function SettingsClient({
                 <tr>
                   <th>Description</th>
                   <th class="right">Qty</th>
-                  <th class="right">Unit Price</th>
+                  <th class="right">Unit price</th>
                   <th class="right">Total</th>
                 </tr>
               </thead>
@@ -496,22 +618,30 @@ export function SettingsClient({
             <div class="totals-container">
               <table class="totals-table">
                 <tr>
-                  <td>Subtotal</td>
-                  <td class="right">${invoice.amount}</td>
+                  <td>Base plan price</td>
+                  <td class="right">${invoice.baseAmount || invoice.amount}</td>
                 </tr>
+                ${invoice.adjustments ? `
+                <tr>
+                  <td>Adjustment / Proration</td>
+                  <td class="right" style="color: ${invoice.adjustments.includes('+') ? '#4f46e5' : '#059669'}; font-weight: 600;">
+                    ${invoice.adjustments}
+                  </td>
+                </tr>
+                ` : ''}
                 <tr>
                   <td>Tax (0%)</td>
                   <td class="right">$0.00</td>
                 </tr>
                 <tr class="grand-total">
-                  <td>Total Paid</td>
+                  <td>Total paid</td>
                   <td class="right">${invoice.amount}</td>
                 </tr>
               </table>
             </div>
 
             <div class="footer">
-              Thank you for choosing FluxBooking! If you have any questions about this invoice, please reach out to billing@fluxbooking.com.
+              Thank you for choosing FluxBooking! If you have any questions about this invoice, please reach out to <a href="mailto:support@fluxbooking.com?subject=Inquiry%20regarding%20Invoice%20${encodeURIComponent(invoice.number)}" style="color: ${primaryColor}; text-decoration: none; font-weight: 500;">support@fluxbooking.com</a>.
             </div>
           </div>
           <script>
@@ -532,13 +662,11 @@ export function SettingsClient({
     switch (activeTab) {
       case "business":
         return (
-          <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
-                <Building className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                <div>
-                  <h3 className="font-medium text-slate-900 dark:text-white">Business Profile</h3>
-                </div>
+          <div className="space-y-10 animate-fade-in w-full">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4.5 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
+                <Building className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-normal text-slate-900 dark:text-white">Business Profile</h3>
               </div>
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -872,7 +1000,7 @@ export function SettingsClient({
         );
       case "billing":
         return (
-          <div className="animate-fade-in max-w-5xl">
+          <div className="animate-fade-in w-full">
             {userRole === "ADMIN" && (
               <BillingSettings 
                 currentPlan={tenant?.plan || "FREE"} 
@@ -881,7 +1009,7 @@ export function SettingsClient({
                 subscriptionId={tenant?.lemonSqueezySubscriptionId}
                 subscriptionEndsAt={tenant?.subscriptionEndsAt}
                 trialEndsAt={tenant?.trialEndsAt}
-                invoices={invoices}
+                invoices={initialInvoices && initialInvoices.length > 0 ? initialInvoices : invoices}
                 onViewInvoice={setSelectedInvoice}
                 onDownloadInvoice={handleDownloadInvoice}
               />
@@ -890,7 +1018,7 @@ export function SettingsClient({
         );
       case "appearance":
         return (
-          <div className="space-y-10 animate-fade-in max-w-5xl">
+          <div className="space-y-10 animate-fade-in w-full">
             {userRole === "ADMIN" && (
               <BrandingSettings 
                 initialColor={tenant?.primaryColor || "#6366f1"} 
@@ -901,29 +1029,35 @@ export function SettingsClient({
         );
       case "security":
         return (
-          <div className="space-y-10 animate-fade-in max-w-5xl">
-            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="p-8 border-b-2 border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
-                <Shield className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                <div>
-                  <h3 className="font-medium text-slate-900 dark:text-white">Account Security</h3>
-                  <p className="text-sm font-normal text-slate-500 dark:text-slate-400">Protect your administrator access.</p>
-                </div>
+          <div className="space-y-10 animate-fade-in w-full">
+            <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4.5 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
+                <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-normal text-slate-900 dark:text-white">Account Security</h3>
               </div>
-              <div className="p-8 space-y-8">
+              <div className="p-8 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Admin Name</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={sessionUser?.name || ""}
+                    className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-900 dark:text-slate-100 font-normal shadow-sm cursor-not-allowed"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Admin Email</label>
                   <input
                     type="text"
                     disabled
                     value={sessionUser?.email || ""}
-                    className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-700 dark:text-slate-400 font-black shadow-sm cursor-not-allowed"
+                    className="block w-full rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900/50 px-5 py-4 text-sm text-slate-900 dark:text-slate-100 font-normal shadow-sm cursor-not-allowed"
                   />
                 </div>
                 <button 
                   type="button"
                   onClick={() => window.dispatchEvent(new CustomEvent("open-profile-modal", { detail: { mode: "security" } }))}
-                  className="text-sm font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-2 group transition-all"
+                  className="text-sm font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-2 group transition-all cursor-pointer"
                 >
                   Change Password
                   <span className="h-1 w-0 group-hover:w-8 bg-indigo-600 dark:bg-indigo-400 transition-all duration-300"></span>
@@ -937,10 +1071,14 @@ export function SettingsClient({
                   <div className="h-8 w-8 rounded-xl bg-rose-600 text-white flex items-center justify-center">
                     <Lock className="h-4 w-4" />
                   </div>
-                  <h4 className="text-rose-900 dark:text-rose-400 font-black uppercase tracking-tight">Danger Zone</h4>
+                  <h4 className="text-rose-900 dark:text-rose-400 font-bold tracking-tight">Danger Zone</h4>
                 </div>
-                <p className="text-rose-700 dark:text-rose-400/80 text-sm mb-8 leading-relaxed">Warning: Deleting your business will remove all data, including bookings and staff lists. This action is irreversible.</p>
-                <button className="bg-rose-600 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-200 dark:shadow-none">
+                <p className="text-rose-700 dark:text-rose-400/80 text-sm mb-6 leading-relaxed">Warning: Deleting your business will remove all data, including bookings, customer records, and staff lists. This action is permanent and cannot be undone.</p>
+                <button 
+                  type="button"
+                  onClick={() => setConfirmDeleteBusiness(true)}
+                  className="bg-rose-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-rose-700 transition-all shadow-md shadow-rose-200 dark:shadow-none cursor-pointer active:scale-95 flex items-center gap-2"
+                >
                   Delete Business
                 </button>
               </div>
@@ -960,24 +1098,21 @@ export function SettingsClient({
 
       {/* Tabs Navigation */}
       <div className="flex-shrink-0 px-2">
-        <div className="flex flex-wrap items-center bg-slate-50 dark:bg-slate-800 p-1.5 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm self-start inline-flex">
+        <div className="flex flex-wrap items-center bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm self-start inline-flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-3 px-6 py-3 rounded-[1.5rem] transition-all relative ${
+              className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl transition-all relative cursor-pointer ${
                 activeTab === tab.id
-                  ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm"
-                  : "text-black dark:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                  : "text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/70"
               }`}
             >
-              <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-600 dark:text-slate-400"}`} />
-              <div className="text-left">
-                <div className="text-xs font-semibold leading-none mb-0.5">{tab.label}</div>
-                <div className={`text-xs font-medium whitespace-nowrap hidden sm:block ${activeTab === tab.id ? "text-indigo-400 dark:text-indigo-300/60" : "text-slate-600 dark:text-slate-400"}`}>
-                  {tab.description}
-                </div>
-              </div>
+              <tab.icon className={`h-4.5 w-4.5 ${activeTab === tab.id ? "text-white" : "text-slate-700 dark:text-slate-300"}`} />
+              <span className={`text-sm font-normal leading-none ${activeTab === tab.id ? "text-white" : "text-slate-900 dark:text-white"}`}>
+                {tab.label}
+              </span>
             </button>
           ))}
         </div>
@@ -987,117 +1122,243 @@ export function SettingsClient({
         {renderTabContent()}
       </div>
 
-      {selectedInvoice && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-905 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative flex flex-col space-y-6">
-            
-            {/* Modal Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <FileText className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Invoice Details</h3>
-              </div>
-              <button 
+      {selectedInvoice && (() => {
+        const displayPlanName = selectedInvoice.planName || (tenant?.plan === "PRO" ? "Pro Plan" : "Starter Plan");
+        const displayInterval = selectedInvoice.interval || (tenant?.planInterval === "YEAR" ? "Yearly" : "Monthly");
+        const displayDescription = selectedInvoice.description || `FluxBooking ${displayPlanName} - ${displayInterval} Subscription`;
+        const displayAmount = selectedInvoice.amount || (tenant?.plan === "PRO" ? (tenant?.planInterval === "YEAR" ? "$149.90" : "$14.99") : (tenant?.planInterval === "YEAR" ? "$69.90" : "$6.99"));
+        const displayNumber = selectedInvoice.number || "INV-2026-001";
+        const displayDate = selectedInvoice.date ? (typeof selectedInvoice.date === "string" ? new Date(selectedInvoice.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : selectedInvoice.date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })) : new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const displayPaymentMethod = selectedInvoice.paymentMethod || "Card ending in 4242";
+        const countryObj = COUNTRIES.find(c => c.code.toUpperCase() === (tenant?.country || "").toUpperCase());
+        const displayCountry = countryObj ? countryObj.name : (tenant?.country || "United States");
+
+        return (
+          <Portal>
+            <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8 overscroll-contain">
+              <div 
+                className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
                 onClick={() => setSelectedInvoice(null)}
-                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 text-sm font-black p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-
-            {/* Invoice Info */}
-            <div className="grid grid-cols-2 gap-6 text-sm">
-              <div>
-                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Billed From</span>
-                <span className="block font-bold text-slate-850 dark:text-slate-200 mt-1">FluxBooking Inc.</span>
-                <span className="block text-xs text-slate-550 dark:text-slate-450 mt-0.5">100 Tech Way, Suite 400<br/>San Francisco, CA 94107</span>
-              </div>
-              <div className="text-right">
-                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Billed To</span>
-                <span className="block font-bold text-slate-850 dark:text-slate-200 mt-1">{tenant?.name}</span>
-                <span className="block text-xs text-slate-550 dark:text-slate-450 mt-0.5">{sessionUser?.email}</span>
-                {sessionUser?.phone && (
-                  <span className="block text-xs text-slate-550 dark:text-slate-455 mt-0.5">Phone: {sessionUser.phone}</span>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-              <div>
-                <span className="block text-slate-400 font-medium">Invoice Number</span>
-                <span className="block font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedInvoice.number}</span>
-              </div>
-              <div>
-                <span className="block text-slate-400 font-medium">Billing Date</span>
-                <span className="block font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedInvoice.date.toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              </div>
-              <div>
-                <span className="block text-slate-400 font-medium">Payment Method</span>
-                <span className="block font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedInvoice.paymentMethod}</span>
-              </div>
-              <div>
-                <span className="block text-slate-400 font-medium">Status</span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 mt-0.5">
-                  Paid
-                </span>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800">
-                    <th className="p-4 font-black text-slate-505 uppercase tracking-wider">Description</th>
-                    <th className="p-4 font-black text-slate-505 uppercase tracking-wider text-right">Qty</th>
-                    <th className="p-4 font-black text-slate-505 uppercase tracking-wider text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-slate-100 dark:border-slate-800">
-                    <td className="p-4 text-slate-700 dark:text-slate-300 font-bold">{selectedInvoice.description}</td>
-                    <td className="p-4 text-slate-700 dark:text-slate-300 text-right font-bold">1</td>
-                    <td className="p-4 text-slate-700 dark:text-slate-300 text-right font-black">{selectedInvoice.amount}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Totals */}
-            <div className="flex justify-end text-sm">
-              <div className="w-48 space-y-1.5">
-                <div className="flex justify-between text-slate-505 text-xs">
-                  <span>Subtotal</span>
-                  <span className="font-bold">{selectedInvoice.amount}</span>
+              />
+              <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 sm:pb-5 pb-5 flex flex-col space-y-4 animate-in fade-in zoom-in duration-300 overscroll-contain">
+                
+                {/* Modal Header */}
+                <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Invoice details</h3>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedInvoice(null)}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="flex justify-between text-slate-505 text-xs">
-                  <span>Tax (0%)</span>
-                  <span>$0.00</span>
+
+                {/* Invoice Info */}
+                <div className="grid grid-cols-2 gap-6 text-sm">
+                  <div>
+                    <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400">Billed from</span>
+                    <span className="block font-bold text-slate-900 dark:text-slate-100 mt-1">FluxBooking</span>
+                    <a 
+                      href={`mailto:support@fluxbooking.com?subject=${encodeURIComponent(`Inquiry regarding Invoice ${displayNumber}`)}`}
+                      className="block text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 font-normal"
+                    >
+                      support@fluxbooking.com
+                    </a>
+                  </div>
+                  <div className="text-right">
+                    <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400">Billed to</span>
+                    <span className="block font-bold text-slate-900 dark:text-slate-100 mt-1">{tenant?.name || "Business Owner"}</span>
+                    {(sessionUser?.phone || (tenant?.locations && tenant.locations.find((l: any) => l.isPrimary)?.phone) || tenant?.locations?.[0]?.phone) && (
+                      <span className="block text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-normal">
+                        Phone: {sessionUser?.phone || (tenant?.locations && tenant.locations.find((l: any) => l.isPrimary)?.phone) || tenant?.locations?.[0]?.phone}
+                      </span>
+                    )}
+                    <span className="block text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-normal">{sessionUser?.email || "admin@example.com"}</span>
+                    <span className="block text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-normal">Country: {displayCountry}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-slate-900 dark:text-white font-bold pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <span>Total Paid</span>
-                  <span>{selectedInvoice.amount}</span>
+
+                <div className="bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <span className="block text-slate-500 dark:text-slate-400 font-medium">Invoice number</span>
+                    <span className="block font-bold text-slate-900 dark:text-slate-100 mt-0.5">{displayNumber}</span>
+                  </div>
+                  <div>
+                    <span className="block text-slate-500 dark:text-slate-400 font-medium">Billing date</span>
+                    <span className="block font-bold text-slate-900 dark:text-slate-100 mt-0.5">{displayDate}</span>
+                  </div>
+                  <div>
+                    <span className="block text-slate-500 dark:text-slate-400 font-medium">Payment method</span>
+                    <span className="block font-bold text-slate-900 dark:text-slate-100 mt-0.5">{displayPaymentMethod}</span>
+                  </div>
+                  <div>
+                    <span className="block text-slate-500 dark:text-slate-400 font-medium">Status</span>
+                    {(() => {
+                      const s = (selectedInvoice.status || "PAID").toUpperCase();
+                      if (s === "PAID") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50 mt-0.5">
+                            Paid
+                          </span>
+                        );
+                      }
+                      if (s === "REFUNDED") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-900/50 mt-0.5">
+                            Refunded
+                          </span>
+                        );
+                      }
+                      if (s === "FAILED" || s === "PAST_DUE") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/50 mt-0.5">
+                            Failed
+                          </span>
+                        );
+                      }
+                      if (s === "VOID" || s === "CANCELLED" || s === "CANCELED") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 mt-0.5">
+                            Cancelled
+                          </span>
+                        );
+                      }
+                      if (s === "PENDING" || s === "UPCOMING") {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50 mt-0.5">
+                            {s === "UPCOMING" ? "Upcoming" : "Pending"}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50 mt-0.5">
+                          {selectedInvoice.status}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800">
+                        <th className="p-4 font-bold text-slate-500">Description</th>
+                        <th className="p-4 font-bold text-slate-500 text-right">Qty</th>
+                        <th className="p-4 font-bold text-slate-500 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-slate-100 dark:border-slate-800">
+                        <td className="p-4 text-slate-700 dark:text-slate-300 font-bold">{displayDescription}</td>
+                        <td className="p-4 text-slate-700 dark:text-slate-300 text-right font-bold">1</td>
+                        <td className="p-4 text-slate-900 dark:text-white text-right font-bold">{displayAmount}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Totals */}
+                <div className="flex justify-end text-sm">
+                  <div className="w-64 space-y-1.5">
+                    <div className="flex justify-between text-slate-600 dark:text-slate-400 text-xs font-medium">
+                      <span>Base plan price</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedInvoice.baseAmount || displayAmount}</span>
+                    </div>
+                    {selectedInvoice.adjustments && (
+                      <div className="flex justify-between text-xs font-medium">
+                        <span className="text-slate-600 dark:text-slate-400">Adjustment / Proration</span>
+                        <span className={`text-[11px] font-semibold ${selectedInvoice.adjustments.includes('+') ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {selectedInvoice.adjustments}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-slate-600 dark:text-slate-400 text-xs font-medium">
+                      <span>Tax (0%)</span>
+                      <span className="text-slate-900 dark:text-slate-100">$0.00</span>
+                    </div>
+                    <div className="flex justify-between text-slate-900 dark:text-white font-bold pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <span>Total charged</span>
+                      <span>{displayAmount}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <button
+                    onClick={() => handleDownloadInvoice(selectedInvoice)}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>Download PDF</span>
+                  </button>
                 </div>
               </div>
             </div>
+          </Portal>
+        );
+      })()}
 
-            {/* Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <button
-                onClick={() => setSelectedInvoice(null)}
-                className="px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => handleDownloadInvoice(selectedInvoice)}
-                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md cursor-pointer"
-              >
-                Download PDF
-              </button>
+      {/* Delete Business Confirmation Modal */}
+      {confirmDeleteBusiness && (
+        <Portal>
+          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              onClick={() => !deleteBusinessLoading && setConfirmDeleteBusiness(false)}
+            />
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
+              <div className="p-8 text-center">
+                <div className="mx-auto h-16 w-16 bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center mb-6 border border-rose-100 dark:border-rose-900/50 animate-bounce">
+                  <AlertCircle className="h-8 w-8 text-rose-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
+                  Delete Business Account?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed">
+                  Are you sure you want to delete <span className="font-bold text-slate-900 dark:text-white">{tenant?.name || "your business"}</span>? All bookings, services, practitioner profiles, and customer records will be permanently deleted. This action cannot be undone.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setConfirmDeleteBusiness(false)}
+                    disabled={deleteBusinessLoading}
+                    className="py-3.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={async () => {
+                      setDeleteBusinessLoading(true);
+                      const result = await deleteBusiness();
+                      if (result.success) {
+                        toast.success("Business account deleted successfully.");
+                        setConfirmDeleteBusiness(false);
+                        signOut({ callbackUrl: "/register" });
+                      } else {
+                        toast.error(result.error || "Failed to delete business");
+                        setDeleteBusinessLoading(false);
+                      }
+                    }}
+                    disabled={deleteBusinessLoading}
+                    className="bg-rose-600 text-white py-3.5 rounded-xl font-bold text-xs hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    {deleteBusinessLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Delete"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

@@ -386,7 +386,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     }
   }, [staff, staffFilter, searchParams, pathname, router, defaultStaffId, currentLimit]);
 
-  const selectedStaffName = staff.find((s: any) => s.id === staffFilter)?.name || "Select Team Member";
+  const selectedStaff = staff.find((s: any) => s.id === staffFilter);
+  const selectedStaffName = selectedStaff?.name || "Select Team Member";
   const activeStaff = useMemo(() => staff.slice(0, currentLimit), [staff, currentLimit]);
 
   const events = useMemo(() => {
@@ -559,7 +560,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
             <>
               <button 
                 onClick={() => setShowScheduleViewModal(true)}
-                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm"
+                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
               >
                 <Clock className="h-4 w-4" />
                 Schedule View
@@ -570,7 +571,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                   setModalKey(prev => prev + 1);
                   setShowHoursModal(true);
                 }}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95"
+                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer"
               >
                 <CalendarIcon className="h-4 w-4" />
                 Create Schedule
@@ -582,21 +583,29 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
             <div className="relative" ref={staffDropdownRef}>
               <button 
                 onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-                className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px]"
+                className="flex items-center gap-2.5 bg-white dark:bg-slate-900 px-4 py-2 rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px] cursor-pointer"
               >
-                <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex-1 text-left">
-                  {selectedStaffName}
-                </span>
-                <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
+                <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors shrink-0`} />
+                <div className="flex flex-col flex-1 text-left min-w-0">
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                    {selectedStaffName}
+                  </span>
+                  {selectedStaff?.locations && selectedStaff.locations.length > 0 && (
+                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate flex items-center gap-1">
+                      <Building className="h-2.5 w-2.5 shrink-0" />
+                      {selectedStaff.locations.map((l: any) => l.name).join(", ")}
+                    </span>
+                  )}
+                </div>
+                <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform shrink-0 ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
               </button>
 
               {isStaffFilterOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
                     <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                   </div>
-                  <div className="max-h-64 overflow-y-auto scrollbar-hide">
+                  <div className="max-h-64 overflow-y-auto scrollbar-hide divide-y divide-slate-100/50 dark:divide-slate-800/30">
                     {staff.map((s: any, idx: number) => {
                       const isLocked = idx >= currentLimit;
                       return (
@@ -616,24 +625,36 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                             // Save to database in background
                             await saveLastSelectedStaff(s.id);
                           }}
-                          className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${
+                          className={`w-full px-4 py-2.5 text-left flex items-center justify-between group transition-colors ${
                             isLocked 
                               ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
-                              : staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-900'
+                              : staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20 cursor-pointer' : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium shrink-0" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
                               {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
                             </div>
-                            <span className={`text-xs font-semibold ${isLocked ? 'text-slate-500 dark:text-slate-400' : staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
-                              {s.name} {isLocked && "(Locked)"}
-                            </span>
+                            <div className="flex flex-col min-w-0">
+                              <span className={`text-xs font-semibold truncate ${isLocked ? 'text-slate-500 dark:text-slate-400' : staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
+                                {s.name} {isLocked && "(Locked)"}
+                              </span>
+                              {s.locations && s.locations.length > 0 ? (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1 font-normal">
+                                  <Building className="h-2.5 w-2.5 text-indigo-500 shrink-0" />
+                                  {s.locations.map((l: any) => l.name).join(", ")}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                                  All Locations
+                                </span>
+                              )}
+                            </div>
                           </div>
                           {isLocked ? (
-                            <Lock className="h-3.5 w-3.5 text-slate-400" />
+                            <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-2" />
                           ) : (
-                            staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600" />
+                            staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600 shrink-0 ml-2" />
                           )}
                         </button>
                       );
@@ -657,13 +678,13 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                     const next = view === 'week' ? addMinutes(currentDate, -10080) : addMinutes(currentDate, -1440);
                     updateCurrentDate(next);
                   }}
-                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button 
                   onClick={() => updateCurrentDate(new Date())} 
-                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
+                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1 cursor-pointer"
                 >
                   Today
                 </button>
@@ -672,7 +693,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                     const next = view === 'week' ? addMinutes(currentDate, 10080) : addMinutes(currentDate, 1440);
                     updateCurrentDate(next);
                   }}
-                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
+                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -803,7 +824,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              onClick={() => setShowHoursModal(false)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-6 bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
@@ -819,7 +841,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                   </div>
                   <button 
                     onClick={() => setShowHoursModal(false)}
-                    className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+                    className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700 cursor-pointer"
                   >
                     <X className="h-5 w-5 text-slate-400" />
                   </button>
@@ -844,7 +866,8 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              onClick={() => setShowScheduleViewModal(false)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
@@ -859,7 +882,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                 </div>
                 <button 
                   onClick={() => setShowScheduleViewModal(false)}
-                  className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all animate-none"
+                  className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all animate-none cursor-pointer"
                 >
                   <X className="h-5 w-5 text-slate-400" />
                 </button>
@@ -878,7 +901,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                           setOpenUpward(spaceBelow < 250);
                           setIsStartOpen(!isStartOpen);
                         }}
-                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group"
+                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group cursor-pointer"
                       >
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                           <Clock className="h-4 w-4" />
@@ -902,7 +925,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                                   setTempViewStart(t.value);
                                   setIsStartOpen(false);
                                 }}
-                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${tempViewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer ${tempViewStart === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                               >
                                 {formatOptionLabel(t.value)}
                               </button>
@@ -923,7 +946,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                           setOpenUpward(spaceBelow < 250);
                           setIsEndOpen(!isEndOpen);
                         }}
-                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group"
+                        className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all hover:border-indigo-100 dark:hover:border-slate-700 focus:border-indigo-600 shadow-sm text-left min-h-[46px] relative group cursor-pointer"
                       >
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                           <Clock className="h-4 w-4" />
@@ -947,7 +970,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                                   setTempViewEnd(t.value);
                                   setIsEndOpen(false);
                                 }}
-                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${tempViewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                                className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer ${tempViewEnd === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                               >
                                 {formatOptionLabel(t.value)}
                               </button>
@@ -969,14 +992,14 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <button 
                     onClick={() => setShowScheduleViewModal(false)}
-                    className="px-6 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-6 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleSaveScheduleView}
                     disabled={saveViewLoading}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95"
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {saveViewLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

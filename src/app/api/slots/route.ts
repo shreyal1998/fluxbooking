@@ -19,3 +19,4 @@ export async function GET(req: Request) {
     return Response.json({ error: "Failed to fetch slots" }, { status: 500 });
   }
 }
+

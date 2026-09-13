@@ -223,14 +223,27 @@ export function HomeClient() {
             <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Pick your pace of flux</h3>
             
             <div className="mt-8 flex items-center justify-center gap-4">
-              <span className={`text-xs font-black transition-colors ${!isYearly ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
               <button 
+                type="button"
+                onClick={() => setIsYearly(false)}
+                className={`text-xs font-black transition-colors cursor-pointer ${!isYearly ? 'text-slate-900' : 'text-slate-400'}`}
+              >
+                Monthly
+              </button>
+              <button 
+                type="button"
                 onClick={() => setIsYearly(!isYearly)}
-                className={`w-12 h-6 rounded-full p-1 transition-all duration-300 relative ${isYearly ? 'bg-indigo-600' : 'bg-slate-200'}`}
+                className={`w-12 h-6 rounded-full p-1 transition-all duration-300 relative cursor-pointer ${isYearly ? 'bg-indigo-600' : 'bg-slate-200'}`}
               >
                 <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${isYearly ? 'translate-x-6' : 'translate-x-0'}`}></div>
               </button>
-              <span className={`text-xs font-black transition-colors ${isYearly ? 'text-indigo-600' : 'text-slate-400'}`}>Yearly (-20%)</span>
+              <button 
+                type="button"
+                onClick={() => setIsYearly(true)}
+                className={`text-xs font-black transition-colors cursor-pointer ${isYearly ? 'text-indigo-600' : 'text-slate-400'}`}
+              >
+                Yearly (-20%)
+              </button>
             </div>
           </div>
 

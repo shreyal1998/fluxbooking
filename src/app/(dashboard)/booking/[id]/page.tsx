@@ -206,7 +206,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
   const currentPrice = booking.price ? Number(booking.price) : Number(booking.service.price);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+    <div className="flex-1 flex flex-col w-full max-w-full min-w-0 animate-fade-in p-4 md:p-6 lg:p-8 space-y-6">
       {/* Header breadcrumb */}
       <div className="flex items-center gap-2 text-sm font-medium tracking-wider">
         <Link href={`/${appointmentSlug}`} className="text-black dark:text-white">Booking Calendar</Link>

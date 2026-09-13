@@ -112,9 +112,9 @@ export default function SupportClient({ userName, userEmail }: { userName: strin
 
   /* ── Form ───────────────────────────────────────────── */
   return (
-    <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+    <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
       {/* Unified Section Header */}
-      <div className="px-8 md:px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="px-8 md:px-10 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">Support</h2>
         </div>
@@ -236,7 +236,7 @@ export default function SupportClient({ userName, userEmail }: { userName: strin
                 <button
                   type="button"
                   onClick={() => { setAttachedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                  className="ml-3 text-slate-400 hover:text-rose-500 transition-colors shrink-0"
+                  className="ml-3 text-slate-400 hover:text-rose-500 transition-colors shrink-0 cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -245,7 +245,7 @@ export default function SupportClient({ userName, userEmail }: { userName: strin
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full rounded-2xl border-2 border-dashed border-indigo-100/80 dark:border-slate-800 bg-indigo-50/20 dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-slate-700 px-5 py-3 text-sm text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2 transition-all shadow-sm"
+                className="w-full rounded-2xl border-2 border-dashed border-indigo-100/80 dark:border-slate-800 bg-indigo-50/20 dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-slate-700 px-5 py-3 text-sm text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
               >
                 <Paperclip className="h-4 w-4" />
                 Click to attach a file (image, PDF, doc…)
@@ -256,7 +256,7 @@ export default function SupportClient({ userName, userEmail }: { userName: strin
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading
               ? <div className="h-5 w-5 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />

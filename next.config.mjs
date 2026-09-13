@@ -4,6 +4,9 @@ const nextConfig = {
   async rewrites() {
     return [
       // Staff / Team / Practitioners
+      { source: '/team/:id', destination: '/staff/:id' },
+      { source: '/trainers/:id', destination: '/staff/:id' },
+      { source: '/practitioners/:id', destination: '/staff/:id' },
       { source: '/team', destination: '/staff' },
       { source: '/trainers', destination: '/staff' },
       { source: '/practitioners', destination: '/staff' },

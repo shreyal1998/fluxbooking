@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   AlertCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react";
 import { updateCustomer, toggleCustomerStatus } from "@/app/actions/customer";
 import { format } from "date-fns";
@@ -55,6 +56,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
   // Admin starts with ACTIVE filter, Staff is locked to ACTIVE
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ACTIVE");
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [customerNotes, setCustomerNotes] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [archivingCustomer, setArchivingCustomer] = useState<any>(null);
   const [archiveReason, setArchiveReason] = useState("");
@@ -92,6 +94,12 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const openCustomerProfile = (customer: any) => {
+    setEditingCustomer(customer);
+    setCustomerNotes(customer.notes || "");
+    setFieldErrors({});
+  };
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -180,7 +188,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                     <button
                         key={s}
                         onClick={() => setStatusFilter(s)}
-                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
                             statusFilter === s 
                             ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm" 
                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -282,7 +290,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
 
                       <Tooltip content="Edit" position="bottom">
                         <button 
-                          onClick={() => setEditingCustomer(customer)}
+                          onClick={() => openCustomerProfile(customer)}
                           className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                           title=""
                         >
@@ -309,7 +317,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -324,7 +332,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                  className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-100/50 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -338,16 +346,17 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              onClick={() => setEditingCustomer(null)}
             />
-             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300">
-                <div className="p-8 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between">
+             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col">
+                <div className="p-6 sm:p-8 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between shrink-0">
                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{labels.customer} Profile</h3>
-                   <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                   <button onClick={() => setEditingCustomer(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer">
                      <X className="h-5 w-5 text-slate-400" />
                    </button>
                 </div>
-                <form onSubmit={handleUpdate} className="p-8 space-y-6" noValidate>
+                <form onSubmit={handleUpdate} className="p-6 sm:p-8 space-y-6 overflow-y-auto" noValidate>
                    <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -387,7 +396,8 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                           defaultValue={editingCustomer.email} 
                           required 
                           onChange={() => clearFieldError("email")}
-                          className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all ${
+                          placeholder="customer@example.com"
+                          className={`w-full rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
                             fieldErrors.email 
                               ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
                               : "border-indigo-100/50 bg-indigo-50/30 dark:bg-slate-800 dark:text-white hover:border-indigo-200 focus:border-indigo-600"
@@ -400,6 +410,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                         <PhoneInput 
                           name="phone" 
                           defaultValue={editingCustomer.phone || ""} 
+                          placeholder="234 567 890"
                           hasError={!!fieldErrors.phone}
                           onChange={() => clearFieldError("phone")}
                           onFocus={() => clearFieldError("phone")}
@@ -407,15 +418,31 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Internal Notes</label>
-                        <textarea name="notes" rows={3} defaultValue={editingCustomer.notes || ""} className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-transparent hover:border-indigo-200 focus:border-indigo-600 rounded-2xl px-5 py-3 text-sm dark:text-white outline-none resize-none transition-all" />
+                        <textarea 
+                          name="notes" 
+                          rows={4} 
+                          value={customerNotes}
+                          onFocus={() => clearFieldError("notes")}
+                          onChange={(e) => {
+                            setCustomerNotes(e.target.value);
+                            clearFieldError("notes");
+                          }}
+                          placeholder="Add internal notes, history or preferences..."
+                          className={`w-full border-2 rounded-2xl px-5 py-3 text-sm focus:outline-none transition-all dark:text-white resize-none shadow-sm ${
+                            fieldErrors.notes 
+                              ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                              : "border-indigo-100/50 bg-indigo-50/30 dark:bg-slate-800 dark:border-transparent hover:border-indigo-200 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-800"
+                          }`} 
+                        />
+                        <InputError message={fieldErrors.notes} />
                       </div>
                    </div>
                    <button 
                      type="submit" 
                      disabled={loading}
-                     className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50"
+                     className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50 cursor-pointer"
                    >
-                     {loading ? "Saving..." : "Save Changes"}
+                     {loading ? "Saving..." : `Save ${labels.customer} Profile`}
                    </button>
                 </form>
              </div>
@@ -427,7 +454,8 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              onClick={() => setArchivingCustomer(null)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
@@ -468,14 +496,14 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
                 <div className="grid grid-cols-2 gap-4 mt-8">
                   <button 
                     onClick={() => setArchivingCustomer(null)}
-                    className="py-4 rounded-2xl font-medium text-slate-900 dark:text-white opacity-40 hover:opacity-100 transition-all"
+                    className="py-4 rounded-2xl font-medium text-slate-900 dark:text-white opacity-40 hover:opacity-100 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={() => handleToggleStatus(archivingCustomer.id, 'ACTIVE', archiveReason)}
                     disabled={!archiveReason || processingId === archivingCustomer.id}
-                    className="bg-amber-600 text-white py-4 rounded-2xl font-black hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50"
+                    className="bg-amber-600 text-white py-4 rounded-2xl font-black hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50 cursor-pointer"
                   >
                     {processingId === archivingCustomer.id ? "Inactivating..." : "Inactivate"}
                   </button>

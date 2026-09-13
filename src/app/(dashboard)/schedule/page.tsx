@@ -26,6 +26,7 @@ export default async function SchedulePage() {
       include: {
         blockedSlots: true,
         availabilityOverrides: true,
+        locations: true,
         leaveRequests: {
           where: { status: { in: ["APPROVED", "PENDING"] } }
         }

@@ -39,7 +39,7 @@ export function CustomersClient({
   country
 }: { 
   initialCustomers: any[], 
-  tenantId: string,
+  tenantId: string, 
   userRole: string, 
   businessType?: any,
   country?: string
@@ -52,6 +52,7 @@ export function CustomersClient({
   const itemsPerPage = 10;
   
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [customerNotes, setCustomerNotes] = useState("");
   const [archivingCustomer, setArchivingCustomer] = useState<any>(null);
   const [archiveReason, setArchiveReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -140,6 +141,11 @@ export function CustomersClient({
     return pageNumbers;
   }, [totalPages, currentPage]);
 
+  const openCustomerProfile = (customer: any) => {
+    setEditingCustomer(customer);
+    setCustomerNotes(customer.notes || "");
+  };
+
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -172,37 +178,37 @@ export function CustomersClient({
   return (
     <div className="flex-1 flex flex-col animate-fade-in p-4 md:p-6 lg:p-8">
       
-      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
         
         {/* Unified Dashboard Header */}
-        <div className="px-10 py-6 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="px-6 py-4 sm:px-8 sm:py-4.5 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">{labels.customer}s</h2>
-            <div className="flex items-center gap-2 mt-1">
+            <h2 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">{labels.customer}s</h2>
+            <div className="flex items-center gap-2 mt-0.5">
               <div className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{customers.length} Total {labels.customer}s</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
               <input 
                 type="text"
                 placeholder={`Search ${labels.customerLower}s...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-2xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
+                className="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-indigo-500/40 dark:focus:border-indigo-500/40 rounded-xl text-xs dark:text-white focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none w-48 lg:w-64 shadow-sm"
               />
             </div>
 
             {userRole === "ADMIN" && (
-              <div className="hidden sm:flex bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="hidden sm:flex bg-slate-50 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 {(["ACTIVE", "INACTIVE", "ALL"] as const).map((s) => (
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s)}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
                       statusFilter === s 
                       ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-white shadow-sm" 
                       : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -216,7 +222,7 @@ export function CustomersClient({
 
             <button 
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-widest"
+              className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-500/10 dark:shadow-none hover:bg-indigo-700 hover:scale-[1.02] transition-all active:scale-95 border border-transparent dark:border-white/10 uppercase tracking-wider cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               Add
@@ -224,7 +230,7 @@ export function CustomersClient({
           </div>
         </div>
 
-        <div className="flex-1 p-10 pt-8" id="customers-table">
+        <div className="flex-1 p-6 sm:p-8 pt-6" id="customers-table">
           {filteredCustomers.length === 0 ? (
             <div className="bg-indigo-50/50 dark:bg-slate-950/50 p-24 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center">
               <UserCircle className="h-16 w-16 text-slate-200 dark:text-slate-700 mb-6" />
@@ -236,25 +242,26 @@ export function CustomersClient({
               </p>
             </div>
           ) : (
-            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="bg-white/50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                   <thead>
-                    <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
-                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.customer}</th>
-                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Contact Details</th>
+                    <tr className="bg-indigo-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                      <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{labels.customer}</th>
+                      <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Email</th>
+                      <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Phone Number</th>
                       {userRole === "ADMIN" && (
-                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                        <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                       )}
-                      <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                      <th className="px-6 py-4 sm:px-8 sm:py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {currentItems.map((customer) => (
                       <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 group">
-                        <td className="px-8 py-5 whitespace-nowrap">
-                          <div className="flex items-center gap-4">
-                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs transition-colors ${
+                        <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs transition-colors shrink-0 ${
                                 customer.status === 'ACTIVE' 
                                 ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' 
                                 : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
@@ -262,7 +269,7 @@ export function CustomersClient({
                               {customer.name.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <p className={`text-sm font-bold transition-colors ${customer.status === 'ACTIVE' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>{customer.name}</p>
+                              <p className={`text-sm font-medium transition-colors ${customer.status === 'ACTIVE' ? 'text-slate-950 dark:text-slate-50' : 'text-slate-400'}`}>{customer.name}</p>
                               {customer.notes && (
                                 <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5 font-medium">
                                   <FileText className="h-3 w-3" /> Note attached
@@ -271,21 +278,27 @@ export function CustomersClient({
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-5 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                              <Mail className="h-3 w-3 text-slate-400" /> {customer.email}
-                            </div>
-                            {customer.phone && (
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                                <Phone className="h-3 w-3 text-slate-400" /> {formatPhone(customer.phone)}
-                              </div>
-                            )}
+                        <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span>{customer.email}</span>
                           </div>
                         </td>
+                        <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                          {customer.phone ? (
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                              <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{formatPhone(customer.phone)}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center w-28 text-xs text-slate-400 font-medium">
+                              —
+                            </div>
+                          )}
+                        </td>
                         {userRole === "ADMIN" && (
-                          <td className="px-8 py-5 whitespace-nowrap">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider border ${
+                          <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider border ${
                                 customer.status === 'ACTIVE' 
                                 ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-900/50' 
                                 : 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/20 dark:border-rose-900/50'
@@ -294,14 +307,14 @@ export function CustomersClient({
                             </span>
                           </td>
                         )}
-                        <td className="px-8 py-5 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2 transition-opacity">
+                        <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1.5 transition-opacity">
                             <Tooltip content="Edit" position="bottom">
                               <button 
-                                onClick={() => setEditingCustomer(customer)}
-                                className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                                onClick={() => openCustomerProfile(customer)}
+                                className="p-2 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
                               >
-                                <Pencil className="h-[18px] w-[18px]" />
+                                <Pencil className="h-4 w-4" />
                               </button>
                             </Tooltip>
 
@@ -310,9 +323,9 @@ export function CustomersClient({
                                 <button 
                                   onClick={() => userRole === "ADMIN" ? handleToggleStatus(customer.id, 'ACTIVE') : setArchivingCustomer(customer)}
                                   disabled={processingId === customer.id}
-                                  className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                  className="p-2 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                 >
-                                  <UserMinus className="h-[18px] w-[18px]" />
+                                  <UserMinus className="h-4 w-4" />
                                 </button>
                               </Tooltip>
                             ) : (
@@ -321,9 +334,9 @@ export function CustomersClient({
                                   <button 
                                     onClick={() => handleToggleStatus(customer.id, 'INACTIVE')}
                                     disabled={processingId === customer.id}
-                                    className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                    className="p-2 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
                                   >
-                                    <UserCheck className="h-[18px] w-[18px]" />
+                                    <UserCheck className="h-4 w-4" />
                                   </button>
                                 </Tooltip>
                               )
@@ -341,7 +354,7 @@ export function CustomersClient({
 
         {/* Pagination Footer */}
         {filteredCustomers.length > itemsPerPage && (
-          <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
               Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, filteredCustomers.length)}</span> of <span className="text-black dark:text-white">{filteredCustomers.length}</span> {labels.customerLower}s
             </p>
@@ -350,7 +363,7 @@ export function CustomersClient({
               <button
                 onClick={() => paginate(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -376,7 +389,7 @@ export function CustomersClient({
                       className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 cursor-pointer ${
                         isActive
                           ? "bg-indigo-600 text-white shadow-sm"
-                          : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                          : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
                       }`}
                     >
                       {pageNum}
@@ -388,7 +401,7 @@ export function CustomersClient({
               <button
                 onClick={() => paginate(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -402,7 +415,8 @@ export function CustomersClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              onClick={() => setIsAddModalOpen(false)}
             />
             <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
                <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
@@ -414,12 +428,12 @@ export function CustomersClient({
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                            Add {labels.customer}
                         </h2>
-                        <p className="text-xs font-bold text-slate-500">New Patient File</p>
+                        <p className="text-xs font-medium text-slate-500">New {labels.customer.toLowerCase()} file</p>
                      </div>
                   </div>
                   <button 
                      onClick={() => setIsAddModalOpen(false)} 
-                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                   >
                      <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                   </button>
@@ -438,12 +452,12 @@ export function CustomersClient({
       )}
 
       {/* Edit Modal */}
-      {/* Edit Modal */}
       {editingCustomer && (
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              onClick={() => setEditingCustomer(null)}
             />
             <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
                <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
@@ -455,81 +469,81 @@ export function CustomersClient({
                         <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                            Edit {labels.customer}
                         </h2>
-                        <p className="text-xs font-bold text-slate-500">Configuring {editingCustomer.name}</p>
+                        <p className="text-xs font-medium text-slate-500">Configuring {editingCustomer.name}</p>
                      </div>
                   </div>
                   <button 
                      onClick={() => setEditingCustomer(null)} 
-                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                   >
                      <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                   </button>
                </div>
                
-               <form onSubmit={handleUpdate} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate={false}>
-                 <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
+                <form onSubmit={handleUpdate} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate={false}>
+                  <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 premium-scrollbar">
                     <div>
                       <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                         Full Name <span className="text-rose-500">*</span>
                       </label>
-                      <input 
-                        name="name" 
-                        defaultValue={editingCustomer.name} 
-                        required 
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        defaultValue={editingCustomer.name}
                         placeholder={labels.customerPlaceholder}
-                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm"
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                         Email Address <span className="text-rose-500">*</span>
                       </label>
-                      <input 
-                        name="email" 
-                        type="email" 
-                        defaultValue={editingCustomer.email} 
-                        required 
+                      <input
+                        type="email"
+                        name="email"
+                        required
+                        defaultValue={editingCustomer.email}
                         placeholder="customer@example.com"
-                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm"
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
                       />
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Phone Number</label>
-                      <PhoneInput 
-                        name="phone" 
-                        defaultValue={editingCustomer.phone || ""} 
-                        defaultCountry={country || "US"}
-                        placeholder="234 567 890" 
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Internal Notes</label>
-                      <textarea 
-                        name="notes" 
-                        rows={3} 
-                        defaultValue={editingCustomer.notes || ""} 
-                        placeholder="Any specific preferences or history..." 
-                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm resize-none"
-                      />
-                    </div>
-                 </div>
 
-                 <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-                    >
-                      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                        <>
-                          <Check className="h-5 w-5" />
-                          Save Changes
-                        </>
-                      )}
-                    </button>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
+                        Phone Number
+                      </label>
+                      <PhoneInput
+                        name="phone"
+                        defaultValue={editingCustomer.phone || ""}
+                        defaultCountry={country || "US"}
+                        placeholder="234 567 890"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
+                        Notes & History
+                      </label>
+                      <textarea
+                        name="notes"
+                        rows={4}
+                        defaultValue={editingCustomer.notes || ""}
+                        placeholder="Enter customer notes, preferences, or important history..."
+                        className="w-full rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                 <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors">
+                   <button
+                     type="submit"
+                     disabled={loading}
+                     className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                   >
+                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : `Save ${labels.customer} Profile`}
+                   </button>
                  </div>
                </form>
             </div>
@@ -541,11 +555,12 @@ export function CustomersClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              onClick={() => setArchivingCustomer(null)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 text-center">
-                <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6 border border-amber-100">
+                <div className="mx-auto h-16 w-16 bg-amber-50 dark:bg-amber-900/20 rounded-2xl flex items-center justify-center mb-6 border border-amber-100 animate-bounce">
                   <AlertTriangle className="h-8 w-8 text-amber-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Inactivate {labels.customer}?</h3>
@@ -580,15 +595,17 @@ export function CustomersClient({
 
                 <div className="grid grid-cols-2 gap-4 mt-8">
                   <button 
+                    type="button"
                     onClick={() => setArchivingCustomer(null)}
-                    className="py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
+                    className="py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button 
+                    type="button"
                     onClick={() => handleToggleStatus(archivingCustomer.id, 'ACTIVE', archiveReason)}
                     disabled={!archiveReason || processingId === archivingCustomer.id}
-                    className="bg-amber-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50"
+                    className="bg-amber-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-amber-700 transition-all shadow-xl shadow-amber-100 dark:shadow-none disabled:opacity-50 cursor-pointer"
                   >
                     {processingId === archivingCustomer.id ? "Inactivating..." : "Inactivate"}
                   </button>

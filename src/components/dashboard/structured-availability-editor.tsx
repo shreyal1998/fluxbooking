@@ -358,7 +358,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
               setOpenUpward(spaceBelow < 280);
               setIsTargetOpen(!isTargetOpen);
             }}
-            className="w-full flex items-center justify-between pl-10 pr-4 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl transition-all shadow-sm group min-h-[46px]"
+            className="w-full flex items-center justify-between pl-10 pr-4 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl transition-all shadow-sm group min-h-[46px] cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
@@ -375,7 +375,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
               <button
                 type="button"
                 onClick={toggleAllTargets}
-                className="w-full px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                className="w-full px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer"
               >
                 <input
                   type="checkbox"
@@ -392,7 +392,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
               <button
                 type="button"
                 onClick={() => toggleTarget("venue")}
-                className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${
+                className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer ${
                   selectedTargets.includes("venue") ? "bg-indigo-50/20 dark:bg-indigo-900/10" : ""
                 }`}
               >
@@ -414,7 +414,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                   key={s.id}
                   type="button"
                   onClick={() => toggleTarget(s.id)}
-                  className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${
+                  className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer ${
                     selectedTargets.includes(s.id) ? "bg-indigo-50/20 dark:bg-indigo-900/10" : ""
                   }`}
                 >
@@ -454,7 +454,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
               setOpenUpward(spaceBelow < 280);
               setIsDayOpen(!isDayOpen);
             }}
-            className="w-full flex items-center justify-between pl-10 pr-4 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl transition-all shadow-sm group min-h-[46px]"
+            className="w-full flex items-center justify-between pl-10 pr-4 py-3 text-sm border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl transition-all shadow-sm group min-h-[46px] cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
@@ -473,7 +473,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
               <button
                 type="button"
                 onClick={toggleAllDays}
-                className="w-full px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                className="w-full px-4 py-2.5 border-b border-slate-100 dark:border-slate-800 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer"
               >
                 <input
                   type="checkbox"
@@ -492,7 +492,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                   key={day}
                   type="button"
                   onClick={() => toggleDay(day)}
-                  className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${
+                  className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer ${
                     selectedDays.includes(day) ? "bg-indigo-50/20 dark:bg-indigo-900/10" : ""
                   }`}
                 >
@@ -521,7 +521,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
           <button
             type="button"
             onClick={handleAddShift}
-            className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition-all border border-indigo-100/50 dark:border-indigo-900/30"
+            className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-xl transition-all border border-indigo-100/50 dark:border-indigo-900/30 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -541,7 +541,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                       setOpenUpward(spaceBelow < 250);
                       setOpenDropdown(prev => prev?.index === index && prev?.field === "start" ? null : { index, field: "start" });
                     }}
-                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm min-h-[46px] text-left relative"
+                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm min-h-[46px] text-left relative cursor-pointer"
                   >
                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                       <Clock className="h-4 w-4" />
@@ -565,7 +565,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                               handleTimeChange(index, "start", t.value);
                               setOpenDropdown(null);
                             }}
-                            className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${shift.start === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                            className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer ${shift.start === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                           >
                             {formatOptionLabel(t.value)}
                           </button>
@@ -587,7 +587,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                       setOpenUpward(spaceBelow < 250);
                       setOpenDropdown(prev => prev?.index === index && prev?.field === "end" ? null : { index, field: "end" });
                     }}
-                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm min-h-[46px] text-left relative"
+                    className="w-full flex items-center justify-between pl-10 pr-8 py-3 text-xs font-bold border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-200 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm min-h-[46px] text-left relative cursor-pointer"
                   >
                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
                       <Clock className="h-4 w-4" />
@@ -611,7 +611,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                               handleTimeChange(index, "end", t.value);
                               setOpenDropdown(null);
                             }}
-                            className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${(shift.end === "00:00" ? "24:00" : shift.end) === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
+                            className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer ${(shift.end === "00:00" ? "24:00" : shift.end) === t.value ? "bg-indigo-600 hover:bg-indigo-600 text-white dark:text-white" : "text-black dark:text-slate-200"}`}
                           >
                             {formatOptionLabel(t.value)}
                           </button>
@@ -623,7 +623,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
                 <button
                   type="button"
                   onClick={() => handleRemoveShift(index)}
-                  className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all border border-transparent hover:border-rose-100 shrink-0"
+                  className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all border border-transparent hover:border-rose-100 shrink-0 cursor-pointer"
                 >
                   <Minus className="h-4.5 w-4.5" />
                 </button>
@@ -659,7 +659,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
       {/* Confirmation Dialog Pop-up */}
       {showConfirm && (
         <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md" onClick={() => setShowConfirm(false)} />
+          <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md cursor-pointer" onClick={() => setShowConfirm(false)} />
           <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
 
             {/* Top accent bar */}
@@ -700,13 +700,13 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
               <div className="flex items-center gap-3 pt-1">
                 <button
                   onClick={() => setShowConfirm(false)}
-                  className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+                  className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all active:scale-95 shadow-lg shadow-amber-100 dark:shadow-amber-950/30"
+                  className="flex-1 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all active:scale-95 shadow-lg shadow-amber-100 dark:shadow-amber-950/30 cursor-pointer"
                 >
                   Yes, Overwrite
                 </button>

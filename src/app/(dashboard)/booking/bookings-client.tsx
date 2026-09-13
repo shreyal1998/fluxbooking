@@ -826,7 +826,7 @@ export function BookingsClient({
             <div className="relative" ref={staffDropdownRef}>
               <button 
                 onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-                className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px]"
+                className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px] cursor-pointer"
               >
                 <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
                 <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex-1 text-left">
@@ -843,7 +843,7 @@ export function BookingsClient({
                   <div className="max-h-64 overflow-y-auto scrollbar-hide">
                     <button
                       onClick={handleToggleAll}
-                      className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
+                      className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
@@ -876,7 +876,7 @@ export function BookingsClient({
                           className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${
                             isLocked 
                               ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-900'
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -914,7 +914,8 @@ export function BookingsClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              onClick={() => setShowHoursModal(false)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50">
@@ -929,7 +930,7 @@ export function BookingsClient({
                 </div>
                 <button 
                   onClick={() => setShowHoursModal(false)}
-                  className="h-10 w-10 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="h-10 w-10 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -950,7 +951,8 @@ export function BookingsClient({
         <Portal>
            <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              onClick={() => setSelectedSlotInfo(null)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                {actionType === null ? (
@@ -965,7 +967,7 @@ export function BookingsClient({
                     <div className="grid grid-cols-2 gap-4">
                          <button 
                           onClick={() => setActionType("book")}
-                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full cursor-pointer"
                          >
                             <div className="h-16 w-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                <labels.serviceIcon className="h-8 w-8" />
@@ -976,7 +978,7 @@ export function BookingsClient({
                        <Tooltip content="Block specific time on calendar" position="top">
                          <button 
                           onClick={() => setActionType("block")}
-                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full"
+                          className="flex flex-col items-center gap-4 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-rose-600 hover:bg-white dark:hover:bg-slate-800 transition-all group w-full cursor-pointer"
                          >
                             <div className="h-16 w-16 rounded-3xl bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                <Ban className="h-8 w-8" />
@@ -988,7 +990,7 @@ export function BookingsClient({
 
                     <button 
                       onClick={() => setSelectedSlotInfo(null)}
-                      className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600"
+                      className="text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -1048,7 +1050,8 @@ export function BookingsClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
+              onClick={() => setCancelConfirmId(null)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 space-y-6 text-center">
@@ -1095,19 +1098,19 @@ export function BookingsClient({
             <div className="flex items-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 p-1.5 shadow-sm">
               <button 
                 onClick={prevDate} 
-                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button 
                 onClick={() => updateCurrentDate(new Date())} 
-                className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1"
+                className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1 cursor-pointer"
               >
                 Today
               </button>
               <button 
                 onClick={nextDate} 
-                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
+                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -1128,7 +1131,7 @@ export function BookingsClient({
                   <button
                     key={mins}
                     onClick={() => setSlotDuration(mins)}
-                    className={`px-4 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all ${
+                    className={`px-4 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all cursor-pointer ${
                       slotDuration === mins
                         ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none"
                         : "text-black dark:text-white"
@@ -1142,7 +1145,7 @@ export function BookingsClient({
 
             {/* View Switcher with Zoom */}
             <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-0.5">
-              {viewMode === "week" && (
+              {(viewMode === "week" || viewMode === "day" || viewMode === "team") && (
                 <>
                   <div className="relative" ref={zoomDropdownRef}>
                     <Tooltip content="Zoom" position="bottom" delay={100}>
@@ -1237,18 +1240,18 @@ export function BookingsClient({
               ) : (
                 <>
                   <div className="flex-1 overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                    <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                       <thead>
-                        <tr className="bg-indigo-50/50 dark:bg-slate-900/50">
-                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Date & Time</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Customer</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">{labels.staff}</th>
-                          <th className="px-10 py-5 text-left text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Status</th>
-                          <th className="px-4 py-5 text-right text-[10px] font-normal text-black dark:text-white uppercase tracking-widest whitespace-nowrap">Actions</th>
+                        <tr className="bg-indigo-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                          <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Date & Time</th>
+                          <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Customer</th>
+                          <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{labels.service}</th>
+                          <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{labels.staff}</th>
+                          <th className="px-6 py-4 sm:px-8 sm:py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                          <th className="px-4 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                         {currentListItems.map((booking) => (
                            <tr 
                              key={booking.id} 
@@ -1259,45 +1262,45 @@ export function BookingsClient({
                                  : "hover:bg-indigo-50/50 dark:hover:bg-slate-800/30"
                              }`}
                            >
-                            <td className="px-10 py-6 whitespace-nowrap">
+                            <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
                               <div className={`text-sm font-normal ${booking.status === "CANCELLED" ? "text-slate-400 dark:text-slate-500 line-through" : "text-black dark:text-white"}`}>{formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", "MMM d, yyyy")}</div>
-                              <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
-                                <Clock className="h-3.5 w-3.5 text-indigo-500/50" /> {formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", listTimeFormat)}
+                              <div className="text-xs font-normal text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-1">
+                                <Clock className="h-3.5 w-3.5 text-indigo-500" /> {formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", listTimeFormat)}
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap">
+                            <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
                               <div className={`text-sm font-normal ${booking.status === "CANCELLED" ? "text-slate-400 dark:text-slate-500" : "text-black dark:text-white"}`}>
                                 {booking.customer?.name && booking.customerName.trim().toLowerCase() !== booking.customer.name.trim().toLowerCase()
                                   ? `${booking.customerName} (${booking.customer.name})`
                                   : booking.customerName}
                               </div>
-                              <div className="text-[10px] font-normal text-black dark:text-white uppercase tracking-tight flex items-center gap-1.5 mt-1">
-                                <Mail className="h-3.5 w-3.5 text-indigo-500/50" /> {booking.customerEmail}
+                              <div className="text-xs font-normal text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-1">
+                                <Mail className="h-3.5 w-3.5 text-indigo-500" /> {booking.customerEmail}
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="inline-flex items-center px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[9px] font-normal uppercase text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
-                                <div className="w-1.5 h-1.5 rounded-full mr-2" style={{ backgroundColor: booking.service.color }}></div>
+                            <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                              <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-xs font-normal text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                                <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: booking.service.color }}></div>
                                 {booking.service.name}
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap">
-                              <div className="flex items-center gap-3">
+                            <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2.5">
                                 <div 
-                                  className={`h-8 w-8 rounded-xl flex items-center justify-center text-[10px] font-normal text-white ${booking.status === "CANCELLED" ? "opacity-40" : ""}`}
+                                  className={`h-8 w-8 rounded-xl flex items-center justify-center text-xs font-normal text-white shrink-0 ${booking.status === "CANCELLED" ? "opacity-40" : ""}`}
                                   style={{ backgroundColor: booking.staff.color }}
                                 >
                                   {booking.staff.name.substring(0, 2).toUpperCase()}
                                 </div>
-                                <span className="text-[11px] font-normal text-black dark:text-white uppercase tracking-tight">{booking.staff.name}</span>
+                                <span className="text-sm font-normal text-black dark:text-white tracking-normal">{booking.staff.name}</span>
                               </div>
                             </td>
-                            <td className="px-10 py-6 whitespace-nowrap">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-normal tracking-wider border ${getStatusStyle(booking.status === "CONFIRMED" ? "PENDING" : booking.status)}`}>
+                            <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-normal tracking-wide border ${getStatusStyle(booking.status === "CONFIRMED" ? "PENDING" : booking.status)}`}>
                                 {booking.status === "CONFIRMED" ? "PENDING" : booking.status}
                               </span>
                             </td>
-                            <td className="px-4 py-6 whitespace-nowrap text-right">
+                            <td className="px-4 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-1 transition-all">
                                 {(booking.status === "PENDING" || booking.status === "CONFIRMED" || booking.status === "COMPLETED" || booking.status === "CANCELLED") && (
                                   <>
@@ -1383,16 +1386,16 @@ export function BookingsClient({
 
                   {/* Integrated Pagination Footer */}
                   {listFilteredBookings.length > itemsPerPage && (
-                    <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                      <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
-                        Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="text-black dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
+                    <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                      <p className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                        Showing <span className="font-normal text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="font-normal text-black dark:text-white">{Math.min(indexOfLastItem, listFilteredBookings.length)}</span> of <span className="font-normal text-black dark:text-white">{listFilteredBookings.length}</span> {labels.appointmentLower}s
                       </p>
                       
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => paginate(currentPage - 1)}
                           disabled={currentPage === 1}
-                          className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </button>
@@ -1415,10 +1418,10 @@ export function BookingsClient({
                               <button
                                 key={`page-${pageNum}`}
                                 onClick={() => paginate(pageNum as number)}
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 ${
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 cursor-pointer ${
                                   isActive
                                     ? "bg-indigo-600 text-white shadow-sm"
-                                    : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
                                 }`}
                               >
                                 {pageNum}
@@ -1430,7 +1433,7 @@ export function BookingsClient({
                         <button
                           onClick={() => paginate(currentPage + 1)}
                           disabled={currentPage === totalPages}
-                          className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
+                          className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
                         >
                           <ChevronRight className="h-4 w-4" />
                         </button>
@@ -1476,7 +1479,8 @@ export function BookingsClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse animate-none"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              onClick={() => setShowScheduleViewModal(false)}
             />
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">

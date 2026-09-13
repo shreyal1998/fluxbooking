@@ -195,6 +195,8 @@ export async function toggleSlotStatus({
 
     revalidatePath("/schedule");
     revalidatePath("/my-schedule");
+    revalidatePath("/staff", "layout");
+    revalidatePath("/practitioners", "layout");
     revalidatePath("/appointments");
     revalidatePath("/booking");
     revalidatePath("/bookings");

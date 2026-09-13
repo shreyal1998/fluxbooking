@@ -562,7 +562,7 @@ export function QuickBlockForm({
               type="text"
               placeholder="e.g., Lunch Break, Errand"
               onChange={() => clearFieldError("reason")}
-              className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
+              className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
                 fieldErrors.reason ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
               }`}
             />
@@ -606,7 +606,7 @@ export function QuickBlockForm({
                   setSelectedBlockDate("");
                   setFieldErrors(prev => ({ ...prev, blockDate: "Please enter a valid date in dd/mm/yyyy format." }));
                 }}
-                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
+                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
                   fieldErrors.blockDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"
                 }`}
               />
@@ -735,7 +735,7 @@ export function QuickBlockForm({
                 }`}
               >
                 <div className="relative w-14 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold">
+                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-normal">
                     <span className="invisible">{startTimeInput}</span>
                     <span className="text-slate-400 dark:text-slate-500">{"00:00".slice(startTimeInput.length)}</span>
                   </span>
@@ -848,7 +848,7 @@ export function QuickBlockForm({
                 }`}
               >
                 <div className="relative w-14 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold">
+                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-normal">
                     <span className="invisible">{endTimeInput}</span>
                     <span className="text-slate-400 dark:text-slate-500">{"00:00".slice(endTimeInput.length)}</span>
                   </span>
@@ -942,7 +942,7 @@ export function QuickBlockForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl shadow-indigo-100 dark:shadow-none"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl shadow-indigo-100 dark:shadow-none cursor-pointer"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
           Confirm Time Block

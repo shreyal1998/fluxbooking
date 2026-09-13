@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { AlertCircle, Loader2, Palette, Trash2, ShieldAlert, Scissors, Check, Eye, EyeOff, ChevronDown, Search, X } from "lucide-react";
+import { AlertCircle, Loader2, Palette, Trash2, ShieldAlert, Scissors, Check, Eye, EyeOff, ChevronDown, Search, X, Building2 } from "lucide-react";
 import { updateStaffProfile, deleteStaff } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { getLabels } from "@/lib/labels";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { validatePhoneNumber } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { validatePhoneNumber } from "@/lib/utils";
 interface EditStaffFormProps {
   staff: {
     id: string;
+    userId?: string | null;
     name: string;
     bio: string | null;
     color: string;
@@ -22,10 +23,12 @@ interface EditStaffFormProps {
       phone: string | null;
     } | null;
     services?: any[];
+    locations?: any[];
   };
   isAdmin: boolean;
   onSuccess?: () => void;
   services: any[];
+  locations?: any[];
   businessType?: any;
   country?: string;
   securityOnlyMode?: boolean;
@@ -41,8 +44,12 @@ const InputError = ({ message }: { message?: string }) => {
   );
 };
 
-export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessType, country, securityOnlyMode = false }: EditStaffFormProps) {
+export function EditStaffForm({ staff, isAdmin, onSuccess, services, locations = [], businessType, country, securityOnlyMode = false }: EditStaffFormProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as any)?.id;
+  const isEditingSelf = securityOnlyMode || (!!currentUserId && (staff.userId === currentUserId || (staff.user as any)?.id === currentUserId));
+
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -50,10 +57,14 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
   const [generalError, setGeneralError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const [showOldPassword, setShowOldPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>(
     staff.services?.map(s => s.id) || []
+  );
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(
+    staff.locations?.map(l => l.id) || []
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -70,10 +81,12 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     setFieldErrors({});
     setGeneralError(null);
     setConfirmDelete(false);
+    setShowOldPassword(false);
     setShowPassword(false);
     setShowConfirmPassword(false);
     setSelectedServices(staff.services?.map(s => s.id) || []);
-  }, [staff.id, staff.services]);
+    setSelectedLocations(staff.locations?.map(l => l.id) || []);
+  }, [staff.id, staff.services, staff.locations]);
 
   const toggleService = (serviceId: string) => {
     setSelectedServices(prev => 
@@ -104,25 +117,39 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     const phone = formData.get("phone") as string;
 
     const errors: Record<string, string> = {};
-    const phoneError = validatePhoneNumber(phone);
-    if (phoneError) errors.phone = phoneError;
-    if (isAdmin) {
-      if (!name) errors.name = `${labels.staff} name is required`;
-      if (!email) {
-        errors.email = "Email address is required";
-      } else if (!/\S+@\S+\.\S+/.test(email)) {
-        errors.email = "Please enter a valid email address";
+    if (!securityOnlyMode) {
+      const phoneError = validatePhoneNumber(phone);
+      if (phoneError) errors.phone = phoneError;
+      if (isAdmin) {
+        if (!name) errors.name = `${labels.staff} name is required`;
+        if (!email) {
+          errors.email = "Email address is required";
+        } else if (!/\S+@\S+\.\S+/.test(email)) {
+          errors.email = "Please enter a valid email address";
+        }
       }
     }
 
+    const oldPassword = formData.get("oldPassword") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
-    if (password) {
-      if (password.length < 6) {
+    const hasAnyPasswordInput = (isEditingSelf && !!oldPassword) || !!password || !!confirmPassword;
+
+    if (hasAnyPasswordInput) {
+      if (isEditingSelf && !oldPassword) {
+        errors.oldPassword = "Current password is required";
+      }
+
+      if (!password) {
+        errors.password = "New password is required";
+      } else if (password.length < 6) {
         errors.password = "Password must be at least 6 characters";
       }
-      if (password !== confirmPassword) {
+
+      if (!confirmPassword) {
+        errors.confirmPassword = "Confirm password is required";
+      } else if (password && password !== confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
     }
@@ -140,8 +167,16 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
     const result = await updateStaffProfile(staff.id, formData);
 
     if (result?.error) {
-      setGeneralError(result.error);
-      toast.error(result.error);
+      if ((result as any).field === "oldPassword" || result.error.toLowerCase().includes("current password")) {
+        setFieldErrors({ oldPassword: result.error });
+      } else if ((result as any).field) {
+        setFieldErrors({ [(result as any).field]: result.error });
+      } else if (result.error.toLowerCase().includes("email")) {
+        setFieldErrors({ email: result.error });
+      } else {
+        setGeneralError(result.error);
+        toast.error(result.error);
+      }
       setLoading(false);
     } else {
       if ((result as any).emailChanged || (result as any).passwordChanged) {
@@ -158,14 +193,17 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
       router.refresh();
       
       // Clear password inputs
+      const oldPwdInput = form.querySelector('input[name="oldPassword"]') as HTMLInputElement;
       const pwdInput = form.querySelector('input[name="password"]') as HTMLInputElement;
       const cpwdInput = form.querySelector('input[name="confirmPassword"]') as HTMLInputElement;
+      if (oldPwdInput) oldPwdInput.value = "";
       if (pwdInput) pwdInput.value = "";
       if (cpwdInput) cpwdInput.value = "";
 
       setLoading(false);
       setFieldErrors({});
       setGeneralError(null);
+      setShowOldPassword(false);
       setShowPassword(false);
       setShowConfirmPassword(false);
       if (onSuccess) onSuccess();
@@ -175,10 +213,105 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
   return (
     <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-6 space-y-5 premium-scrollbar">
-        <div>
-          <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
-            Full Name <span className="text-rose-500">*</span>
-          </label>
+        {securityOnlyMode ? (
+          <>
+            <input type="hidden" name="name" value={staff.name} />
+            <input type="hidden" name="email" value={staff.user?.email || ""} />
+            <input type="hidden" name="bio" value={staff.bio || ""} />
+            <input type="hidden" name="phone" value={staff.user?.phone || ""} />
+            <input type="hidden" name="color" value={staff.color} />
+            {selectedServices.map((serviceId) => (
+              <input key={serviceId} type="hidden" name="services" value={serviceId} />
+            ))}
+            {selectedLocations.map((locId) => (
+              <input key={locId} type="hidden" name="locations" value={locId} />
+            ))}
+
+            <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/30 space-y-3">
+              <p className="text-xs font-bold text-indigo-500 dark:text-indigo-400">Change Password (Optional)</p>
+              <div>
+                <div className="relative">
+                  <input
+                    name="oldPassword"
+                    type={showOldPassword ? "text" : "password"}
+                    onChange={() => clearFieldError("oldPassword")}
+                    placeholder="Current password"
+                    className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm text-sm ${
+                      showOldPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                    } ${
+                      fieldErrors.oldPassword 
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                        : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPassword(!showOldPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                  >
+                    {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <InputError message={fieldErrors.oldPassword} />
+              </div>
+              <div>
+                <div className="relative">
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    onChange={() => clearFieldError("password")}
+                    placeholder="New password"
+                    className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm text-sm ${
+                      showPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                    } ${
+                      fieldErrors.password 
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                        : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <InputError message={fieldErrors.password} />
+              </div>
+              <div>
+                <div className="relative">
+                  <input
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    onChange={() => clearFieldError("confirmPassword")}
+                    placeholder="Confirm new password"
+                    className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm text-sm ${
+                      showConfirmPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                    } ${
+                      fieldErrors.confirmPassword 
+                        ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                        : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <InputError message={fieldErrors.confirmPassword} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
+                Full Name <span className="text-rose-500">*</span>
+              </label>
               <input
                 name="name"
                 type="text"
@@ -222,18 +355,6 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
               <InputError message={fieldErrors.email} />
               {!isAdmin && <input type="hidden" name="email" value={staff.user?.email || ""} />}
             </div>
-
-        {securityOnlyMode ? (
-          <>
-            <input type="hidden" name="bio" value={staff.bio || ""} />
-            <input type="hidden" name="phone" value={staff.user?.phone || ""} />
-            <input type="hidden" name="color" value={staff.color} />
-            {selectedServices.map((serviceId) => (
-              <input key={serviceId} type="hidden" name="services" value={serviceId} />
-            ))}
-          </>
-        ) : (
-          <>
             <div>
               <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Phone Number</label>
               <PhoneInput
@@ -267,6 +388,33 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
             {staff.user && (
               <div className="p-5 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-3xl border-2 border-indigo-100 dark:border-indigo-900/30 space-y-3">
                 <p className="text-xs font-bold text-indigo-500 dark:text-indigo-400">Change Password (Optional)</p>
+                {isEditingSelf && (
+                  <div>
+                    <div className="relative">
+                      <input
+                        name="oldPassword"
+                        type={showOldPassword ? "text" : "password"}
+                        onChange={() => clearFieldError("oldPassword")}
+                        placeholder="Current password"
+                        className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm text-sm ${
+                          showOldPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
+                        } ${
+                          fieldErrors.oldPassword 
+                            ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                            : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-700 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOldPassword(!showOldPassword)}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                      >
+                        {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <InputError message={fieldErrors.oldPassword} />
+                  </div>
+                )}
                 <div>
                   <div className="relative">
                     <input
@@ -274,7 +422,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                       type={showPassword ? "text" : "password"}
                       onChange={() => clearFieldError("password")}
                       placeholder="New password"
-                      className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
+                      className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm text-sm ${
                         showPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
                       } ${
                         fieldErrors.password 
@@ -285,7 +433,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -299,7 +447,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                       type={showConfirmPassword ? "text" : "password"}
                       onChange={() => clearFieldError("confirmPassword")}
                       placeholder="Confirm new password"
-                      className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400 shadow-sm text-sm ${
+                      className={`h-10 w-full rounded-xl border-2 pl-4 pr-10 py-2 focus:outline-none transition-all dark:text-white placeholder:text-xs placeholder:tracking-normal placeholder:font-normal placeholder:text-slate-400 shadow-sm text-sm ${
                         showConfirmPassword ? "font-semibold tracking-normal" : "tracking-[0.25em]"
                       } ${
                         fieldErrors.confirmPassword 
@@ -310,7 +458,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
                     >
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -373,7 +521,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                            }
                            setIsDropdownOpen(!isDropdownOpen);
                          }}
-                         className="w-full flex items-center justify-between rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 text-left"
+                         className="w-full flex items-center justify-between rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 text-left cursor-pointer"
                        >
                          <span className="truncate text-slate-700 dark:text-slate-200">
                            {selectedServices.length === 0 
@@ -407,7 +555,7 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                                       key={service.id}
                                       type="button"
                                       onClick={() => toggleService(service.id)}
-                                      className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left text-xs ${
+                                      className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all text-left text-xs cursor-pointer ${
                                         isSelected
                                           ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold"
                                           : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-350"
@@ -437,6 +585,63 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
                  )}
                </div>
              )}
+
+              {/* Branch Locations Selection */}
+              {locations && locations.length > 0 && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-3 flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-slate-400" />
+                    Assigned Branch Locations
+                  </label>
+                  <div className="space-y-2">
+                    {locations.map((loc) => {
+                      const isChecked = selectedLocations.includes(loc.id);
+                      return (
+                        <label
+                          key={loc.id}
+                          className={`flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer select-none ${
+                            isChecked
+                              ? "border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/30"
+                              : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              name="locations"
+                              value={loc.id}
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedLocations((prev) =>
+                                  prev.includes(loc.id)
+                                    ? prev.filter((id) => id !== loc.id)
+                                    : [...prev, loc.id]
+                                );
+                              }}
+                              className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                            />
+                            <div>
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                {loc.name}
+                              </span>
+                              {loc.address && (
+                                <p className="text-[11px] text-slate-400 truncate max-w-[240px]">
+                                  {loc.address}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {loc.isPrimary && (
+                            <span className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/40">
+                              Primary
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
           </>
         )}
       </div>
@@ -445,9 +650,9 @@ export function EditStaffForm({ staff, isAdmin, onSuccess, services, businessTyp
         <button
           type="submit"
           disabled={loading || deleteLoading}
-          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md border border-transparent dark:border-white/10 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (securityOnlyMode ? "Save" : "Save Profile Changes")}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (securityOnlyMode ? "Save Security Settings" : "Save Profile Changes")}
         </button>
 
         {generalError && (

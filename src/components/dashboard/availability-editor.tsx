@@ -148,7 +148,7 @@ export function AvailabilityEditor({
                         </div>
                         <button
                           onClick={() => handleRemoveShift(day, index)}
-                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"
+                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all cursor-pointer"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
@@ -162,7 +162,7 @@ export function AvailabilityEditor({
                   
                   <button
                     onClick={() => handleAddShift(day)}
-                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 py-1 px-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 py-1 px-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all cursor-pointer"
                   >
                     <Plus className="h-3 w-3" />
                     Add Range
@@ -178,7 +178,7 @@ export function AvailabilityEditor({
         <button
           onClick={handleSave}
           disabled={loading}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-10 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-xl shadow-indigo-200 dark:shadow-none active:scale-95"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-10 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-xl shadow-indigo-200 dark:shadow-none active:scale-95 cursor-pointer disabled:cursor-not-allowed"
         >
           {loading ? (
             <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

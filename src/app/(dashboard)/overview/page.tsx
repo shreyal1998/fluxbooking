@@ -114,7 +114,7 @@ export default async function DashboardPage() {
     { name: labels.service + "s", value: servicesCount, icon: labels.serviceIcon, color: "text-blue-600", bg: "bg-blue-50/50", trend: "Active", hidden: userRole === "STAFF" },
     { name: `Active ${labels.staff}s`, value: activeStaffCount, icon: labels.staffIcon, color: "text-indigo-600", bg: "bg-indigo-50/50", trend: currentLimit === 1000000 ? "Unlimited" : `Limit: ${currentLimit}`, hidden: userRole === "STAFF" },
     { name: userRole === "STAFF" ? `My Active ${labels.appointment}s` : `Pending ${labels.appointment}s`, value: bookingsCount, icon: CalendarIcon, color: "text-rose-600", bg: "bg-rose-50/50", trend: "Waiting" },
-    { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: formatCurrency(totalRevenue, currency), icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
+    { name: userRole === "STAFF" ? "My Revenue" : "Total Revenue", value: formatCurrency(totalRevenue, currency, { showFree: false }), icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50/50", trend: "Real-time" },
   ].filter(s => !s.hidden);
 
   return (

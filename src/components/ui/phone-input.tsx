@@ -251,31 +251,27 @@ export function PhoneInput({
             inputRef.current?.focus();
           }
         }}
-        style={
-          primaryColor
-            ? {
-                borderColor: isError ? undefined : (isFocused ? primaryColor : `${primaryColor}25`),
-                backgroundColor: isError ? undefined : (isFocused ? "#ffffff" : `${primaryColor}08`),
-              }
-            : undefined
-        }
-        className={`relative flex items-center w-full rounded-2xl border-2 transition-colors duration-75 shadow-sm cursor-text ${
+        style={{
+          borderColor: isError 
+            ? undefined 
+            : (isFocused ? (primaryColor || "#4f46e5") : undefined),
+        }}
+        className={`relative flex items-center w-full rounded-2xl border-2 transition-colors duration-75 shadow-2xs cursor-text bg-white dark:bg-slate-900 ${
           isError 
-            ? "border-rose-200 bg-rose-50/10 dark:bg-rose-900/10 focus-within:border-rose-500 hover:border-rose-300" 
+            ? "border-rose-200 bg-rose-50/50 dark:bg-rose-900/10 focus-within:border-rose-500 hover:border-rose-300" 
             : isFocused
-              ? "border-indigo-600 dark:border-indigo-500 bg-white dark:bg-slate-900"
-              : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800"
+              ? "border-indigo-600 dark:border-indigo-500"
+              : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
         } ${className}`}
       >
         {/* Country Select Button */}
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          style={primaryColor ? { borderColor: `${primaryColor}25` } : undefined}
-          className={`flex items-center gap-1.5 px-4 py-3 text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-l-2xl border-r transition-colors cursor-pointer select-none ${
+          className={`flex items-center gap-1.5 px-4 py-3 text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-l-2xl border-r border-slate-200 dark:border-slate-800 transition-colors cursor-pointer select-none ${
             isError 
               ? "border-rose-200 dark:border-rose-900/30" 
-              : "border-indigo-100/50 dark:border-slate-800"
+              : "border-slate-200 dark:border-slate-800"
           }`}
         >
           <span className="text-base leading-none select-none">{getFlagEmoji(selectedCountry.code)}</span>

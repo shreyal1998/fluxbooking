@@ -11,13 +11,14 @@ export default async function StaffPage() {
   const tenantId = (session.user as any).tenantId;
   const userRole = (session.user as any).role;
 
-  const [staffMembers, users, pendingRequests, tenant, services] = await Promise.all([
+  const [staffMembers, users, pendingRequests, tenant, services, locations] = await Promise.all([
     prisma.staff.findMany({
       where: { tenantId },
       orderBy: { createdAt: "asc" },
       include: { 
         user: true,
-        services: true
+        services: true,
+        locations: true
       }
     }),
     prisma.user.findMany({
@@ -49,6 +50,10 @@ export default async function StaffPage() {
       select: { plan: true, planStatus: true, trialEndsAt: true, businessType: true, timeFormat: true, country: true }
     }),
     prisma.service.findMany({
+      where: { tenantId },
+      orderBy: { name: "asc" }
+    }),
+    prisma.location.findMany({
       where: { tenantId },
       orderBy: { name: "asc" }
     })
@@ -129,6 +134,13 @@ export default async function StaffPage() {
       capacity: srv.capacity,
       createdAt: srv.createdAt,
       updatedAt: srv.updatedAt
+    })),
+    locations: s.locations.map(l => ({
+      id: l.id,
+      name: l.name,
+      address: l.address,
+      phone: l.phone,
+      isPrimary: l.isPrimary
     }))
   }));
 
@@ -137,6 +149,7 @@ export default async function StaffPage() {
       initialStaff={serializedStaff}
       initialUsers={users}
       initialServices={serializedServices}
+      locations={locations}
       pendingRequests={requestsWithConflicts}
       currentLimit={currentLimit}
       businessType={tenant?.businessType}

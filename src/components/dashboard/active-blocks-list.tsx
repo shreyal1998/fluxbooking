@@ -65,7 +65,7 @@ export function ActiveBlocksList({ existingBlocks = [], timeFormat = "12h" }: Ac
               placeholder="Search blocks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50/50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-xl py-2 pl-9 pr-10 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-all shadow-sm"
+              className="w-full bg-slate-50/50 dark:bg-slate-955/30 border border-slate-200 dark:border-slate-800 rounded-xl py-2 pl-9 pr-10 text-xs font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-all shadow-sm"
             />
             {searchQuery && (
               <button

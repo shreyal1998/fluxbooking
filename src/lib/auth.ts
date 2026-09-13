@@ -49,6 +49,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          phone: user.phone,
           role: user.role,
           tenantId: user.tenantId,
         };
@@ -64,6 +65,7 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             role: user.role,
             tenantId: user.tenantId,
+            phone: (user as any).phone,
           };
         }
         return token;
@@ -81,6 +83,7 @@ export const authOptions: NextAuthOptions = {
             id: token.id,
             role: token.role,
             tenantId: token.tenantId,
+            phone: token.phone,
           },
         };
       } catch (error) {

@@ -23,6 +23,7 @@ export async function addStaff(formData: FormData) {
   const password = formData.get("password") as string;
   const phone = formData.get("phone") as string;
   const serviceIds = formData.getAll("services") as string[];
+  const locationIds = formData.getAll("locations") as string[];
 
   const phoneError = validatePhoneNumber(phone);
   if (phoneError) return { error: phoneError };
@@ -75,6 +76,9 @@ export async function addStaff(formData: FormData) {
         availabilityJson: JSON.stringify({}),
         services: {
           connect: serviceIds.map((id: string) => ({ id }))
+        },
+        locations: {
+          connect: locationIds.map((id: string) => ({ id }))
         }
       },
     });
@@ -131,6 +135,7 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
   const bio = formData.get("bio") as string;
   const color = formData.get("color") as string;
   const serviceIds = formData.getAll("services") as string[];
+  const locationIds = formData.getAll("locations") as string[];
   const email = formData.get("email") as string;
   const phone = formData.get("phone") as string;
 
@@ -146,7 +151,8 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
         tenantId: true,
         user: {
           select: {
-            email: true
+            email: true,
+            password: true
           }
         }
       }
@@ -202,11 +208,23 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
         }
       }
 
+      const oldPassword = formData.get("oldPassword") as string;
       const password = formData.get("password") as string;
       if (password) {
         if (password.length < 6) {
           return { error: "Password must be at least 6 characters" };
         }
+
+        if (currentStaff.user?.password) {
+          if (!oldPassword) {
+            return { error: "Current password is required", field: "oldPassword" };
+          }
+          const isMatch = await bcrypt.compare(oldPassword, currentStaff.user.password);
+          if (!isMatch) {
+            return { error: "Current password is incorrect", field: "oldPassword" };
+          }
+        }
+
         userUpdateData.password = await bcrypt.hash(password, 10);
       }
 
@@ -230,6 +248,9 @@ export async function updateStaffProfile(staffId: string, formData: FormData) {
         color,
         services: {
           set: serviceIds.map((id: string) => ({ id }))
+        },
+        locations: {
+          set: locationIds.map((id: string) => ({ id }))
         }
       }
     });
@@ -445,6 +466,8 @@ export async function updateStaffAvailability(staffId: string, availability: any
     ]);
 
     revalidatePath("/staff");
+    revalidatePath("/staff", "layout");
+    revalidatePath("/practitioners", "layout");
     revalidatePath("/my-schedule");
     revalidatePath("/schedule");
     revalidatePath("/appointments");
@@ -968,6 +991,7 @@ export async function getPersonalProfile() {
       },
       staff: user.staffProfile ? {
         id: user.staffProfile.id,
+        userId: user.id,
         name: user.staffProfile.name,
         bio: user.staffProfile.bio,
         color: user.staffProfile.color,
@@ -993,5 +1017,165 @@ export async function getPersonalProfile() {
   } catch (err) {
     console.error("Error in getPersonalProfile:", err);
     return { error: "Failed to fetch profile info" };
+  }
+}
+
+export async function addLocation(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") {
+    return { error: "Only administrators can add locations." };
+  }
+
+  const tenantId = session.user.tenantId;
+  const name = (formData.get("name") as string)?.trim();
+  const address = (formData.get("address") as string)?.trim() || null;
+  const phone = (formData.get("phone") as string)?.trim() || null;
+  const isPrimary = formData.get("isPrimary") === "true";
+
+  if (!name) return { error: "Location name is required." };
+
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId || "" },
+      include: { locations: true }
+    });
+
+    const isPro = tenant?.plan === "PRO";
+
+    if (!isPro) {
+      return { error: "Business locations is a Pro feature. Please upgrade to the Pro plan to add locations." };
+    }
+
+    if (isPrimary) {
+      await prisma.location.updateMany({
+        where: { tenantId: tenantId || "" },
+        data: { isPrimary: false }
+      });
+    }
+
+    // If first location, force isPrimary = true
+    const shouldBePrimary = isPrimary || (tenant?.locations.length === 0);
+
+    await prisma.location.create({
+      data: {
+        name,
+        address,
+        phone,
+        isPrimary: shouldBePrimary,
+        tenantId: tenantId || "",
+      }
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/settings/locations");
+    return { success: true };
+  } catch (error) {
+    console.error("Add Location Error:", error);
+    return { error: "Failed to create location." };
+  }
+}
+
+export async function updateLocation(locationId: string, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") {
+    return { error: "Only administrators can update locations." };
+  }
+
+  const tenantId = session.user.tenantId;
+  const name = (formData.get("name") as string)?.trim();
+  const address = (formData.get("address") as string)?.trim() || null;
+  const phone = (formData.get("phone") as string)?.trim() || null;
+  const isPrimary = formData.get("isPrimary") === "true";
+
+  if (!name) return { error: "Location name is required." };
+
+  try {
+    if (isPrimary) {
+      await prisma.location.updateMany({
+        where: { tenantId: tenantId || "" },
+        data: { isPrimary: false }
+      });
+    }
+
+    await prisma.location.update({
+      where: { id: locationId, tenantId: tenantId || "" },
+      data: {
+        name,
+        address,
+        phone,
+        ...(isPrimary ? { isPrimary: true } : {})
+      }
+    });
+
+    revalidatePath("/settings");
+    revalidatePath("/settings/locations");
+    return { success: true };
+  } catch (error) {
+    console.error("Update Location Error:", error);
+    return { error: "Failed to update location." };
+  }
+}
+
+export async function deleteLocation(locationId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") {
+    return { error: "Only administrators can delete locations." };
+  }
+
+  const tenantId = session.user.tenantId;
+
+  try {
+    const loc = await prisma.location.findUnique({
+      where: { id: locationId, tenantId: tenantId || "" }
+    });
+
+    if (!loc) return { error: "Location not found." };
+
+    await prisma.location.delete({
+      where: { id: locationId }
+    });
+
+    // If deleted location was primary, make remaining first location primary
+    if (loc.isPrimary) {
+      const remaining = await prisma.location.findFirst({
+        where: { tenantId: tenantId || "" }
+      });
+      if (remaining) {
+        await prisma.location.update({
+          where: { id: remaining.id },
+          data: { isPrimary: true }
+        });
+      }
+    }
+
+    revalidatePath("/settings");
+    revalidatePath("/settings/locations");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete Location Error:", error);
+    return { error: "Failed to delete location." };
+  }
+}
+
+export async function deleteBusiness() {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any).role !== "ADMIN") {
+    return { error: "Only administrators can delete the business." };
+  }
+
+  const tenantId = (session.user as any).tenantId;
+  if (!tenantId) {
+    return { error: "Business not found." };
+  }
+
+  try {
+    await prisma.tenant.delete({
+      where: { id: tenantId }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete Business Error:", error);
+    return { error: "Failed to delete business. Please try again." };
   }
 }

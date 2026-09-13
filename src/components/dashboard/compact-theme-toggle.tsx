@@ -38,7 +38,7 @@ export function CompactThemeToggle() {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 p-2.5 px-3 rounded-2xl bg-white/50 dark:bg-slate-800 border-2 transition-all group ${
+        className={`flex items-center gap-2 p-2.5 px-3 rounded-2xl bg-white/50 dark:bg-slate-800 border-2 transition-all group cursor-pointer ${
           isOpen ? 'border-indigo-600/10 ring-4 ring-indigo-500/5' : 'border-slate-100 dark:border-slate-800'
         } text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white`}
       >
@@ -63,7 +63,7 @@ export function CompactThemeToggle() {
                     setTheme(option.value);
                     setIsOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 rounded-xl text-left flex items-center justify-between group transition-colors ${
+                  className={`w-full px-3 py-2.5 rounded-xl text-left flex items-center justify-between group transition-colors cursor-pointer ${
                     isActive 
                       ? 'bg-indigo-50/50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' 
                       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'

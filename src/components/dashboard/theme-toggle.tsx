@@ -30,7 +30,7 @@ export function ThemeToggle() {
           <button
             key={option.value}
             onClick={() => setTheme(option.value)}
-            className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200 ${
+            className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200 cursor-pointer ${
               isActive 
                 ? "bg-indigo-50 border-indigo-600 text-indigo-600 dark:bg-indigo-900/20 dark:border-indigo-500 dark:text-indigo-400 shadow-lg shadow-indigo-100 dark:shadow-none" 
                 : "bg-white border-slate-100 text-slate-500 hover:border-indigo-200 hover:bg-indigo-50/30 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:bg-slate-800/50"

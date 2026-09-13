@@ -1127,6 +1127,9 @@ export function ManualBooking({
       email: customer.email,
       phone: customer.phone || ""
     });
+    if (customer.notes && !specialRequest) {
+      setSpecialRequest(customer.notes);
+    }
     setCustomerSearch("");
     setSearchResults([]);
     setIsAddingNewCustomer(false);
@@ -1319,7 +1322,7 @@ export function ManualBooking({
         </div>
         <button 
           onClick={handleClose}
-          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
         >
           <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
         </button>
@@ -1350,7 +1353,7 @@ export function ManualBooking({
               }
               setIsServiceOpen(!isServiceOpen);
             }}
-            className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedService ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.service ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+            className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm outline-none transition-all shadow-sm text-left ${selectedService ? 'font-bold text-slate-900 dark:text-white' : 'font-normal text-slate-400 dark:text-slate-500'} ${fieldErrors.service ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
           >
             <span>{selectedService ? `${selectedService.name} (${selectedService.durationMinutes} mins)` : "Select Treatment"}</span>
             <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isServiceOpen ? 'rotate-180' : ''}`} />
@@ -1413,7 +1416,7 @@ export function ManualBooking({
               }
               setIsStaffOpen(!isStaffOpen);
             }}
-            className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${selectedStaff ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.staff ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+            className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm outline-none transition-all shadow-sm text-left ${selectedStaff ? 'font-bold text-slate-900 dark:text-white' : 'font-normal text-slate-400 dark:text-slate-500'} ${fieldErrors.staff ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
           >
             {(() => {
               const isSelectedStaffLocked = selectedStaff ? (staff.indexOf(selectedStaff) >= currentLimit) : false;
@@ -1502,7 +1505,7 @@ export function ManualBooking({
                 setSelectedDateStr("");
                 setFieldErrors(prev => ({ ...prev, date: "Please enter a valid date in dd/mm/yyyy format." }));
               }}
-              className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-bold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
+              className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-bold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${
                 fieldErrors.date 
                   ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' 
                   : 'border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600'
@@ -1537,7 +1540,7 @@ export function ManualBooking({
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -1547,7 +1550,7 @@ export function ManualBooking({
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -1634,7 +1637,7 @@ export function ManualBooking({
                 {/* Ghost overlay — always visible showing untyped positions */}
                 <span
                   aria-hidden="true"
-                  className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold"
+                  className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-normal"
                 >
                   <span className="invisible">{startTimeInput}</span>
                   <span className="text-slate-400 dark:text-slate-500">{"00:00".slice(startTimeInput.length)}</span>
@@ -1764,7 +1767,7 @@ export function ManualBooking({
               <div className="relative w-14 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                 <span
                   aria-hidden="true"
-                  className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold"
+                  className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-normal"
                 >
                   <span className="invisible">{endTimeInput}</span>
                   <span className="text-slate-400 dark:text-slate-500">{"00:00".slice(endTimeInput.length)}</span>
@@ -1883,7 +1886,7 @@ export function ManualBooking({
                 value={customPrice}
                 onChange={(e) => setCustomPrice(e.target.value)}
                 placeholder={selectedService ? "Enter custom price" : "Select Treatment first"}
-                className="w-full bg-transparent border-none outline-none font-bold text-sm text-slate-900 dark:text-white disabled:cursor-not-allowed"
+                className="w-full bg-transparent border-none outline-none font-bold text-sm text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -1915,7 +1918,7 @@ export function ManualBooking({
                   }
                   setIsCustomerDropdownOpen(!isCustomerDropdownOpen);
                 }}
-                className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm font-bold outline-none transition-all shadow-sm text-left ${customerInfo.name ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'} ${fieldErrors.customer ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
+                className={`w-full flex items-center justify-between bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 text-sm outline-none transition-all shadow-sm text-left ${customerInfo.name ? 'font-bold text-slate-900 dark:text-white' : 'font-normal text-slate-400 dark:text-slate-500'} ${fieldErrors.customer ? 'border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500' : 'border-indigo-100/50 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-slate-600'}`}
               >
                 <span>{customerInfo.name || `Select ${labels.customer}`}</span>
                 <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isCustomerDropdownOpen ? 'rotate-180' : ''}`} />
@@ -1932,11 +1935,11 @@ export function ManualBooking({
                       <Search className="h-4 w-4 text-slate-400" />
                       <input
                         type="text"
-                        placeholder="Search patients..."
+                        placeholder={`Search ${labels.customerLower}s...`}
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-full bg-slate-50 dark:bg-slate-800 text-xs font-bold p-2 outline-none rounded-lg border border-slate-200 dark:border-slate-700/50 dark:text-white"
+                        className="w-full bg-slate-50 dark:bg-slate-800 text-xs font-normal p-2 outline-none rounded-lg border border-slate-200 dark:border-slate-700/50 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       />
                     </div>
                     <button 
@@ -2001,7 +2004,7 @@ export function ManualBooking({
                 <button 
                   type="button"
                   onClick={() => setCustomerInfo({ id: "", name: "", email: "", phone: "" })} 
-                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all"
+                  className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
                 >
                   <X className="h-4 w-4 text-slate-400 hover:text-slate-650" />
                 </button>
@@ -2018,7 +2021,7 @@ export function ManualBooking({
             onChange={(e) => setSpecialRequest(e.target.value)}
             placeholder="Any special instructions or requests (optional)..."
             rows={3}
-            className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 hover:border-indigo-200 dark:hover:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none resize-none transition-all"
+            className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 rounded-2xl p-4 text-sm font-normal text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-indigo-200 dark:hover:border-slate-600 focus:border-indigo-600 dark:focus:border-indigo-500 outline-none resize-none transition-all"
           />
         </div>
 
@@ -2105,7 +2108,7 @@ export function ManualBooking({
       {mode === "create" && (
         <button 
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10 cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Add

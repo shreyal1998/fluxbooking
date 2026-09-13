@@ -307,7 +307,7 @@ export function CalendarView({
   }, []);
 
   const baseSlotHeight = slotDuration === 15 ? 40 : slotDuration === 30 ? 60 : 80;
-  const slotHeight = view === "week" ? baseSlotHeight * (zoomLevel / 100) : baseSlotHeight;
+  const slotHeight = baseSlotHeight * (zoomLevel / 100);
   const pixelsPerMinute = slotHeight / slotDuration;
 
   const getVenueTime = useCallback(() => {
@@ -874,14 +874,14 @@ export function CalendarView({
                                             );
                                           })()
                                         ) : isPastSlot ? (
-                                          <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
-                                          </div>
-                                        ) : (
-                                          <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                            <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
-                                          </div>
-                                        )}
+                                           <div className="flex items-center justify-center h-5 px-2 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700 shrink-0 whitespace-nowrap">
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-tight whitespace-nowrap shrink-0">{format(subSlotTime, bookingTimeFormat)}</span>
+                                           </div>
+                                         ) : (
+                                           <div className="flex items-center justify-center h-5 px-2 bg-indigo-600 rounded-full shadow-md border border-indigo-500 shrink-0 whitespace-nowrap">
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-tight whitespace-nowrap shrink-0">{format(subSlotTime, bookingTimeFormat)}</span>
+                                           </div>
+                                         )}
                                    </div>
                                 </div>
                               );
@@ -1031,10 +1031,15 @@ export function CalendarView({
 
     const N = activeStaffList.length;
     const isSplit = N > 1;
+    const totalCols = isSplit ? 7 * N : 7;
 
-    const colWidth = 120 * (zoomLevel / 100);
-    const gridCols = isSplit ? `repeat(${7 * N}, 1fr)` : `repeat(7, 1fr)`;
-    const gridMinWidth = isSplit ? `max(100%, ${7 * N * colWidth}px)` : "100%";
+    // For 1 practitioner at 100% zoom, fit 100% of the screen.
+    // For 2+ practitioners, ensure minimum readable column width so it becomes scrollable when needed.
+    const minColWidth = N > 1 ? Math.round(80 * (zoomLevel / 100)) : 0;
+    const gridMinWidth = N > 1 
+      ? `max(${Math.max(100, zoomLevel)}%, ${totalCols * minColWidth}px)`
+      : `${Math.max(100, zoomLevel)}%`;
+    const gridCols = `repeat(${totalCols}, minmax(${minColWidth ? `${minColWidth}px` : '0'}, 1fr))`;
     const headerHeight = isSplit ? 111 : 76;
 
     const getSingleStaffParam = () => {
@@ -1122,7 +1127,6 @@ export function CalendarView({
                       gridRowEnd: 3,
                       top: '76px'
                     }}
-                    title={staff.name}
                   >
                     <div className="h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm transition-transform hover:scale-110" style={{ backgroundColor: staff.color }}>
                       {getInitials(staff.name)}
@@ -1230,26 +1234,29 @@ export function CalendarView({
                                             })()
                                           ) : (isClosed && mode !== "booking") ? (
                                             (() => {
-                                              const blockEvent = events.find(e => 
-                                                e.type === 'blocked' && 
-                                                subSlotTime >= e.start && 
-                                                subSlotTime < e.end &&
-                                                (staffMember ? e.staffId === staffMember.id : true)
-                                              );
-                                              const label = blockEvent?.title?.toLowerCase().includes("leave") ? "Leave" : "Closed";
-                                              return (
-                                                <div className="flex items-center justify-center h-6 px-3 py-0.5 bg-slate-800 dark:bg-slate-900 rounded-full shadow-md border border-slate-700 dark:border-slate-800 max-w-[150px] truncate">
-                                                  <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate">{label}</span>
-                                                </div>
-                                              );
-                                            })()
+                                             const isStaffFiltered = Array.isArray(staffFilter) || staffFilter !== "all";
+                                             const blockEvent = events.find(e => 
+                                               e.type === 'blocked' && 
+                                               subSlotTime >= e.start && 
+                                               subSlotTime < e.end &&
+                                               (isStaffFiltered 
+                                                 ? (Array.isArray(staffFilter) ? staffFilter.includes(e.staffId || "") : e.staffId === staffFilter)
+                                                 : true)
+                                             );
+                                             const label = blockEvent?.title?.toLowerCase().includes("leave") ? "Leave" : "Closed";
+                                             return (
+                                               <div className="flex items-center justify-center h-6 px-3 py-0.5 bg-slate-800 dark:bg-slate-900 rounded-full shadow-md border border-slate-700 dark:border-slate-800 max-w-[150px] truncate">
+                                                 <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate whitespace-nowrap shrink-0">{label}</span>
+                                               </div>
+                                             );
+                                           })()
                                           ) : isPastSlot ? (
-                                            <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
+                                            <div className="flex items-center justify-center h-5 px-2 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700 shrink-0 whitespace-nowrap">
+                                               <span className="text-[10px] font-bold text-white uppercase tracking-tight whitespace-nowrap shrink-0">{format(subSlotTime, bookingTimeFormat)}</span>
                                             </div>
                                           ) : (
-                                            <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
+                                            <div className="flex items-center justify-center h-5 px-2 bg-indigo-600 rounded-full shadow-md border border-indigo-500 shrink-0 whitespace-nowrap">
+                                               <span className="text-[10px] font-bold text-white uppercase tracking-tight whitespace-nowrap shrink-0">{format(subSlotTime, bookingTimeFormat)}</span>
                                             </div>
                                           )}
                                        </div>
@@ -1422,12 +1429,18 @@ export function CalendarView({
         </div>
 
         {/* Right Side: Horizontal Scrollable Columns */}
-        <div className={`flex-1 ${mode === 'booking' ? 'overflow-y-hidden' : 'overflow-y-hidden premium-scrollbar'} relative pb-0 ${activeStaffList.length > 2 ? 'overflow-x-auto' : 'overflow-x-hidden'}`}>
-          <div className="grid" style={{ 
-            gridTemplateColumns: activeStaffList.length > 0 ? `repeat(${activeStaffList.length}, 1fr)` : "1fr", 
-            minWidth: activeStaffList.length > 2 ? `${activeStaffList.length * 200}px` : "100%" 
-          }}>
-            {/* Staff Headers (Row 1) */}
+        {(() => {
+          const totalCols = Math.max(1, activeStaffList.length);
+          const gridCols = activeStaffList.length > 0 ? `repeat(${totalCols}, minmax(0, 1fr))` : "1fr";
+          const gridMinWidth = `${Math.max(100, zoomLevel)}%`;
+
+          return (
+            <div className={`flex-1 ${mode === 'booking' ? 'overflow-y-hidden' : 'overflow-y-hidden premium-scrollbar'} relative pb-0 overflow-x-auto`}>
+              <div className="grid" style={{ 
+                gridTemplateColumns: gridCols, 
+                minWidth: gridMinWidth 
+              }}>
+                {/* Staff Headers (Row 1) */}
             {activeStaffList.map((staff, staffIdx) => (
               <div 
                 key={staff.id} 
@@ -1442,7 +1455,7 @@ export function CalendarView({
                     <div className="h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: staff.color }}>
                       {staff.name.substring(0, 2).toUpperCase()}
                     </div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider truncate w-full text-black dark:text-white">{staff.name}</p>
+                    <p className="text-[10px] font-bold tracking-wider truncate w-full text-black dark:text-white">{staff.name}</p>
                  </div>
               </div>
             ))}
@@ -1567,18 +1580,18 @@ export function CalendarView({
                                                );
                                                const label = blockEvent?.title?.toLowerCase().includes("leave") ? "Leave" : "Closed";
                                                return (
-                                                 <div className="flex items-center justify-center h-6 px-3 py-0.5 bg-slate-800 dark:bg-slate-900 rounded-full shadow-md border border-slate-700 dark:border-slate-800 max-w-[150px] truncate">
-                                                   <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate">{label}</span>
-                                                 </div>
-                                               );
-                                             })()
-                                           ) : isPastSlot ? (
-                                           <div className="flex items-center justify-center h-5 px-2.5 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700">
-                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
+                                                  <div className="flex items-center justify-center h-6 px-3 py-0.5 bg-slate-800 dark:bg-slate-900 rounded-full shadow-md border border-slate-700 dark:border-slate-800 max-w-[150px] truncate">
+                                                    <span className="text-[10px] font-bold text-white uppercase tracking-tight truncate">{label}</span>
+                                                  </div>
+                                                );
+                                              })()
+                                         ) : isPastSlot ? (
+                                           <div className="flex items-center justify-center h-5 px-2 bg-slate-600 dark:bg-slate-800 rounded-full shadow-md border border-slate-500 dark:border-slate-700 shrink-0 whitespace-nowrap">
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-tight whitespace-nowrap shrink-0">{format(subSlotTime, bookingTimeFormat)}</span>
                                            </div>
                                          ) : (
-                                           <div className="flex items-center justify-center h-5 px-2.5 bg-indigo-600 rounded-full shadow-md border border-indigo-500">
-                                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{format(subSlotTime, bookingTimeFormat)}</span>
+                                           <div className="flex items-center justify-center h-5 px-2 bg-indigo-600 rounded-full shadow-md border border-indigo-500 shrink-0 whitespace-nowrap">
+                                             <span className="text-[10px] font-bold text-white uppercase tracking-tight whitespace-nowrap shrink-0">{format(subSlotTime, bookingTimeFormat)}</span>
                                            </div>
                                          )}
                                       </div>
@@ -1701,6 +1714,8 @@ export function CalendarView({
             })}
           </div>
         </div>
+      );
+    })()}
       </div>
     );
   };

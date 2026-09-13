@@ -83,7 +83,7 @@ export function ScrollToTop() {
               }
             : undefined
         }
-        className={`h-9 w-9 text-white rounded-xl flex items-center justify-center shadow-md backdrop-blur-sm hover:scale-110 active:scale-95 transition-all group border ${
+        className={`h-9 w-9 text-white rounded-xl flex items-center justify-center shadow-md backdrop-blur-sm hover:scale-110 active:scale-95 transition-all group border cursor-pointer ${
           brandColor
             ? ""
             : "bg-indigo-600/70 dark:bg-indigo-500/70 hover:bg-indigo-600 dark:hover:bg-indigo-500 border-indigo-500/20"

@@ -601,7 +601,7 @@ export function LeaveRequestForm({
             name="reason"
             type="text"
             placeholder="e.g., Family event"
-            className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm"
+            className="w-full bg-indigo-50/30 dark:bg-slate-800 border-2 border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600 rounded-2xl p-4 text-sm font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm"
           />
         </div>
       </div>
@@ -620,7 +620,7 @@ export function LeaveRequestForm({
         <button
           type="button"
           onClick={() => { setIsAllDay(!isAllDay); setFieldErrors({}); }}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isAllDay ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-800'}`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${isAllDay ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-800'}`}
         >
           <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isAllDay ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
@@ -668,7 +668,7 @@ export function LeaveRequestForm({
                   setSelectedStartDate("");
                   setFieldErrors(prev => ({ ...prev, startDate: "Please enter a valid date in dd/mm/yyyy format." }));
                 }}
-                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${fieldErrors.startDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"}`}
+                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${fieldErrors.startDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"}`}
               />
               <button
                 type="button"
@@ -807,7 +807,7 @@ export function LeaveRequestForm({
                   setSelectedEndDate("");
                   setFieldErrors(prev => ({ ...prev, endDate: "Please enter a valid date in dd/mm/yyyy format." }));
                 }}
-                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${fieldErrors.endDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"}`}
+                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${fieldErrors.endDate ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"}`}
               />
               <button
                 type="button"
@@ -948,7 +948,7 @@ export function LeaveRequestForm({
                   setSelectedBlockDate("");
                   setFieldErrors(prev => ({ ...prev, date: "Please enter a valid date in dd/mm/yyyy format." }));
                 }}
-                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${fieldErrors.date ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"}`}
+                className={`w-full bg-indigo-50/30 dark:bg-slate-800 border-2 rounded-2xl p-4 pr-12 text-sm font-semibold text-slate-900 dark:text-white placeholder:font-normal placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all shadow-sm ${fieldErrors.date ? "border-rose-200 bg-rose-50/30 focus:border-rose-500" : "border-indigo-100/50 dark:border-slate-700/50 focus:border-indigo-600 dark:focus:border-indigo-500 hover:border-indigo-200 dark:hover:border-slate-600"}`}
               />
               <button
                 type="button"
@@ -1076,7 +1076,7 @@ export function LeaveRequestForm({
               >
                 {/* Ghost overlay + typed input */}
                 <div className="relative w-14 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold">
+                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-normal">
                     <span className="invisible">{startTimeInput}</span>
                     <span className="text-slate-400 dark:text-slate-500">{"00:00".slice(startTimeInput.length)}</span>
                   </span>
@@ -1193,7 +1193,7 @@ export function LeaveRequestForm({
               >
                 {/* Ghost overlay + typed input */}
                 <div className="relative w-14 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-semibold">
+                  <span aria-hidden="true" className="absolute inset-0 flex items-center pointer-events-none select-none text-sm font-normal">
                     <span className="invisible">{endTimeInput}</span>
                     <span className="text-slate-400 dark:text-slate-500">{"00:00".slice(endTimeInput.length)}</span>
                   </span>
@@ -1299,7 +1299,7 @@ export function LeaveRequestForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-indigo-400/20 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98]"
+        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-indigo-400/20 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
       >
         {loading ? "Submitting..." : (
           <>
