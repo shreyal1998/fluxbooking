@@ -52,34 +52,34 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <ThemeCleaner />
 
-      <main className="flex-1 container mx-auto px-4 py-8 lg:py-12 max-w-2xl">
-        <div className="space-y-6">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-8 lg:py-12 max-w-2xl">
+        <div className="space-y-5 sm:space-y-6">
           {/* Status Header */}
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-2.5 sm:space-y-3 px-2">
              <div className="flex justify-center">
                <Link href="/" className="outline-none">
                  <Logo size="2xl" />
                </Link>
              </div>
              {booking.status === "CANCELLED" ? (
-               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400">
-                 <XCircle className="h-4.5 w-4.5" />
+               <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400">
+                 <XCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                  <span className="text-xs sm:text-sm font-bold tracking-wide">Cancelled {labels.appointment}</span>
                </div>
              ) : (
-               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400">
-                 <ShieldCheck className="h-4.5 w-4.5" />
+               <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-400">
+                 <ShieldCheck className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                  <span className="text-xs sm:text-sm font-bold tracking-wide">Verified {labels.appointment}</span>
                </div>
              )}
-             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
+             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
                {booking.status === "CANCELLED" ? (
                  <>Your <span className="text-rose-600 dark:text-rose-450">{labels.appointment}</span> is Cancelled</>
                ) : (
                  <>Manage Your <span className="text-indigo-600 dark:text-indigo-400">{labels.appointment}</span></>
                )}
              </h1>
-             <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base font-medium leading-relaxed max-w-md mx-auto">
+             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm md:text-base font-medium leading-relaxed max-w-md mx-auto">
                {booking.status === "CANCELLED"
                  ? `This ${labels.appointmentLower} has been cancelled and cannot be rescheduled.`
                  : "You can instantly reschedule to a new time or browse the full calendar for more options."}
@@ -87,8 +87,8 @@ export default async function ManageBookingPage({ params }: ManageBookingPagePro
           </div>
 
           {/* Current Booking Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl shadow-indigo-500/5 dark:shadow-none overflow-hidden">
-            <div className="p-6 sm:p-8 space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl shadow-indigo-500/5 dark:shadow-none overflow-hidden">
+            <div className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1">
                   <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-500">

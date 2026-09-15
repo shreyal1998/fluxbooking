@@ -1097,7 +1097,7 @@ export function StaffDetailClient({
 
               <Link
                 href={`/${appointmentSlug}`}
-                className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400"
               >
                 <span>View Full Calendar</span>
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -1154,7 +1154,7 @@ export function StaffDetailClient({
                             <td className="px-6 py-3.5 sm:px-8 sm:py-3.5 whitespace-nowrap text-right">
                               <Link
                                 href={`/${appointmentSlug}/${b.id}`}
-                                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400"
                               >
                                 Details
                               </Link>
@@ -1313,8 +1313,7 @@ export function StaffDetailClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
-              onClick={() => setIsEditModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
             <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">

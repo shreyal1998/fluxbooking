@@ -112,16 +112,16 @@ export default function SupportClient({ userName, userEmail }: { userName: strin
 
   /* ── Form ───────────────────────────────────────────── */
   return (
-    <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+    <div className="flex-1 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl sm:rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
       {/* Unified Section Header */}
-      <div className="px-8 md:px-10 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="px-4 sm:px-8 md:px-10 py-4 sm:py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
         <div>
-          <h2 className="text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">Support</h2>
+          <h2 className="text-lg sm:text-xl font-medium text-slate-900 dark:text-slate-200 tracking-tight">Support</h2>
         </div>
       </div>
 
       {/* Form Content in the Same Section */}
-      <div className="p-8 md:p-10 max-w-2xl w-full">
+      <div className="p-4 sm:p-8 md:p-10 max-w-2xl w-full">
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
 
           {/* Category */}

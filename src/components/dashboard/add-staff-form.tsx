@@ -145,7 +145,7 @@ export function AddStaffForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 bg-white dark:bg-slate-900" noValidate>
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-6 space-y-5 premium-scrollbar">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 space-y-4 sm:space-y-5 premium-scrollbar">
         {/* Full Name */}
         <div>
           <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
@@ -474,7 +474,7 @@ export function AddStaffForm({
       </div>
 
 
-      <div className="px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
+      <div className="px-4 sm:px-6 md:px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl sm:rounded-b-[2.5rem] transition-colors flex flex-col gap-3">
         <button
           type="submit"
           disabled={loading}

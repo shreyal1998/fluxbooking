@@ -520,19 +520,19 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
 
 
   return (
-    <div className="flex-1 flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
+    <div className="flex-1 flex flex-col transition-colors px-2.5 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-5 px-1 sm:px-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-medium text-black dark:text-slate-200 tracking-tight">Schedule Calendar</h2>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h2 className="text-lg sm:text-xl font-medium text-black dark:text-slate-200 tracking-tight">Schedule Calendar</h2>
             {(() => {
               const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
               if (formattedHours.length === 0) return null;
               return (
                 <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700">
                   <Building className="h-3.5 w-3.5 text-indigo-500" />
-                  <span className="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Venue Hours</span>
+                  <span className="group-hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Venue Hours</span>
                   <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
                       <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
@@ -555,15 +555,15 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {userRole === "ADMIN" && (
             <>
               <button 
                 onClick={() => setShowScheduleViewModal(true)}
-                className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
               >
                 <Clock className="h-4 w-4" />
-                Schedule View
+                <span>Schedule View</span>
               </button>
 
               <button 
@@ -571,120 +571,114 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                   setModalKey(prev => prev + 1);
                   setShowHoursModal(true);
                 }}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 bg-indigo-600 text-white px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer"
               >
                 <CalendarIcon className="h-4 w-4" />
-                Create Schedule
+                <span>Create Schedule</span>
               </button>
             </>
           )}
 
-          {userRole !== "STAFF" && (
-            <div className="relative" ref={staffDropdownRef}>
-              <button 
-                onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-                className="flex items-center gap-2.5 bg-white dark:bg-slate-900 px-4 py-2 rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px] cursor-pointer"
-              >
-                <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors shrink-0`} />
-                <div className="flex flex-col flex-1 text-left min-w-0">
-                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                    {selectedStaffName}
+          <div className="relative" ref={staffDropdownRef}>
+            <button 
+              onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
+              className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3.5 sm:px-4 py-2 sm:py-2 rounded-xl sm:rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-0 sm:min-w-[180px] md:min-w-[200px] cursor-pointer"
+            >
+              <Filter className={`h-4 w-4 shrink-0 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
+              <div className="flex flex-col flex-1 text-left min-w-0">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {selectedStaffName}
+                </span>
+                {selectedStaff?.locations && selectedStaff.locations.length > 0 && (
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate flex items-center gap-1">
+                    <Building className="h-2.5 w-2.5 shrink-0" />
+                    {selectedStaff.locations.map((l: any) => l.name).join(", ")}
                   </span>
-                  {selectedStaff?.locations && selectedStaff.locations.length > 0 && (
-                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate flex items-center gap-1">
-                      <Building className="h-2.5 w-2.5 shrink-0" />
-                      {selectedStaff.locations.map((l: any) => l.name).join(", ")}
-                    </span>
-                  )}
-                </div>
-                <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform shrink-0 ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
-              </button>
+                )}
+              </div>
+              <ChevronLeft className={`h-3 w-3 shrink-0 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
+            </button>
 
-              {isStaffFilterOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
-                    <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto scrollbar-hide divide-y divide-slate-100/50 dark:divide-slate-800/30">
-                    {staff.map((s: any, idx: number) => {
-                      const isLocked = idx >= currentLimit;
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={async () => { 
-                            if (isLocked) {
-                              toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
-                              return;
-                            }
-                            setStaffFilter(s.id); 
-                            lastSelectedStaffFilter = s.id;
-                            const params = new URLSearchParams(searchParams.toString());
-                            params.set("staffId", s.id);
-                            router.replace(`${pathname}?${params.toString()}`);
-                            setIsStaffFilterOpen(false); 
-                            // Save to database in background
-                            await saveLastSelectedStaff(s.id);
-                          }}
-                          className={`w-full px-4 py-2.5 text-left flex items-center justify-between group transition-colors ${
-                            isLocked 
-                              ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
-                              : staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20 cursor-pointer' : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium shrink-0" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
-                              {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className={`text-xs font-semibold truncate ${isLocked ? 'text-slate-500 dark:text-slate-400' : staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
-                                {s.name} {isLocked && "(Locked)"}
-                              </span>
-                              {s.locations && s.locations.length > 0 ? (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1 font-normal">
-                                  <Building className="h-2.5 w-2.5 text-indigo-500 shrink-0" />
-                                  {s.locations.map((l: any) => l.name).join(", ")}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                                  All Locations
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {isLocked ? (
-                            <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-2" />
-                          ) : (
-                            staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600 shrink-0 ml-2" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {isStaffFilterOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
+                  <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="max-h-64 overflow-y-auto scrollbar-hide divide-y divide-slate-100/50 dark:divide-slate-800/30">
+                  {staff.map((s: any, idx: number) => {
+                    const isLocked = idx >= currentLimit;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={async () => { 
+                          if (isLocked) {
+                            toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
+                            return;
+                          }
+                          setStaffFilter(s.id); 
+                          lastSelectedStaffFilter = s.id;
+                          const params = new URLSearchParams(searchParams.toString());
+                          params.set("staffId", s.id);
+                          router.replace(`${pathname}?${params.toString()}`);
+                          setIsStaffFilterOpen(false); 
+                          // Save to database in background
+                          await saveLastSelectedStaff(s.id);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left flex items-center justify-between group transition-colors ${
+                          isLocked 
+                            ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
+                            : staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20 cursor-pointer' : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium shrink-0" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
+                            {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className={`text-xs font-semibold truncate ${isLocked ? 'text-slate-500 dark:text-slate-400' : staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
+                              {s.name} {isLocked && "(Locked)"}
+                            </span>
+                            {s.locations && s.locations.length > 0 ? (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1 font-normal">
+                                <Building className="h-2.5 w-2.5 text-indigo-500 shrink-0" />
+                                {s.locations.map((l: any) => l.name).join(", ")}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                        {isLocked ? (
+                          <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-2" />
+                        ) : (
+                          staffFilter === s.id && <Check className="h-4 w-4 text-indigo-600 shrink-0 ml-2" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Toolbar & Calendar Grid */}
       <div className="flex-1 flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-           <div className="flex items-center gap-4">
-              <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="flex items-center bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                  <button 
                   onClick={() => {
                     const next = view === 'week' ? addMinutes(currentDate, -10080) : addMinutes(currentDate, -1440);
                     updateCurrentDate(next);
                   }}
-                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button 
                   onClick={() => updateCurrentDate(new Date())} 
-                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1 cursor-pointer"
+                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all mx-0.5 sm:mx-1 cursor-pointer"
                 >
                   Today
                 </button>
@@ -693,26 +687,26 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                     const next = view === 'week' ? addMinutes(currentDate, 10080) : addMinutes(currentDate, 1440);
                     updateCurrentDate(next);
                   }}
-                  className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                  className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <span className="text-base font-normal text-black dark:text-white whitespace-nowrap px-2 tracking-tight">
+              <span className="text-xs sm:text-base font-normal text-black dark:text-white whitespace-nowrap px-1 sm:px-2 tracking-tight">
                 {getHeaderText()}
               </span>
            </div>
 
-           <div className="flex items-center gap-3">
+           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar max-w-full">
              {/* View Switcher with Zoom */}
-             <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm gap-0.5">
+             <div className="flex items-center bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm gap-0.5 shrink-0">
                {view === "week" && (
                  <>
-                   <div className="relative" ref={zoomDropdownRef}>
+                   <div className="relative shrink-0" ref={zoomDropdownRef}>
                      <Tooltip content="Zoom" position="bottom" delay={100}>
                        <button
                         onClick={() => setIsZoomOpen(!isZoomOpen)}
-                        className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
+                        className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
                           isZoomOpen
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
                             : "text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"

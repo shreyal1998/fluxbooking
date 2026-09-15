@@ -192,6 +192,12 @@ export function BookingsClient({
   const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
   const activeStaff = useMemo(() => staff.slice(0, currentLimit), [staff, currentLimit]);
 
+  const currentStaffId = useMemo(() => staff.find((s: any) => s.userId === userId)?.id, [staff, userId]);
+  const canManage = useCallback((staffId?: string) => {
+    if (userRole === "ADMIN") return true;
+    return Boolean(staffId && currentStaffId && staffId === currentStaffId);
+  }, [userRole, currentStaffId]);
+
   const router = useRouter();
   const labels = getLabels(tenant?.businessType);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">(defaultViewMode as any);
@@ -492,8 +498,19 @@ export function BookingsClient({
     };
   }, [showHoursModal, selectedSlotInfo, showScheduleViewModal]);
 
+  const allowedStaffForBooking = useMemo(() => {
+    if (userRole === "STAFF" && currentStaffId) {
+      return staff.filter((s: any) => s.id === currentStaffId);
+    }
+    return staff;
+  }, [userRole, currentStaffId, staff]);
+
   const handleSlotClick = (date: Date, staffId?: string) => {
-    setSelectedSlotInfo({ date, staffId });
+    if (userRole === "STAFF" && staffId && currentStaffId && staffId !== currentStaffId) {
+      toast.error("Staff members can only create bookings for their own schedule.");
+      return;
+    }
+    setSelectedSlotInfo({ date, staffId: userRole === "STAFF" ? (currentStaffId || staffId) : staffId });
     setActionType("book"); // Open manual booking directly
   };
 
@@ -558,9 +575,10 @@ export function BookingsClient({
 
   // Filtered Bookings for List View
   const listFilteredBookings = useMemo(() => {
-    if (userRole !== "ADMIN" || currentStaffFilter.includes("all") || currentStaffFilter.length === 0) return initialBookings;
+    if (currentStaffFilter.includes("all") || currentStaffFilter.length === 0) return initialBookings;
+    if (currentStaffFilter.includes("none")) return [];
     return initialBookings.filter((b) => currentStaffFilter.includes(b.staffId));
-  }, [initialBookings, currentStaffFilter, userRole]);
+  }, [initialBookings, currentStaffFilter]);
 
   // Pagination Calculations for List View
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -621,13 +639,13 @@ export function BookingsClient({
     let filteredOverrides = availabilityOverrides.filter((o) => activeStaffIds.includes(o.staffId));
     let filteredLeaves = (leaveRequests || []).filter((l: any) => activeStaffIds.includes(l.staffId));
 
-    const isFiltered = userRole === "ADMIN" && !currentStaffFilter.includes("all") && currentStaffFilter.length > 0;
+    const isFiltered = !currentStaffFilter.includes("all") && currentStaffFilter.length > 0;
 
     if (isFiltered) {
-      filteredBookings = filteredBookings.filter((b) => currentStaffFilter.includes(b.staffId));
-      filteredBlocked = filteredBlocked.filter((s) => currentStaffFilter.includes(s.staffId));
-      filteredOverrides = filteredOverrides.filter((o) => currentStaffFilter.includes(o.staffId));
-      filteredLeaves = filteredLeaves.filter((l: any) => currentStaffFilter.includes(l.staffId));
+      filteredBookings = currentStaffFilter.includes("none") ? [] : filteredBookings.filter((b) => currentStaffFilter.includes(b.staffId));
+      filteredBlocked = currentStaffFilter.includes("none") ? [] : filteredBlocked.filter((s) => currentStaffFilter.includes(s.staffId));
+      filteredOverrides = currentStaffFilter.includes("none") ? [] : filteredOverrides.filter((o) => currentStaffFilter.includes(o.staffId));
+      filteredLeaves = currentStaffFilter.includes("none") ? [] : filteredLeaves.filter((l: any) => currentStaffFilter.includes(l.staffId));
     }
 
     const eventsList = [
@@ -764,12 +782,12 @@ export function BookingsClient({
 
 
   return (
-    <div className="w-full flex flex-col transition-colors px-4 md:px-6 lg:px-8 pt-4 md:pt-5 pb-8">
+    <div className="w-full flex flex-col transition-colors px-2.5 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-5 px-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-5 px-1 sm:px-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-medium text-black dark:text-slate-200 tracking-tight">Booking Calendar</h2>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h2 className="text-lg sm:text-xl font-medium text-black dark:text-slate-200 tracking-tight">Booking Calendar</h2>
             {(() => {
               const formattedHours = formatBusinessHours(tenant?.businessHoursJson, tenant?.timeFormat || "12h");
               if (formattedHours.length === 0) return null;
@@ -799,21 +817,21 @@ export function BookingsClient({
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {userRole === "ADMIN" && (
             <button 
               onClick={() => setShowScheduleViewModal(true)}
-              className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
             >
               <Clock className="h-4 w-4" />
-              Schedule View
+              <span>Schedule View</span>
             </button>
           )}
 
           <ManualBooking 
             tenantId={tenant?.id || ""} 
             services={services} 
-            staff={staff} 
+            staff={allowedStaffForBooking} 
             tenant={tenant}
             businessType={tenant?.businessType}
             currency={tenant?.currency}
@@ -822,90 +840,88 @@ export function BookingsClient({
             weekStart={tenant?.weekStart || "sunday"}
           />
 
-          {userRole === "ADMIN" && (
-            <div className="relative" ref={staffDropdownRef}>
-              <button 
-                onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-                className="flex items-center gap-2 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-[200px] cursor-pointer"
-              >
-                <Filter className={`h-4 w-4 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex-1 text-left">
-                  {selectedStaffName}
-                </span>
-                <ChevronLeft className={`h-3 w-3 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
-              </button>
+          <div className="relative" ref={staffDropdownRef}>
+            <button 
+              onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
+              className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-0 sm:min-w-[180px] md:min-w-[200px] cursor-pointer"
+            >
+              <Filter className={`h-4 w-4 shrink-0 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
+              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex-1 text-left truncate">
+                {selectedStaffName}
+              </span>
+              <ChevronLeft className={`h-3 w-3 shrink-0 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
+            </button>
 
-              {isStaffFilterOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
-                    <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto scrollbar-hide">
-                    <button
-                      onClick={handleToggleAll}
-                      className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                          <Users className="h-4 w-4" />
-                        </div>
-                        <span className="text-xs font-medium text-black dark:text-white">All Staff Members</span>
-                      </div>
-                      <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
-                        (currentStaffFilter.includes("all") || currentStaffFilter.length === 0)
-                          ? 'bg-indigo-600 border-indigo-600 text-white' 
-                          : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
-                      }`}>
-                        {(currentStaffFilter.includes("all") || currentStaffFilter.length === 0) && <Check className="h-3 w-3 stroke-[3] text-white" />}
-                      </div>
-                    </button>
-
-                    {staff.map((s, idx) => {
-                      const isLocked = idx >= currentLimit;
-                      const isSelected = currentStaffFilter.includes(s.id) || (!currentStaffFilter.includes("none") && (currentStaffFilter.includes("all") || currentStaffFilter.length === 0));
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={() => {
-                            if (isLocked) {
-                              toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
-                              return;
-                            }
-                            handleToggleStaff(s.id);
-                          }}
-                          className={`w-full px-4 py-3 text-left flex items-center justify-between group transition-colors ${
-                            isLocked 
-                              ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
-                              {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
-                            </div>
-                            <span className={`text-xs font-semibold ${isLocked ? 'text-slate-500 dark:text-slate-400' : 'text-black dark:text-white'}`}>
-                              {s.name} {isLocked && "(Locked)"}
-                            </span>
-                          </div>
-                          {isLocked ? (
-                            <Lock className="h-3.5 w-3.5 text-slate-400" />
-                          ) : (
-                            <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
-                              isSelected 
-                                ? 'bg-indigo-600 border-indigo-600 text-white' 
-                                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
-                            }`}>
-                              {isSelected && <Check className="h-3 w-3 stroke-[3] text-white" />}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {isStaffFilterOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
+                  <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="max-h-64 overflow-y-auto scrollbar-hide">
+                  <button
+                    onClick={handleToggleAll}
+                    className="w-full px-4 py-3 text-left flex items-center justify-between group transition-colors hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-medium text-black dark:text-white">All Staff Members</span>
+                    </div>
+                    <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
+                      (currentStaffFilter.includes("all") || currentStaffFilter.length === 0)
+                        ? 'bg-indigo-600 border-indigo-600 text-white' 
+                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
+                    }`}>
+                      {(currentStaffFilter.includes("all") || currentStaffFilter.length === 0) && <Check className="h-3 w-3 stroke-[3] text-white" />}
+                    </div>
+                  </button>
+
+                  {staff.map((s: any, idx: number) => {
+                    const isLocked = idx >= currentLimit;
+                    const isSelected = currentStaffFilter.includes(s.id);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          if (isLocked) {
+                            toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
+                            return;
+                          }
+                          handleToggleStaff(s.id);
+                        }}
+                        className={`w-full px-4 py-2.5 text-left flex items-center justify-between group transition-colors ${
+                          isLocked 
+                            ? 'opacity-80 dark:opacity-75 cursor-not-allowed' 
+                            : isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20 cursor-pointer' : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
+                            {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <span className={`text-xs font-semibold ${isLocked ? 'text-slate-500 dark:text-slate-400' : 'text-black dark:text-white'}`}>
+                            {s.name} {isLocked && "(Locked)"}
+                          </span>
+                        </div>
+                        {isLocked ? (
+                          <Lock className="h-3.5 w-3.5 text-slate-400" />
+                        ) : (
+                          <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
+                            isSelected 
+                              ? 'bg-indigo-600 border-indigo-600 text-white' 
+                              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
+                          }`}>
+                            {isSelected && <Check className="h-3 w-3 stroke-[3] text-white" />}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1000,7 +1016,7 @@ export function BookingsClient({
                     <ManualBooking 
                       tenantId={tenantId}
                       services={services}
-                      staff={staff}
+                      staff={allowedStaffForBooking}
                       tenant={tenant}
                       mode="create"
                       initialData={{
@@ -1093,45 +1109,45 @@ export function BookingsClient({
       {/* Toolbar & Content Card */}
       <div className="w-full flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-3 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 p-1.5 shadow-sm">
+        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 p-1 sm:p-1.5 shadow-sm">
               <button 
                 onClick={prevDate} 
-                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button 
                 onClick={() => updateCurrentDate(new Date())} 
-                className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all mx-1 cursor-pointer"
+                className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all mx-0.5 sm:mx-1 cursor-pointer"
               >
                 Today
               </button>
               <button 
                 onClick={nextDate} 
-                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
             
             {viewMode !== "list" && (
-              <h3 className="text-base font-normal text-black dark:text-white whitespace-nowrap px-2 tracking-tight">
+              <h3 className="text-xs sm:text-base font-normal text-black dark:text-white whitespace-nowrap px-1 sm:px-2 tracking-tight">
                 {getHeaderText()}
               </h3>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Granularity Selector */}
             {viewMode !== "month" && viewMode !== "list" && (
-              <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 {([15, 30, 60] as const).map((mins) => (
                   <button
                     key={mins}
                     onClick={() => setSlotDuration(mins)}
-                    className={`px-4 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all cursor-pointer ${
+                    className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-normal uppercase tracking-widest transition-all cursor-pointer ${
                       slotDuration === mins
                         ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none"
                         : "text-black dark:text-white"
@@ -1144,14 +1160,14 @@ export function BookingsClient({
             )}
 
             {/* View Switcher with Zoom */}
-            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-0.5">
+            <div className="bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-0.5 max-w-full overflow-x-auto no-scrollbar">
               {(viewMode === "week" || viewMode === "day" || viewMode === "team") && (
                 <>
-                  <div className="relative" ref={zoomDropdownRef}>
+                  <div className="relative shrink-0" ref={zoomDropdownRef}>
                     <Tooltip content="Zoom" position="bottom" delay={100}>
                       <button
                         onClick={() => setIsZoomOpen(!isZoomOpen)}
-                        className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
+                        className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
                           isZoomOpen
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
                             : "text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
@@ -1204,7 +1220,7 @@ export function BookingsClient({
                       </div>
                     )}
                   </div>
-                  <div className="w-[1px] h-5 bg-slate-100 dark:bg-slate-700 mx-1.5 self-center" />
+                  <div className="w-[1px] h-4 sm:h-5 bg-slate-100 dark:bg-slate-700 mx-1 sm:mx-1.5 self-center shrink-0" />
                 </>
               )}
 
@@ -1212,7 +1228,7 @@ export function BookingsClient({
                 <button 
                    key={mode}
                    onClick={() => setViewMode(mode)}
-                   className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${
+                   className={`px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-normal tracking-normal transition-all cursor-pointer shrink-0 ${
                      viewMode === mode 
                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
                        : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50"
@@ -1302,79 +1318,83 @@ export function BookingsClient({
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-1 transition-all">
-                                {(booking.status === "PENDING" || booking.status === "CONFIRMED" || booking.status === "COMPLETED" || booking.status === "CANCELLED") && (
-                                  <>
-                                    {/* Edit Booking: PENDING, CONFIRMED, COMPLETED */}
-                                    {booking.status !== "CANCELLED" && (
-                                      <Tooltip content="Edit" position="bottom">
-                                        <div onClick={(e) => e.stopPropagation()}>
-                                          <ManualBooking 
-                                            tenantId={tenant?.id || ""} 
-                                            services={services} 
-                                            staff={staff} 
-                                            tenant={tenant}
-                                            mode="edit"
-                                            initialData={booking}
-                                            businessType={tenant?.businessType}
-                                            currency={tenant?.currency}
-                                            timeFormat={tenant?.timeFormat || "12h"}
-                                            timezone={tenant?.timezone || "UTC"}
-                                            weekStart={tenant?.weekStart || "sunday"}
-                                            triggerIconOnly={true}
-                                            triggerClassName="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center"
-                                          />
-                                        </div>
-                                      </Tooltip>
-                                    )}
+                                {canManage(booking.staffId) ? (
+                                  (booking.status === "PENDING" || booking.status === "CONFIRMED" || booking.status === "COMPLETED" || booking.status === "CANCELLED") && (
+                                    <>
+                                      {/* Edit Booking: PENDING, CONFIRMED, COMPLETED */}
+                                      {booking.status !== "CANCELLED" && (
+                                        <Tooltip content="Edit" position="bottom">
+                                          <div onClick={(e) => e.stopPropagation()}>
+                                            <ManualBooking 
+                                              tenantId={tenant?.id || ""} 
+                                              services={services} 
+                                              staff={staff} 
+                                              tenant={tenant}
+                                              mode="edit"
+                                              initialData={booking}
+                                              businessType={tenant?.businessType}
+                                              currency={tenant?.currency}
+                                              timeFormat={tenant?.timeFormat || "12h"}
+                                              timezone={tenant?.timezone || "UTC"}
+                                              weekStart={tenant?.weekStart || "sunday"}
+                                              triggerIconOnly={true}
+                                              triggerClassName="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer flex items-center justify-center"
+                                            />
+                                          </div>
+                                        </Tooltip>
+                                      )}
 
-                                    {/* Complete Booking: PENDING, CONFIRMED */}
-                                    {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
-                                      <Tooltip content="Complete" position="bottom">
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStatusUpdate(booking.id, "COMPLETED");
-                                          }}
-                                          disabled={processingId === booking.id}
-                                          className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
-                                        >
-                                          <CheckCircle2 className="h-4 w-4" />
-                                        </button>
-                                      </Tooltip>
-                                    )}
+                                      {/* Complete Booking: PENDING, CONFIRMED */}
+                                      {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
+                                        <Tooltip content="Complete" position="bottom">
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleStatusUpdate(booking.id, "COMPLETED");
+                                            }}
+                                            disabled={processingId === booking.id}
+                                            className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                          >
+                                            <CheckCircle2 className="h-4 w-4" />
+                                          </button>
+                                        </Tooltip>
+                                      )}
 
-                                    {/* Restore to Pending: CANCELLED or COMPLETED */}
-                                    {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
-                                      <Tooltip content="Restore" position="bottom">
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStatusUpdate(booking.id, "PENDING");
-                                          }}
-                                          disabled={processingId === booking.id}
-                                          className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
-                                        >
-                                          <Undo className="h-4 w-4" />
-                                        </button>
-                                      </Tooltip>
-                                    )}
+                                      {/* Restore to Pending: CANCELLED or COMPLETED */}
+                                      {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
+                                        <Tooltip content="Restore" position="bottom">
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleStatusUpdate(booking.id, "PENDING");
+                                            }}
+                                            disabled={processingId === booking.id}
+                                            className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                          >
+                                            <Undo className="h-4 w-4" />
+                                          </button>
+                                        </Tooltip>
+                                      )}
 
-                                    {/* Cancel Booking: always last */}
-                                    {booking.status !== "CANCELLED" && (
-                                      <Tooltip content="Cancel" position="bottom">
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCancelConfirmId(booking.id);
-                                          }}
-                                          disabled={processingId === booking.id}
-                                          className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-450 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </button>
-                                      </Tooltip>
-                                    )}
-                                  </>
+                                      {/* Cancel Booking: always last */}
+                                      {booking.status !== "CANCELLED" && (
+                                        <Tooltip content="Cancel" position="bottom">
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setCancelConfirmId(booking.id);
+                                            }}
+                                            disabled={processingId === booking.id}
+                                            className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-450 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 disabled:opacity-50 cursor-pointer"
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </button>
+                                        </Tooltip>
+                                      )}
+                                    </>
+                                  )
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium italic pr-2">Read-only</span>
                                 )}
                               </div>
                             </td>
@@ -1447,6 +1467,7 @@ export function BookingsClient({
             <CalendarView 
               initialEvents={filteredEvents} 
               userRole={userRole} 
+              currentStaffId={currentStaffId}
               staffList={activeStaff as any} 
               businessHours={tenant?.businessHoursJson as any}
               timezone={tenant?.timezone || "UTC"}

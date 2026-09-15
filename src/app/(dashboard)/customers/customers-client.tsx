@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { 
   Users, 
   Plus, 
@@ -18,7 +19,8 @@ import {
   FileText,
   AlertTriangle,
   Loader2,
-  Check
+  Check,
+  Eye
 } from "lucide-react";
 import { useLockBodyScroll } from "@/hooks/use-lock-body-scroll";
 import { Portal } from "@/components/ui/portal";
@@ -260,8 +262,11 @@ export function CustomersClient({
                     {currentItems.map((customer) => (
                       <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 group">
                         <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs transition-colors shrink-0 ${
+                          <Link 
+                            href={`/${labels.customerSlug}/${customer.id}`}
+                            className="flex items-center gap-3 cursor-pointer"
+                          >
+                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
                                 customer.status === 'ACTIVE' 
                                 ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' 
                                 : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
@@ -276,7 +281,7 @@ export function CustomersClient({
                                 </p>
                               )}
                             </div>
-                          </div>
+                          </Link>
                         </td>
                         <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -309,6 +314,15 @@ export function CustomersClient({
                         )}
                         <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-1.5 transition-opacity">
+                            <Tooltip content="View Profile" position="bottom">
+                              <Link
+                                href={`/${labels.customerSlug}/${customer.id}`}
+                                className="p-2 rounded-lg bg-transparent text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer inline-flex items-center justify-center"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Tooltip>
+
                             <Tooltip content="Edit" position="bottom">
                               <button 
                                 onClick={() => openCustomerProfile(customer)}
@@ -415,8 +429,7 @@ export function CustomersClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
-              onClick={() => setIsAddModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
             <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
                <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
@@ -456,8 +469,7 @@ export function CustomersClient({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4 md:p-8">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
-              onClick={() => setEditingCustomer(null)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse"
             />
             <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
                <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">

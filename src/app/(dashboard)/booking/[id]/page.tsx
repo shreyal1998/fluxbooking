@@ -31,6 +31,8 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
   const { id } = await params;
   const tenantId = (session.user as any).tenantId;
+  const userRole = (session.user as any).role;
+  const userId = (session.user as any).id;
 
   // Fetch booking, services, staff, and tenant in parallel
   const [booking, services, staff, tenant] = await Promise.all([
@@ -80,6 +82,8 @@ export default async function BookingDetailPage({ params }: PageProps) {
       </div>
     );
   }
+
+  const canManage = userRole === "ADMIN" || booking.staff?.userId === userId;
 
   const timezone = tenant?.timezone || "UTC";
   const timeFormatSetting = tenant?.timeFormat || "12h";
@@ -206,36 +210,36 @@ export default async function BookingDetailPage({ params }: PageProps) {
   const currentPrice = booking.price ? Number(booking.price) : Number(booking.service.price);
 
   return (
-    <div className="flex-1 flex flex-col w-full max-w-full min-w-0 animate-fade-in p-4 md:p-6 lg:p-8 space-y-6">
+    <div className="flex-1 flex flex-col w-full max-w-full min-w-0 animate-fade-in p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header breadcrumb */}
-      <div className="flex items-center gap-2 text-sm font-medium tracking-wider">
-        <Link href={`/${appointmentSlug}`} className="text-black dark:text-white">Booking Calendar</Link>
+      <div className="flex items-center gap-2 text-xs sm:text-sm font-medium tracking-wider flex-wrap">
+        <Link href={`/${appointmentSlug}`} className="text-black dark:text-white hover:text-indigo-600 transition-colors">Booking Calendar</Link>
         <span className="text-slate-700 dark:text-slate-300">&gt;&gt;</span>
         <span className="text-indigo-600 dark:text-indigo-400">Booking Detail</span>
       </div>
 
       {/* Single Consolidated Booking Details Card */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
         {/* Service Theme Color Banner */}
         <div className="h-2 w-full" style={{ backgroundColor: booking.service.color }} />
         
-        <div className="p-6 md:p-8 space-y-6">
+        <div className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
           {/* Card Header Title */}
           <div>
-            <h1 className="text-2xl font-medium text-black dark:text-slate-200 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-medium text-black dark:text-slate-200 tracking-tight">
               Booking Details
             </h1>
           </div>
           
           {/* Header row: Service, Progress timeline, and compact Action Buttons */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-slate-200 dark:border-slate-800">
             {/* Left: Service Details */}
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                 <ServiceIcon className="h-5 w-5" />
               </div>
-              <div>
-                <h2 className="text-lg font-medium text-black dark:text-slate-200 tracking-tight">
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-medium text-black dark:text-slate-200 tracking-tight truncate">
                   {booking.service.name}
                 </h2>
               </div>
@@ -243,33 +247,39 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
             {/* Center: Progress Step Indicator or Cancelled Status */}
             {booking.status === "CANCELLED" ? (
-              <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 px-5 py-2 rounded-xl border border-rose-200 dark:border-rose-900/50">
+              <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 px-4 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-rose-200 dark:border-rose-900/50">
                 <span className="text-xs font-black text-rose-600 dark:text-rose-400 tracking-widest flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-rose-600 animate-pulse" />
                   This Booking is Cancelled
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950/20 px-5 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
-                <span className="text-xs font-medium text-black dark:text-slate-400 tracking-wider">Progress</span>
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${(booking.status === "PENDING" || booking.status === "CONFIRMED") ? "bg-amber-500 text-white font-black" : "text-slate-400 dark:text-slate-500"}`}>Requested</span>
+              <div className="flex items-center gap-3 sm:gap-4 bg-slate-50 dark:bg-slate-950/20 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-800 self-start md:self-auto">
+                <span className="text-[11px] sm:text-xs font-medium text-black dark:text-slate-400 tracking-wider">Progress</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className={`text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded ${(booking.status === "PENDING" || booking.status === "CONFIRMED") ? "bg-amber-500 text-white font-black" : "text-slate-400 dark:text-slate-500"}`}>Requested</span>
                   <span className="text-slate-400 dark:text-slate-700 text-xs">➔</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${booking.status === "COMPLETED" ? "bg-emerald-600 text-white font-black" : "text-slate-400 dark:text-slate-500"}`}>Completed</span>
+                  <span className={`text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded ${booking.status === "COMPLETED" ? "bg-emerald-600 text-white font-black" : "text-slate-400 dark:text-slate-500"}`}>Completed</span>
                 </div>
               </div>
             )}
 
             {/* Right: Icon-only Action Controls */}
-            <div className="flex items-center gap-2">
-              <StatusButtons 
-                booking={serializedBooking} 
-                services={serializedServices} 
-                staff={serializedStaff} 
-                tenant={tenant} 
-                iconOnly={true}
-              />
-            </div>
+            {canManage ? (
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <StatusButtons 
+                  booking={serializedBooking} 
+                  services={serializedServices} 
+                  staff={serializedStaff} 
+                  tenant={tenant} 
+                  iconOnly={true}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-700 self-start md:self-auto">
+                <span>Read-only</span>
+              </div>
+            )}
           </div>
 
           {/* Grid Content: Client, Staff, Time, and Billing */}

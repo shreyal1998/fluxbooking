@@ -551,7 +551,7 @@ export function QuickBlockForm({
   return (
     <div className="space-y-8">
       {/* Block Form */}
-      <form onSubmit={handleSubmit} className={`${inline ? '' : 'bg-slate-50/50 dark:bg-slate-900/30 p-6 rounded-3xl border border-slate-300 dark:border-slate-800'} space-y-4`} noValidate>
+      <form onSubmit={handleSubmit} className={`${inline ? '' : 'bg-slate-50/50 dark:bg-slate-900/30 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-300 dark:border-slate-800'} space-y-4`} noValidate>
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
@@ -711,7 +711,7 @@ export function QuickBlockForm({
           </div>
 
           {/* Start & End Time */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4">
             {/* Start Time Selector */}
             <div className="space-y-1 relative" ref={startTimeRef}>
               <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">

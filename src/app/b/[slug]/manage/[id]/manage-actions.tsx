@@ -125,7 +125,7 @@ export function ManageActions({
             <Sparkles className="h-4 w-4 text-amber-500" />
             <h2 className="text-xs sm:text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400">Fast Reschedule Options</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
             {suggestions.map((slot, i) => {
               const slotKey = `${slot.date}-${slot.time}`;
               const isThisLoading = loading === slotKey;
@@ -134,11 +134,11 @@ export function ManageActions({
                   key={i}
                   disabled={!!loading}
                   onClick={() => handleInstantReschedule(slot)}
-                  className="p-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-600 dark:hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/5 transition-all text-left group disabled:opacity-50 cursor-pointer"
+                  className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-600 dark:hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/5 transition-all text-left group disabled:opacity-50 cursor-pointer"
                 >
                   <p className="text-[10px] sm:text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-0.5">{getFriendlyDate(slot.date)}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">{formatTimeSlot(slot.time)}</span>
+                    <span className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-slate-100">{formatTimeSlot(slot.time)}</span>
                     {isThisLoading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
                     ) : (
@@ -153,17 +153,17 @@ export function ManageActions({
       )}
 
       {/* Main Actions */}
-      <div className="flex flex-col sm:flex-row gap-3.5 pt-2">
+      <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3.5 pt-2">
         <Link 
           href={`/b/${slug}?reschedule=${bookingId}`}
-          className={`flex-1 h-12 bg-indigo-600 dark:bg-indigo-600 text-sm sm:text-base text-white rounded-xl flex items-center justify-center gap-2 font-bold transition-all hover:bg-indigo-700 dark:hover:bg-indigo-500 hover:scale-[1.01] active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+          className={`flex-1 h-11 sm:h-12 bg-indigo-600 dark:bg-indigo-600 text-xs sm:text-sm md:text-base text-white rounded-xl flex items-center justify-center gap-2 font-bold transition-all hover:bg-indigo-700 dark:hover:bg-indigo-500 hover:scale-[1.01] active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none ${loading ? 'opacity-50 pointer-events-none' : ''}`}
         >
           Reschedule booking <Calendar className="h-4 w-4 ml-0.5" />
         </Link>
         <button 
           onClick={() => setShowCancelModal(true)}
           disabled={!!loading}
-          className="flex-1 h-12 bg-white dark:bg-slate-900 text-sm sm:text-base text-rose-600 dark:text-rose-400 border-2 border-rose-100 dark:border-rose-950/40 rounded-xl flex items-center justify-center gap-2 font-bold transition-all hover:bg-rose-50 dark:hover:bg-rose-950/15 hover:border-rose-200 disabled:opacity-50 cursor-pointer"
+          className="flex-1 h-11 sm:h-12 bg-white dark:bg-slate-900 text-xs sm:text-sm md:text-base text-rose-600 dark:text-rose-400 border-2 border-rose-100 dark:border-rose-950/40 rounded-xl flex items-center justify-center gap-2 font-bold transition-all hover:bg-rose-50 dark:hover:bg-rose-950/15 hover:border-rose-200 disabled:opacity-50 cursor-pointer"
         >
           {loading === "cancel" ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
           Cancel {labels.appointment}

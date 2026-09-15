@@ -146,7 +146,7 @@ export default async function PublicBookingPage({
   return (
     <div 
       data-brand-color={tenant.primaryColor || "#6366f1"}
-      className="min-h-screen bg-[#F8FAFC] py-6 md:py-8 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden"
+      className="min-h-screen bg-[#F8FAFC] py-4 sm:py-6 md:py-8 px-2.5 sm:px-4 md:px-6 lg:px-8 selection:bg-indigo-100 relative overflow-hidden"
     >
       <ThemeCleaner />
       {/* Background Decorative Glows */}
@@ -154,19 +154,19 @@ export default async function PublicBookingPage({
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-200/20 rounded-full blur-[120px]"></div>
 
       <div className="max-w-3xl mx-auto relative z-10">
-        <div className="flex flex-col items-center mb-5 md:mb-6 animate-fade-in">
+        <div className="flex flex-col items-center mb-4 sm:mb-5 md:mb-6 animate-fade-in px-2">
           <div 
-            className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center mb-2.5 shadow-md border border-slate-100"
+            className="h-11 w-11 sm:h-12 sm:w-12 bg-white rounded-2xl flex items-center justify-center mb-2 sm:mb-2.5 shadow-md border border-slate-100"
             style={{ color: tenant.primaryColor || "#6366f1" }}
           >
-            <Calendar className="h-6 w-6" />
+            <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{tenant.name}</h1>
+          <div className="text-center space-y-1 max-w-full">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight break-words">{tenant.name}</h1>
             {(() => {
               const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
               return (
-                <div className="flex items-center justify-center gap-3 flex-wrap text-xs">
+                <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap text-xs">
                   <div className="flex items-center gap-1 text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
                     <Star className="h-3 w-3 fill-current" /> 4.9
                   </div>
@@ -179,7 +179,7 @@ export default async function PublicBookingPage({
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden animate-fade-in-up flex flex-col">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden animate-fade-in-up flex flex-col">
           <BookingForm 
             tenantId={tenant.id} 
             tenantName={tenant.name}
@@ -216,9 +216,9 @@ export default async function PublicBookingPage({
           />
 
           {/* Always Visible Bottom Booking Footer */}
-          <div className="px-6 py-3.5 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-slate-900">
+          <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-2.5 text-xs text-slate-900 text-center sm:text-left">
             {tenant.plan === "FREE" ? (
-              <p className="text-[12px] font-normal text-slate-900">
+              <p className="text-[11px] sm:text-[12px] font-normal text-slate-900">
                 Powered by{" "}
                 <a 
                   href={process.env.NEXT_PUBLIC_APP_URL || "/"} 
@@ -231,11 +231,11 @@ export default async function PublicBookingPage({
                 </a>
               </p>
             ) : (
-              <p className="text-[12px] font-medium text-slate-700">
+              <p className="text-[11px] sm:text-[12px] font-medium text-slate-700">
                 {tenant.name}
               </p>
             )}
-            <div className="flex items-center gap-4 text-[12px] font-normal text-slate-900">
+            <div className="flex items-center gap-3 sm:gap-4 text-[11px] sm:text-[12px] font-normal text-slate-900 justify-center">
               <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-slate-900 no-underline">Privacy</a>
               <span className="h-1 w-1 rounded-full bg-slate-400" />
               <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-slate-900 no-underline">Terms</a>

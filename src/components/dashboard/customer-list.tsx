@@ -346,8 +346,7 @@ export function CustomerList({ initialCustomers, userRole, businessType }: { ini
         <Portal>
           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
             <div 
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
-              onClick={() => setEditingCustomer(null)}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse" 
             />
              <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden transition-colors animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col">
                 <div className="p-6 sm:p-8 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between shrink-0">

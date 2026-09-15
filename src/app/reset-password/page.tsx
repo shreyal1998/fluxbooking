@@ -107,9 +107,9 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-indigo-50/40 px-4 py-12 sm:px-6 lg:px-8 selection:bg-indigo-100">
+    <div className="flex min-h-screen items-center justify-center bg-indigo-50/40 px-3 sm:px-6 lg:px-8 py-8 sm:py-12 selection:bg-indigo-100">
       <ThemeCleaner />
-      <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(99,102,241,0.12)] border border-slate-100 animate-fade-in">
+      <div className="w-full max-w-md space-y-6 sm:space-y-8 bg-white dark:bg-slate-900 p-6 sm:p-8 md:p-10 rounded-3xl sm:rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(99,102,241,0.12)] border border-slate-100 dark:border-slate-800 animate-fade-in">
         <div className="flex flex-col items-center">
           <Link href="/" className="mb-6 outline-none">
             <Logo size="xl" />

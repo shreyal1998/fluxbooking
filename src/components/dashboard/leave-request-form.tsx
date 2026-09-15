@@ -1051,7 +1051,7 @@ export function LeaveRequestForm({
           </div>
 
           {/* Start & End Time — full manual-booking dropdown */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 sm:gap-4">
             {/* Start Time Selector */}
             <div className="space-y-1 relative" ref={startTimeRef}>
               <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">

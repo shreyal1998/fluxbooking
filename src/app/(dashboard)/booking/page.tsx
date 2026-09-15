@@ -28,22 +28,11 @@ export default async function BookingsPage() {
   const savedZoom = cookieStore.get(`zoom-level-${userId}`)?.value;
   const initialZoomLevel = savedZoom ? parseInt(savedZoom, 10) : 100;
 
-  // Filter logic for staff: only see their own appointments
+  // Load all bookings, blocks, overrides, and approved leaves for the tenant
   const bookingQuery: any = { tenantId };
   const blockedQuery: any = { tenantId };
   const overrideQuery: any = { tenantId };
-
   const leaveQuery: any = { tenantId, status: "APPROVED" };
-
-  if (userRole === "STAFF") {
-    const staffProfile = await prisma.staff.findUnique({ where: { userId } });
-    if (staffProfile) {
-      bookingQuery.staffId = staffProfile.id;
-      blockedQuery.staffId = staffProfile.id;
-      overrideQuery.staffId = staffProfile.id;
-      leaveQuery.staffId = staffProfile.id;
-    }
-  }
 
   const [bookings, blockedSlots, availabilityOverrides, services, staffRaw, tenant, leaveRequests] = await Promise.all([
     prisma.booking.findMany({
@@ -87,12 +76,7 @@ export default async function BookingsPage() {
     })
   ]);
 
-  // If user is STAFF, filter the staff list to only include themselves for manual booking options
-  let staff = staffRaw;
-  if (userRole === "STAFF") {
-    const staffProfile = staffRaw.find(s => s.userId === userId);
-    staff = staffProfile ? [staffProfile] : [];
-  }
+  const staff = staffRaw;
 
   const serializedBookings = bookings.map(b => ({
     id: b.id,

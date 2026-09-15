@@ -478,16 +478,16 @@ export function BookingForm({
       )}
 
       {/* Stepper Header */}
-      <div className="px-5 md:px-8 py-3.5 border-b border-slate-100 bg-slate-50/50">
+      <div className="px-3 sm:px-5 md:px-8 py-3 sm:py-3.5 border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
             {stepsList.map((st, idx) => {
               const isCurrent = step === st.num;
               const isPast = step > st.num;
               return (
-                <div key={st.num} className="flex items-center gap-2">
+                <div key={st.num} className="flex items-center gap-1 sm:gap-2">
                   <div 
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium transition-all ${
                       isCurrent 
                         ? "text-white shadow-xs" 
                         : isPast 
@@ -501,26 +501,26 @@ export function BookingForm({
                     {isPast ? (
                       <Check className="h-3 w-3 stroke-[2.5]" />
                     ) : (
-                      <span className="text-[11px] font-semibold">{st.num}</span>
+                      <span className="text-[10px] sm:text-[11px] font-semibold">{st.num}</span>
                     )}
-                    <span className="hidden sm:inline font-medium">{st.label}</span>
+                    <span className="hidden min-[400px]:inline font-medium">{st.label}</span>
                   </div>
                   {idx < stepsList.length - 1 && (
-                    <div className={`w-4 md:w-8 h-0.5 rounded-full ${isPast ? "bg-emerald-500" : "bg-slate-200"}`} />
+                    <div className={`w-2.5 sm:w-4 md:w-8 h-0.5 rounded-full ${isPast ? "bg-emerald-500" : "bg-slate-200"}`} />
                   )}
                 </div>
               );
             })}
           </div>
 
-          <span className="text-xs font-medium text-slate-500">
-            Step {step} of 3
+          <span className="text-[11px] sm:text-xs font-medium text-slate-500 shrink-0">
+            Step {step}/3
           </span>
         </div>
       </div>
 
       {/* Stepper Content Body */}
-      <div className="p-5 md:p-8 flex-1 overflow-y-auto">
+      <div className="p-3.5 sm:p-5 md:p-8 flex-1 overflow-y-auto">
         {/* STEP 1: SERVICE SELECTION */}
         {step === 1 && (
           <div className="space-y-4 animate-fade-in">
@@ -808,22 +808,22 @@ export function BookingForm({
             )}
 
             {/* 7-DAY WEEK SELECTOR CONTAINER */}
-            <div className="space-y-3 bg-slate-50/70 p-4 md:p-5 rounded-3xl border border-slate-200">
+            <div className="space-y-3 bg-slate-50/70 p-3 sm:p-4 md:p-5 rounded-2xl sm:rounded-3xl border border-slate-200">
               {/* Week Navigation Header */}
               <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm font-semibold text-slate-900">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-500" />
+                  <span className="text-xs sm:text-sm font-semibold text-slate-900">
                     {weekMonthYearLabel}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 sm:gap-1.5">
                   {!isPrevWeekDisabled && (
                     <button
                       type="button"
                       onClick={handleJumpToToday}
-                      className="px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors shadow-2xs cursor-pointer mr-1"
+                      className="px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-lg sm:rounded-xl border border-slate-200 transition-colors shadow-2xs cursor-pointer mr-0.5 sm:mr-1"
                     >
                       Today
                     </button>
@@ -833,23 +833,23 @@ export function BookingForm({
                     onClick={handlePrevWeek}
                     disabled={isPrevWeekDisabled}
                     aria-label="Previous Week"
-                    className="h-8 w-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={handleNextWeek}
                     aria-label="Next Week"
-                    className="h-8 w-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shadow-2xs cursor-pointer"
+                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shadow-2xs cursor-pointer"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </button>
                 </div>
               </div>
 
               {/* 7 Days of the Week Grid */}
-              <div className="grid grid-cols-7 gap-1.5 md:gap-2">
+              <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2">
                 {weekDays.map((dayDate) => {
                   const dateKey = format(dayDate, "yyyy-MM-dd");
                   const isSelected = selectedDate ? isSameDay(dayDate, selectedDate) : false;
@@ -861,7 +861,7 @@ export function BookingForm({
                       key={dateKey}
                       disabled={isPast}
                       onClick={() => setSelectedDate(dayDate)}
-                      className={`group relative flex flex-col items-center justify-center py-2.5 md:py-3 rounded-2xl border-2 transition-all duration-150 ${
+                      className={`group relative flex flex-col items-center justify-center py-2 sm:py-2.5 md:py-3 px-0.5 rounded-xl sm:rounded-2xl border-2 transition-all duration-150 ${
                         isPast
                           ? "bg-slate-200/60 border-slate-200/80 cursor-not-allowed text-slate-500"
                           : isSelected
@@ -886,7 +886,7 @@ export function BookingForm({
                       }}
                     >
                       <span 
-                        className={`text-[10px] md:text-[11px] uppercase tracking-tight ${
+                        className={`text-[9px] sm:text-[10px] md:text-[11px] uppercase tracking-tight ${
                           isToday && !isSelected ? "font-bold" : "font-medium"
                         }`}
                         style={{ 
@@ -904,7 +904,7 @@ export function BookingForm({
                       
                       {isToday && !isSelected ? (
                         <span 
-                          className="h-7 w-7 md:h-8 md:w-8 rounded-full flex items-center justify-center text-sm md:text-base font-bold mt-0.5 shadow-2xs"
+                          className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 rounded-full flex items-center justify-center text-xs sm:text-sm md:text-base font-bold mt-0.5 shadow-2xs"
                           style={{
                             backgroundColor: `${primaryColor}20`,
                             color: primaryColor
@@ -914,7 +914,7 @@ export function BookingForm({
                         </span>
                       ) : (
                         <span 
-                          className={`text-base md:text-lg font-medium mt-0.5 h-7 md:h-8 flex items-center justify-center ${
+                          className={`text-sm sm:text-base md:text-lg font-medium mt-0.5 h-6 sm:h-7 md:h-8 flex items-center justify-center ${
                             isPast ? "text-slate-600" : "text-slate-900 font-semibold"
                           }`}
                           style={{
@@ -944,14 +944,14 @@ export function BookingForm({
               </div>
 
               {!selectedDate ? (
-                <div className="p-10 text-center bg-slate-50/70 rounded-3xl border border-dashed border-slate-200">
+                <div className="p-8 sm:p-10 text-center bg-slate-50/70 rounded-2xl sm:rounded-3xl border border-dashed border-slate-200">
                   <CalendarIcon className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-600 font-medium text-sm">
+                  <p className="text-slate-600 font-medium text-xs sm:text-sm">
                     Please select a date above to view available time slots.
                   </p>
                 </div>
               ) : loadingSlots ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3.5 bg-slate-50/50 rounded-3xl border border-slate-100">
+                <div className="flex flex-col items-center justify-center py-12 sm:py-16 gap-3.5 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-100">
                   <LiquidLoader color={primaryColor} />
                   <p className="text-xs font-normal text-slate-500">
                     Checking available time slots...
@@ -975,8 +975,8 @@ export function BookingForm({
                           <div className="flex-1 h-px bg-slate-200/80 ml-2" />
                         </div>
                         
-                        {/* Time Slots Grid: Normal font weight, crisp dark black text */}
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                        {/* Time Slots Grid: 2 cols on smallest screens (<380px), 3 cols on 380px+, 4 on sm, 5 on md */}
+                        <div className="grid grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-2.5">
                           {sectionSlots.map((slot, i) => {
                             const isSlotSelected = selectedSlot?.time === slot.time && selectedSlot?.staffId === slot.staffId;
                             return (
@@ -986,7 +986,7 @@ export function BookingForm({
                                 onClick={() => {
                                   setSelectedSlot(slot);
                                 }}
-                                className={`py-3 px-3 rounded-2xl border-2 transition-all duration-150 flex items-center justify-center cursor-pointer text-sm ${
+                                className={`py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl sm:rounded-2xl border-2 transition-all duration-150 flex items-center justify-center cursor-pointer text-xs sm:text-sm ${
                                   isSlotSelected
                                     ? "font-medium text-white shadow-sm"
                                     : "bg-white text-slate-900 font-normal shadow-2xs active:scale-98"

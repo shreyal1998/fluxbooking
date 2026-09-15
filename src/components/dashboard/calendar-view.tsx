@@ -192,6 +192,7 @@ const blendColors = (colorHex: string, bgHex: string, opacity: number): string =
 export function CalendarView({
   initialEvents,
   userRole,
+  currentStaffId,
   staffList,
   businessHours,
   timezone = "UTC",
@@ -216,6 +217,7 @@ export function CalendarView({
 }: {
   initialEvents: Event[],
   userRole: string,
+  currentStaffId?: string,
   staffList: Staff[],
   businessHours?: BusinessHours | string,
   timezone?: string,
@@ -1787,10 +1789,10 @@ export function CalendarView({
         </div>
 
         {/* Inline status update action buttons inside tooltip popover */}
-        {tooltipInfo.event.type === "booking" && onStatusUpdate && (
-          <div className="mt-3 pt-2.5 border-t border-black/15 dark:border-white/15 flex items-center justify-end gap-2">
+        {tooltipInfo.event.type === "booking" && (
+          <div className="mt-3 pt-2.5 border-t border-black/15 dark:border-white/15 flex items-center justify-between gap-2">
             {/* Status Display Pill */}
-            <span className={`mr-auto text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
               tooltipInfo.event.status === "COMPLETED"
                 ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                 : tooltipInfo.event.status === "CANCELLED"
@@ -1800,54 +1802,62 @@ export function CalendarView({
               {tooltipInfo.event.status === "CONFIRMED" ? "PENDING" : tooltipInfo.event.status}
             </span>
 
-            {/* Action Icons */}
-            {(tooltipInfo.event.status === "CANCELLED" || tooltipInfo.event.status === "COMPLETED") && (
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  await onStatusUpdate(tooltipInfo.event.id, "PENDING");
-                }}
-                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
-              >
-                <Undo className="h-3.5 w-3.5" />
-              </button>
-            )}
+            {/* Action Icons: Only for Admin or booking's own practitioner */}
+            {(userRole === "ADMIN" || (Boolean(currentStaffId) && tooltipInfo.event.staffId === currentStaffId)) ? (
+              onStatusUpdate && (
+                <div className="flex items-center gap-1.5">
+                  {(tooltipInfo.event.status === "CANCELLED" || tooltipInfo.event.status === "COMPLETED") && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await onStatusUpdate(tooltipInfo.event.id, "PENDING");
+                      }}
+                      className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+                    >
+                      <Undo className="h-3.5 w-3.5" />
+                    </button>
+                  )}
 
-            {tooltipInfo.event.status !== "COMPLETED" && tooltipInfo.event.status !== "CANCELLED" && (
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  await onStatusUpdate(tooltipInfo.event.id, "COMPLETED");
-                }}
-                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-emerald-600 dark:text-emerald-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              </button>
-            )}
+                  {tooltipInfo.event.status !== "COMPLETED" && tooltipInfo.event.status !== "CANCELLED" && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await onStatusUpdate(tooltipInfo.event.id, "COMPLETED");
+                      }}
+                      className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-emerald-600 dark:text-emerald-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
 
-            {tooltipInfo.event.status !== "CANCELLED" && (
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  await onStatusUpdate(tooltipInfo.event.id, "CANCELLED");
-                }}
-                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-450 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+                  {tooltipInfo.event.status !== "CANCELLED" && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await onStatusUpdate(tooltipInfo.event.id, "CANCELLED");
+                      }}
+                      className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-450 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
 
-            {onDeleteBooking && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTooltipInfo(null);
-                  onDeleteBooking(tooltipInfo.event.id);
-                }}
-                className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+                  {onDeleteBooking && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTooltipInfo(null);
+                        onDeleteBooking(tooltipInfo.event.id);
+                      }}
+                      className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-rose-600 dark:text-rose-400 transition-colors flex items-center justify-center cursor-pointer active:scale-90"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              )
+            ) : (
+              <span className="text-[10px] text-black/50 dark:text-white/50 font-medium italic">Read-only</span>
             )}
           </div>
         )}

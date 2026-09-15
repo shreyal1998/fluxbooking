@@ -37,11 +37,7 @@ export default async function SchedulePage() {
     })
   ]);
 
-  let staff = staffRaw;
-  if (userRole === "STAFF") {
-    const staffProfile = staffRaw.find(s => s.userId === userId);
-    staff = staffProfile ? [staffProfile] : [];
-  }
+  const staff = staffRaw;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

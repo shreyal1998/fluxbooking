@@ -1307,17 +1307,17 @@ export function ManualBooking({
   const selectedStaff = staff.find(st => st.id === selectedStaffId);
 
   const content = (
-    <div className={`relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] ${inline ? '' : 'shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden'} animate-fade-in-up flex flex-col max-h-[90vh] transition-colors`}>
-      <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
+    <div className={`relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2.5rem] ${inline ? '' : 'shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden'} animate-fade-in-up flex flex-col max-h-[92vh] sm:max-h-[90vh] transition-colors`}>
+      <div className="px-5 sm:px-8 py-4 sm:py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-t-[2.4rem] z-10">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10">
-            {mode === 'edit' ? <Pencil className="h-5 w-5" /> : <CalendarIcon className="h-5 w-5" />}
+          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 shrink-0">
+            {mode === 'edit' ? <Pencil className="h-4 w-4 sm:h-5 sm:w-5" /> : <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />}
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
               {mode === 'edit' ? `Edit ${labels.appointment}` : `Add ${labels.appointment}`}
             </h2>
-            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Manual Booking Form</p>
+            <p className="text-[11px] sm:text-xs font-bold text-indigo-600 dark:text-indigo-400">Manual Booking Form</p>
           </div>
         </div>
         <button 
@@ -1330,7 +1330,7 @@ export function ManualBooking({
 
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-8 space-y-6 premium-scrollbar"
+        className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 premium-scrollbar"
       >
         {/* Service Selector */}
         <div className="space-y-2 relative" ref={serviceRef}>
