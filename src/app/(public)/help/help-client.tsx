@@ -18,18 +18,22 @@ import {
   Zap,
   Users,
   Bug,
-  AlertCircle
+  AlertCircle,
+  MapPin,
+  Sliders
 } from "lucide-react";
 
 const REASONS = [
-  { id: "booking", label: "Booking Issue", icon: Calendar, subject: "e.g. Cannot select a specific time slot", placeholder: "Please provide your appointment details (date or time) and describe what went wrong..." },
-  { id: "scheduling", label: "Scheduling & Availability", icon: Clock, subject: "e.g. Syncing my external calendar", placeholder: "Describe the issue with your hours or staff availability..." },
-  { id: "billing", label: "Billing & Subscription", icon: CreditCard, subject: "e.g. Inquiry about my recent invoice", placeholder: "Tell us about your billing inquiry or plan change request..." },
-  { id: "branding", label: "Branding & Customization", icon: Zap, subject: "e.g. Uploading my business logo", placeholder: "Describe the custom domain or branding issue you are facing..." },
-  { id: "staff", label: "Staff Management", icon: Users, subject: "e.g. Adding a new team member", placeholder: "Tell us about the issue with adding or managing team members..." },
-  { id: "feature", label: "Feature Request", icon: MessageSquare, subject: "e.g. Integration with Google Meet", placeholder: "What new feature would you like to see? How would it help your business?" },
-  { id: "bug", label: "Technical Bug", icon: Bug, subject: "e.g. Page crashes when clicking 'Save'", placeholder: "Please describe the steps to reproduce the bug and what happened..." },
-  { id: "other", label: "Other", icon: LifeBuoy, subject: "e.g. General inquiry", placeholder: "Describe your inquiry in detail..." },
+  { id: "booking", label: "Booking & Rescheduling", icon: Calendar, subject: "e.g. Cannot select a specific time slot", placeholder: "Please provide your appointment details (date, time, or customer email) and describe what happened..." },
+  { id: "scheduling", label: "Availability & Leave Requests", icon: Clock, subject: "e.g. Staff leave approvals or slot blocking", placeholder: "Describe the issue with working hours, leave requests, or availability..." },
+  { id: "locations", label: "Locations & Branch Management", icon: MapPin, subject: "e.g. Setting up a second clinic branch", placeholder: "Tell us about your multi-location setup question or branch issue..." },
+  { id: "terminology", label: "Business Type & Terminology", icon: Sliders, subject: "e.g. Healthcare mode terminology customization", placeholder: "Describe what you would like to adjust with your business type labels..." },
+  { id: "billing", label: "Billing & Subscription", icon: CreditCard, subject: "e.g. Inquiry about practitioner capacity or invoice", placeholder: "Tell us about your billing inquiry, plan upgrade, or downgrade request..." },
+  { id: "branding", label: "Branding & Custom Domain", icon: Zap, subject: "e.g. Uploading my business logo or slug setup", placeholder: "Describe the custom domain, logo, or theme issue you are facing..." },
+  { id: "staff", label: "Staff & Practitioner Access", icon: Users, subject: "e.g. Staff portal login or plan limits", placeholder: "Tell us about the issue with adding, locking, or managing practitioners..." },
+  { id: "feature", label: "Feature Request", icon: MessageSquare, subject: "e.g. Additional integration request", placeholder: "What new feature would you like to see? How would it help your business flux?" },
+  { id: "bug", label: "Technical Bug", icon: Bug, subject: "e.g. Error when updating settings", placeholder: "Please describe the steps to reproduce the bug and what happened..." },
+  { id: "other", label: "Other Inquiry", icon: LifeBuoy, subject: "e.g. General question", placeholder: "Describe your inquiry in detail..." },
 ];
 
 const InputError = ({ message }: { message?: string }) => {

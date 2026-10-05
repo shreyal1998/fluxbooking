@@ -27,6 +27,7 @@ export default async function MySchedulePage() {
       include: {
         user: true,
         services: true,
+        locations: true,
         leaveRequests: {
           orderBy: { createdAt: "desc" },
           take: 20
@@ -51,12 +52,12 @@ export default async function MySchedulePage() {
             startTime: { gte: new Date() },
             status: { in: ["PENDING", "CONFIRMED"] }
         },
-        include: { service: true },
+        include: { service: true, location: true },
         orderBy: { startTime: "asc" }
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { businessType: true, timeFormat: true, weekStart: true, slug: true }
+      select: { businessType: true, timeFormat: true, weekStart: true, slug: true, plan: true, planStatus: true }
     })  ]);
 
   if (!staffProfile) {
@@ -77,6 +78,18 @@ export default async function MySchedulePage() {
   const labels = getLabels(tenant?.businessType);
   const timeFormat = tenant?.timeFormat || "12h";
   const timeDisplayFormat = timeFormat === "24h" ? "HH:mm" : "hh:mm a";
+
+  const isPro = tenant?.plan === "PRO" || tenant?.planStatus === "TRIALING";
+  const activeLocations = isPro 
+    ? (staffProfile.locations || [])
+    : (staffProfile.locations?.filter((l: any) => l.isPrimary).length 
+        ? staffProfile.locations.filter((l: any) => l.isPrimary) 
+        : staffProfile.locations?.slice(0, 1) || []);
+
+  const serializedServices = staffProfile.services?.map((srv: any) => ({
+    ...srv,
+    price: srv.price ? srv.price.toString() : "0"
+  })) || [];
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in pt-4 pb-6 px-6 md:pt-5 md:pb-8 md:px-8 lg:pt-6 lg:pb-10 lg:px-10 space-y-5">
@@ -119,7 +132,11 @@ export default async function MySchedulePage() {
                     </div>
                     <div>
                       <h4 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{nextAppointment.customerName}</h4>
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-wider mt-1">{nextAppointment.service.name} • {format(new Date(nextAppointment.startTime), timeDisplayFormat)}</p>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-wider mt-1">
+                        {nextAppointment.service.name}
+                        {nextAppointment.location?.name ? ` • ${nextAppointment.location.name}` : ""}
+                        {` • ${format(new Date(nextAppointment.startTime), timeDisplayFormat)}`}
+                      </p>
                     </div>
                   </div>
                   <Link href={`/${labels.appointmentSlug}`} className="flex items-center justify-center gap-2 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-900 dark:text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm border border-slate-200 dark:border-slate-800 active:scale-95 transition-all">
@@ -168,7 +185,10 @@ export default async function MySchedulePage() {
           <ShareableLink 
             tenantSlug={tenant?.slug || ""} 
             staffId={staffProfile.id} 
-            staffName={staffProfile.name} 
+            staffName={staffProfile.name}
+            services={serializedServices}
+            locations={activeLocations}
+            serviceLabel={labels.service}
           />
 
           {/* Active Blocks */}

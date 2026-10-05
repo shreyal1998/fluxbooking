@@ -73,7 +73,8 @@ export default async function PublicBookingPage({
     where: { slug },
     include: {
       services: {
-        orderBy: { name: "asc" }
+        orderBy: { name: "asc" },
+        include: { locations: true }
       },
       staff: {
         orderBy: { createdAt: "asc" },
@@ -136,8 +137,8 @@ export default async function PublicBookingPage({
     if (countryData) currency = countryData.currency;
   }
 
-  const isPro = tenant.plan === "PRO";
-  const activeLocations = isPro 
+  const isPro = tenant.plan === "PRO" || tenant.planStatus === "TRIALING";
+  const activeLocations = isPro
     ? tenant.locations 
     : (tenant.locations.filter(l => l.isPrimary).length > 0 
         ? tenant.locations.filter(l => l.isPrimary).slice(0, 1) 
@@ -184,7 +185,14 @@ export default async function PublicBookingPage({
             tenantId={tenant.id} 
             tenantName={tenant.name}
             logoUrl={tenant.logoUrl}
-            services={tenant.services.map(s => ({ ...s, price: s.price.toString() }))} 
+            services={tenant.services.map(s => ({ 
+              ...s, 
+              price: s.price.toString(),
+              locations: (s as any).locations?.map((l: any) => ({
+                id: l.id,
+                name: l.name
+              })) || []
+            }))} 
             locations={activeLocations.map(l => ({
               id: l.id,
               name: l.name,

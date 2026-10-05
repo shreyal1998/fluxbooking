@@ -54,16 +54,16 @@ export async function sendEmail({
   }
 }
 
-function getFooter(businessName?: string) {
+function getFooter(businessName?: string, marginTop: number = 24) {
   const behalfOf = businessName && businessName !== "FluxBooking" 
     ? ` on behalf of ${businessName}` 
     : "";
   return `
-    <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center;">
-      <p style="color: #94a3b8; font-size: 11px; line-height: 1.6; margin-bottom: 16px;">
+    <div style="margin-top: ${marginTop}px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center;">
+      <p style="color: #94a3b8; font-size: 11px; line-height: 1.5; margin: 0 0 10px 0;">
         This is an automated notification from FluxBooking${behalfOf}.<br />Replies to this email address are not&nbsp;monitored.
       </p>
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/help" style="color: #4f46e5; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 16px;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/help" style="color: #4f46e5; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-block; margin-bottom: 10px;">
         Visit Help Center
       </a>
       <p style="color: #94a3b8; font-size: 11px; font-weight: 600; margin: 0;">
@@ -463,12 +463,33 @@ export async function sendWelcomeEmail({
   businessName: string;
 }) {
   const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px;">
-      <h1 style="color: #4f46e5; font-size: 24px; font-weight: 600; margin-bottom: 16px;">Welcome to FluxBooking!</h1>
-      <p style="color: #64748b;">Hi ${adminName}, <strong>${businessName}</strong> is now live.</p>
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/overview" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; margin: 32px 0;">Go to Dashboard</a>
-      ${getFooter(businessName)}
-    </div>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          @media only screen and (max-width: 600px) {
+            .btn-responsive {
+              padding: 14px 28px !important;
+              font-size: 15px !important;
+              font-weight: 700 !important;
+              border-radius: 12px !important;
+            }
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
+          <h1 style="color: #4f46e5; font-size: 24px; font-weight: 600; margin-bottom: 16px;">Welcome to FluxBooking!</h1>
+          <p style="color: #64748b; font-size: 15px; line-height: 24px; margin-bottom: 6px;">Hi ${adminName},</p>
+          <p style="color: #64748b; font-size: 15px; line-height: 24px; margin-bottom: 20px;"><strong>${businessName}</strong> is now live on FluxBooking.</p>
+          <div style="text-align: center; margin: 18px 0 4px 0;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/overview" class="btn-responsive" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 13.5px; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);">Go to Dashboard</a>
+          </div>
+          ${getFooter(businessName, 18)}
+        </div>
+      </body>
+    </html>
   `;
   return sendEmail({ to: adminEmail, subject: `Welcome to FluxBooking, ${adminName}!`, html });
 }
@@ -480,20 +501,47 @@ export async function sendStaffWelcomeEmail({
   staffName,
   staffEmail,
   businessName,
+  staffId,
 }: {
   staffName: string;
   staffEmail: string;
   businessName: string;
+  staffId?: string;
 }) {
+  const loginUrl = staffId 
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/login?staffId=${staffId}` 
+    : `${process.env.NEXT_PUBLIC_APP_URL}/login`;
+
   const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px;">
-      <h1 style="color: #0f172a; font-size: 24px; font-weight: 600; margin-bottom: 16px;">You've been added to the team!</h1>
-      <p style="color: #64748b;">Hi ${staffName}, you've been added to <strong>${businessName}</strong>.</p>
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: 700; margin: 32px 0;">Login to FluxBooking</a>
-      ${getFooter(businessName)}
-    </div>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          @media only screen and (max-width: 600px) {
+            .btn-responsive {
+              padding: 14px 28px !important;
+              font-size: 15px !important;
+              font-weight: 700 !important;
+              border-radius: 12px !important;
+            }
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
+          <h1 style="color: #0f172a; font-size: 24px; font-weight: 600; margin-bottom: 16px;">You've been added to the team!</h1>
+          <p style="color: #64748b; font-size: 15px; line-height: 24px; margin-bottom: 6px;">Hi ${staffName},</p>
+          <p style="color: #64748b; font-size: 15px; line-height: 24px; margin-bottom: 20px;">You have been invited to join the team at <strong>${businessName}</strong>.</p>
+          <div style="text-align: center; margin: 18px 0;">
+            <a href="${loginUrl}" class="btn-responsive" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 13.5px; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);">Log in</a>
+          </div>
+          ${getFooter(businessName, 18)}
+        </div>
+      </body>
+    </html>
   `;
-  return sendEmail({ to: staffEmail, subject: `Invitation: Join ${businessName} on FluxBooking`, html, fromName: businessName });
+  return sendEmail({ to: staffEmail, subject: `Invitation: Join ${businessName}`, html, fromName: businessName });
 }
 
 /**
@@ -509,27 +557,45 @@ export async function sendPasswordResetEmail({
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
   
   const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
-      <h1 style="color: #0f172a; font-size: 24px; font-weight: 600; margin-bottom: 16px; text-align: center;">Reset your password</h1>
-      <p style="color: #64748b; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
-        We received a request to reset the password for your FluxBooking account. Click the button below to choose a new password. This link is valid for 2 hours.
-      </p>
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="${resetUrl}" style="display: inline-block; background-color: #6366f1; color: #ffffff; padding: 16px 32px; border-radius: 16px; text-decoration: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">
-          Reset Password
-        </a>
-      </div>
-      <p style="color: #94a3b8; font-size: 12px; line-height: 18px; margin-bottom: 24px; text-align: center;">
-        If you didn't request a password reset, you can safely ignore this email. Your password will remain secure.
-      </p>
-      <p style="color: #94a3b8; font-size: 11px; text-align: center; margin-bottom: 8px;">
-        Or copy and paste this URL into your browser:
-      </p>
-      <p style="color: #6366f1; font-size: 11px; word-break: break-all; text-align: center; margin-bottom: 32px;">
-        <a href="${resetUrl}" style="color: #6366f1; text-decoration: underline;">${resetUrl}</a>
-      </p>
-      ${getFooter()}
-    </div>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          @media only screen and (max-width: 600px) {
+            .btn-responsive {
+              padding: 14px 28px !important;
+              font-size: 15px !important;
+              font-weight: 700 !important;
+              border-radius: 12px !important;
+            }
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px; background-color: #ffffff;">
+          <h1 style="color: #0f172a; font-size: 24px; font-weight: 600; margin-bottom: 16px; text-align: center;">Reset your password</h1>
+          <p style="color: #64748b; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+            We received a request to reset the password for your FluxBooking account. Click the button below to choose a new password. This link is valid for 2 hours.
+          </p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${resetUrl}" class="btn-responsive" style="display: inline-block; background-color: #6366f1; color: #ffffff; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 13.5px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);">
+              Reset Password
+            </a>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; line-height: 18px; margin-bottom: 24px; text-align: center;">
+            If you didn't request a password reset, you can safely ignore this email. Your password will remain secure.
+          </p>
+          <p style="color: #94a3b8; font-size: 11px; text-align: center; margin-bottom: 8px;">
+            Or copy and paste this URL into your browser:
+          </p>
+          <p style="color: #6366f1; font-size: 11px; word-break: break-all; text-align: center; margin-bottom: 32px;">
+            <a href="${resetUrl}" style="color: #6366f1; text-decoration: underline;">${resetUrl}</a>
+          </p>
+          ${getFooter()}
+        </div>
+      </body>
+    </html>
   `;
   
   return sendEmail({

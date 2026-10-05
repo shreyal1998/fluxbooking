@@ -74,6 +74,7 @@ export default async function StaffDetailPage({ params }: PageProps) {
     }),
     prisma.service.findMany({
       where: { tenantId: tenantId || "" },
+      include: { locations: true },
       orderBy: { name: "asc" }
     }),
     prisma.location.findMany({
@@ -125,7 +126,8 @@ export default async function StaffDetailPage({ params }: PageProps) {
     color: s.color,
     capacity: s.capacity,
     createdAt: s.createdAt,
-    updatedAt: s.updatedAt
+    updatedAt: s.updatedAt,
+    locations: (s as any).locations || []
   }));
 
   const serializedStaff = {
@@ -156,7 +158,8 @@ export default async function StaffDetailPage({ params }: PageProps) {
       color: srv.color,
       capacity: srv.capacity,
       createdAt: srv.createdAt,
-      updatedAt: srv.updatedAt
+      updatedAt: srv.updatedAt,
+      locations: (srv as any).locations || []
     })),
     locations: staffMember.locations.map(l => ({
       id: l.id,
@@ -222,11 +225,18 @@ export default async function StaffDetailPage({ params }: PageProps) {
     }))
   };
 
+  const isPro = tenant?.plan === "PRO" || tenant?.planStatus === "TRIALING";
+  const activeLocations = isPro 
+    ? allLocations 
+    : (allLocations.filter(l => l.isPrimary).length > 0 
+        ? allLocations.filter(l => l.isPrimary).slice(0, 1) 
+        : allLocations.slice(0, 1));
+
   return (
     <StaffDetailClient 
       staff={serializedStaff}
       allServices={serializedServices}
-      allLocations={allLocations}
+      allLocations={activeLocations}
       isLocked={isLocked}
       userRole={userRole}
       currentUserId={currentUserId}

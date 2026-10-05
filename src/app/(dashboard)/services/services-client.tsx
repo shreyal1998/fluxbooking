@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight, Search, Landmark } from "lucide-react";
+import { Scissors, Clock, DollarSign, Palette, Plus, Pencil, Trash2, X, AlertCircle, Loader2, Check, LayoutGrid, List, ChevronLeft, ChevronRight, Search, Landmark, Building2 } from "lucide-react";
 import { AddServiceForm } from "@/components/dashboard/add-service-form";
 import { updateService, deleteService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
@@ -11,14 +11,19 @@ import { getLabels } from "@/lib/labels";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/currency-utils";
+import { BranchMultiSelect } from "@/components/dashboard/branch-multi-select";
 
 export function ServicesClient({ 
   initialServices, 
+  locations = [],
+  isPro = false,
   userRole,
   businessType,
   currency = "USD"
 }: { 
   initialServices: any[], 
+  locations?: any[],
+  isPro?: boolean,
   userRole: string,
   businessType?: any,
   currency?: string
@@ -28,6 +33,7 @@ export function ServicesClient({
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [selectedEditLocations, setSelectedEditLocations] = useState<string[]>([]);
 
   // Sync state when initialServices changes (e.g. after router.refresh())
   useEffect(() => {
@@ -249,7 +255,19 @@ export function ServicesClient({
                          <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
                            <div className="flex items-center gap-3">
                              <div className="w-1.5 h-7 rounded-full shrink-0" style={{ backgroundColor: service.color }}></div>
-                             <p className="text-sm font-medium text-slate-900 dark:text-white">{service.name}</p>
+                             <div>
+                               <p className="text-sm font-medium text-slate-900 dark:text-white">{service.name}</p>
+                               {locations && locations.length > 1 && (
+                                 <div className="flex items-center gap-1 mt-0.5 text-[11px] text-slate-400 font-normal">
+                                   <Building2 className="h-3 w-3 shrink-0" />
+                                   <span>
+                                     {service.locations && service.locations.length > 0 && service.locations.length < locations.length
+                                       ? service.locations.map((l: any) => l.name).join(", ")
+                                       : "All Branches"}
+                                   </span>
+                                 </div>
+                               )}
+                             </div>
                            </div>
                          </td>
                          <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
@@ -276,6 +294,11 @@ export function ServicesClient({
                                     onClick={() => {
                                       setFieldErrors({});
                                       setEditingService(service);
+                                      setSelectedEditLocations(
+                                        service.locations && service.locations.length > 0
+                                          ? service.locations.map((l: any) => l.id)
+                                          : locations.map((l: any) => l.id)
+                                      );
                                     }}
                                     className="p-2 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
                                   >
@@ -388,9 +411,15 @@ export function ServicesClient({
                      <X className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                   </button>
                </div>
-               <div className="flex-1 flex flex-col min-h-0">
-                  <AddServiceForm onSuccess={() => setIsAddModalOpen(false)} businessType={businessType} currency={currency} />
-               </div>
+                <div className="flex-1 flex flex-col min-h-0">
+                  <AddServiceForm 
+                    onSuccess={() => setIsAddModalOpen(false)} 
+                    businessType={businessType} 
+                    currency={currency} 
+                    locations={locations}
+                    isPro={isPro}
+                  />
+                </div>
             </div>
           </div>
         </Portal>
@@ -591,6 +620,16 @@ export function ServicesClient({
                         ))}
                       </div>
                     </div>
+
+                    {/* Branch Locations Dropdown Selection */}
+                    {locations && locations.length > 0 && (
+                      <BranchMultiSelect
+                        locations={locations}
+                        selectedLocations={selectedEditLocations}
+                        onChange={setSelectedEditLocations}
+                        label="Available at Branches"
+                      />
+                    )}
                  </div>
 
                  <div className="px-4 sm:px-6 md:px-8 py-4 border-t border-indigo-100/30 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-2xl sm:rounded-b-[2.5rem] transition-colors flex flex-col gap-3">

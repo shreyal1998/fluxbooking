@@ -407,12 +407,32 @@ export async function createBooking(formData: FormData) {
       });
     }
 
+    let finalLocationId = locationId;
+    if (!finalLocationId) {
+      const staffMember = await prisma.staff.findUnique({
+        where: { id: staffId },
+        include: { locations: true }
+      });
+      if (staffMember?.locations && staffMember.locations.length > 0) {
+        finalLocationId = staffMember.locations[0].id;
+      } else {
+        const primaryLoc = await prisma.location.findFirst({
+          where: { tenantId, isPrimary: true }
+        }) || await prisma.location.findFirst({
+          where: { tenantId }
+        });
+        if (primaryLoc) {
+          finalLocationId = primaryLoc.id;
+        }
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         tenantId,
         serviceId,
         staffId,
-        locationId: locationId || null,
+        locationId: finalLocationId || null,
         customerId: customer.id,
         customerName,
         customerEmail,
@@ -501,6 +521,7 @@ export async function updateBooking(bookingId: string, formData: FormData) {
   const customerEmail = formData.get("customerEmail") as string;
   const priceStr = formData.get("price") as string;
   const notes = formData.get("notes") as string;
+  const locationId = formData.get("locationId") as string | null;
 
   try {
     const booking = await prisma.booking.findUnique({
@@ -562,7 +583,8 @@ export async function updateBooking(bookingId: string, formData: FormData) {
         startTime, 
         endTime,
         price: priceStr ? new Prisma.Decimal(priceStr) : null,
-        notes: notes || null
+        notes: notes || null,
+        locationId: locationId !== null ? (locationId || null) : undefined
       }
     });
 

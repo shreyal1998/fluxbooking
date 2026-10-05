@@ -1,23 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2, Check, Landmark } from "lucide-react";
+import { Plus, Clock, DollarSign, Palette, AlertCircle, Loader2, Check, Landmark, Building2 } from "lucide-react";
 import { addService } from "@/app/actions/dashboard";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
+import { BranchMultiSelect } from "@/components/dashboard/branch-multi-select";
 
 interface AddServiceFormProps {
   onSuccess?: () => void;
   businessType?: any;
   currency?: string;
+  locations?: any[];
+  isPro?: boolean;
 }
 
-export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: AddServiceFormProps) {
+export function AddServiceForm({ onSuccess, businessType, currency = "USD", locations = [], isPro = false }: AddServiceFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(
+    locations.map(l => l.id)
+  );
 
   const labels = getLabels(businessType);
 
@@ -190,6 +196,16 @@ export function AddServiceForm({ onSuccess, businessType, currency = "USD" }: Ad
             ))}
           </div>
         </div>
+
+        {/* Branch Locations Dropdown Selection */}
+        {locations && locations.length > 0 && (
+          <BranchMultiSelect
+            locations={locations}
+            selectedLocations={selectedLocations}
+            onChange={setSelectedLocations}
+            label="Available at Branches"
+          />
+        )}
 
       </div>
 

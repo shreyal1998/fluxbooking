@@ -25,7 +25,9 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  MapPin,
+  MoreHorizontal
 } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/calendar-view";
 import { updateBookingStatus } from "@/app/actions/booking";
@@ -67,6 +69,7 @@ type SerializedBooking = Omit<Booking, "service"> & {
   service: SerializedService;
   staff: Staff;
   customer?: { name: string; email: string } | null;
+  location?: { id: string; name: string; address?: string | null; isPrimary?: boolean } | null;
 };
 
 interface BookingsClientProps {
@@ -75,7 +78,7 @@ interface BookingsClientProps {
   availabilityOverrides: any[];
   leaveRequests?: any[];
   services: SerializedService[];
-  staff: Staff[];
+  staff: (Staff & { locations?: any[] })[];
   tenantId: string;
   userRole: UserRole;
   tenant: Tenant | null;
@@ -200,7 +203,7 @@ export function BookingsClient({
 
   const router = useRouter();
   const labels = getLabels(tenant?.businessType);
-  const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">(defaultViewMode as any);
+  const [viewMode, setViewMode] = useState<"month" | "week" | "day" | "team" | "list">((defaultViewMode as any) || "week");
 
   // Save view mode to database whenever it changes
   useEffect(() => {
@@ -269,6 +272,12 @@ export function BookingsClient({
   const staffDropdownRef = useRef<HTMLDivElement>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const zoomDropdownRef = useRef<HTMLDivElement>(null);
+  const [isGranularityOpen, setIsGranularityOpen] = useState(false);
+  const granularityDropdownRef = useRef<HTMLDivElement>(null);
+  const [isViewModeOpen, setIsViewModeOpen] = useState(false);
+  const viewModeDropdownRef = useRef<HTMLDivElement>(null);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const mobileMoreRef = useRef<HTMLDivElement>(null);
 
   // Schedule view visible hours range
   const [showScheduleViewModal, setShowScheduleViewModal] = useState(false);
@@ -341,7 +350,7 @@ export function BookingsClient({
     }
   }, [showScheduleViewModal, viewStart, viewEnd]);
 
-  // Click outside to close staff/start/end dropdowns
+  // Click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: any) => {
       if (staffDropdownRef.current && !staffDropdownRef.current.contains(event.target as Node)) {
@@ -355,6 +364,15 @@ export function BookingsClient({
       }
       if (zoomDropdownRef.current && !zoomDropdownRef.current.contains(event.target as Node)) {
         setIsZoomOpen(false);
+      }
+      if (granularityDropdownRef.current && !granularityDropdownRef.current.contains(event.target as Node)) {
+        setIsGranularityOpen(false);
+      }
+      if (viewModeDropdownRef.current && !viewModeDropdownRef.current.contains(event.target as Node)) {
+        setIsViewModeOpen(false);
+      }
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(event.target as Node)) {
+        setIsMobileMoreOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -666,7 +684,9 @@ export function BookingsClient({
           serviceDuration: b.service.durationMinutes,
           customerName: displayCustomerName,
           serviceName: b.service.name,
-          bufferTime: b.service?.bufferTime || 0
+          bufferTime: b.service?.bufferTime || 0,
+          locationName: b.location?.name,
+          locationAddress: b.location?.address
         };
       }) || []),
       ...(filteredBlocked?.map((s) => ({
@@ -752,8 +772,10 @@ export function BookingsClient({
 
   const handleToggleStaff = (staffId: string) => {
     setCurrentPage(1);
-    if (currentStaffFilter.includes("all") || currentStaffFilter.length === 0) {
-      const nextFilter = staff.map(s => s.id).filter(id => id !== staffId);
+    const isAllSelected = currentStaffFilter.includes("all") || currentStaffFilter.length === 0;
+    const activeStaff = staff.slice(0, currentLimit);
+    if (isAllSelected) {
+      const nextFilter = activeStaff.map(s => s.id).filter(id => id !== staffId);
       setCurrentStaffFilter(nextFilter.length === 0 ? ["none"] : nextFilter);
     } else if (currentStaffFilter.includes("none")) {
       setCurrentStaffFilter([staffId]);
@@ -763,18 +785,23 @@ export function BookingsClient({
         setCurrentStaffFilter(nextFilter.length === 0 ? ["none"] : nextFilter);
       } else {
         const nextFilter = [...currentStaffFilter, staffId];
-        setCurrentStaffFilter(nextFilter);
+        if (activeStaff.every(s => nextFilter.includes(s.id))) {
+          setCurrentStaffFilter(["all"]);
+        } else {
+          setCurrentStaffFilter(nextFilter);
+        }
       }
     }
   };
+
+  const isSingleStaffSelected = !currentStaffFilter.includes("all") && !currentStaffFilter.includes("none") && currentStaffFilter.length === 1;
+  const singleSelectedStaff = isSingleStaffSelected ? staff.find((s: any) => s.id === currentStaffFilter[0]) : null;
 
   const selectedStaffName = currentStaffFilter.includes("all") || currentStaffFilter.length === 0
     ? "All Staff Members"
     : (currentStaffFilter.includes("none")
        ? "No Staff Selected"
-       : (currentStaffFilter.length === 1
-          ? (staff.find((s) => s.id === currentStaffFilter[0])?.name || "Select Staff")
-          : `${currentStaffFilter.length} Staff Selected`));
+       : (singleSelectedStaff?.name || `${currentStaffFilter.length} Staff Selected`));
 
   const timeDisplayFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
   const listTimeFormat = tenant?.timeFormat === "24h" ? "HH:mm" : "hh:mm a";
@@ -782,78 +809,75 @@ export function BookingsClient({
 
 
   return (
-    <div className="w-full flex flex-col transition-colors px-2.5 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-4 md:pt-5 pb-8">
+    <div className="w-full flex flex-col transition-colors px-0 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-5 px-1 sm:px-4">
-        <div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <h2 className="text-lg sm:text-xl font-medium text-black dark:text-slate-200 tracking-tight">Booking Calendar</h2>
-            {(() => {
-              const formattedHours = formatBusinessHours(tenant?.businessHoursJson, tenant?.timeFormat || "12h");
-              if (formattedHours.length === 0) return null;
-              return (
-                <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700">
-                  <Building className="h-3.5 w-3.5 text-indigo-500" />
-                  <span className="group-hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Venue Hours</span>
-                  <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
-                      <div className="space-y-2">
-                        {formattedHours.map((fh, idx) => {
-                          const [day, hoursText] = fh.split(": ");
-                          return (
-                            <div key={idx} className="flex justify-between text-[11px] font-bold">
-                              <span className="text-slate-400">{day}</span>
-                              <span className="text-slate-700 dark:text-slate-200 tabular-nums">{hoursText}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+      <div className="flex items-center justify-between gap-2 sm:gap-6 mb-2.5 sm:mb-5 px-3 sm:px-4">
+        <div className="min-w-0 flex items-center gap-2 sm:gap-3">
+          <h2 className="text-base sm:text-xl font-medium text-black dark:text-slate-200 tracking-tight truncate">Booking Calendar</h2>
+          {(() => {
+            const formattedHours = formatBusinessHours(tenant?.businessHoursJson, tenant?.timeFormat || "12h");
+            if (formattedHours.length === 0) return null;
+            return (
+              <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2 sm:px-2.5 py-1 rounded-full flex items-center gap-1 sm:gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700 shrink-0">
+                <Building className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500" />
+                <span className="hidden xs:inline group-hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Venue Hours</span>
+                <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
+                    <div className="space-y-2">
+                      {formattedHours.map((fh, idx) => {
+                        const [day, hoursText] = fh.split(": ");
+                        return (
+                          <div key={idx} className="flex justify-between text-[11px] font-bold">
+                            <span className="text-slate-400">{day}</span>
+                            <span className="text-slate-700 dark:text-slate-200 tabular-nums">{hoursText}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })()}
         </div>
         
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {userRole === "ADMIN" && (
             <button 
               onClick={() => setShowScheduleViewModal(true)}
-              className="flex items-center gap-1.5 sm:gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
+              className="hidden sm:flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-5 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer shrink-0"
+              title="Schedule View"
             >
-              <Clock className="h-4 w-4" />
+              <Clock className="h-4 w-4 shrink-0" />
               <span>Schedule View</span>
             </button>
           )}
 
-          <ManualBooking 
-            tenantId={tenant?.id || ""} 
-            services={services} 
-            staff={allowedStaffForBooking} 
-            tenant={tenant}
-            businessType={tenant?.businessType}
-            currency={tenant?.currency}
-            timeFormat={tenant?.timeFormat || "12h"}
-            timezone={tenant?.timezone || "UTC"}
-            weekStart={tenant?.weekStart || "sunday"}
-          />
-
-          <div className="relative" ref={staffDropdownRef}>
+          <div className="relative min-w-0" ref={staffDropdownRef}>
             <button 
               onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-              className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-0 sm:min-w-[180px] md:min-w-[200px] cursor-pointer"
+              className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border-2 border-slate-100 dark:border-slate-800 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-0 max-w-[125px] xs:max-w-[160px] sm:max-w-[240px] md:max-w-[260px] cursor-pointer"
             >
-              <Filter className={`h-4 w-4 shrink-0 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex-1 text-left truncate">
-                {selectedStaffName}
-              </span>
+              <Filter className={`h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
+              <div className="flex flex-col flex-1 text-left min-w-0 overflow-hidden">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate block">
+                  {selectedStaffName}
+                </span>
+                {singleSelectedStaff?.locations && singleSelectedStaff.locations.length > 0 && (
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate hidden sm:flex items-center gap-1">
+                    <Building className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">
+                      {singleSelectedStaff.locations.map((l: any) => l.address ? `${l.name} • ${l.address}` : l.name).join(", ")}
+                    </span>
+                  </span>
+                )}
+              </div>
               <ChevronLeft className={`h-3 w-3 shrink-0 text-slate-400 transition-transform ${isStaffFilterOpen ? 'rotate-90' : '-rotate-90'}`} />
             </button>
 
             {isStaffFilterOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
                   <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                 </div>
@@ -879,7 +903,8 @@ export function BookingsClient({
 
                   {staff.map((s: any, idx: number) => {
                     const isLocked = idx >= currentLimit;
-                    const isSelected = currentStaffFilter.includes(s.id);
+                    const isAllSelected = currentStaffFilter.includes("all") || currentStaffFilter.length === 0;
+                    const isSelected = !currentStaffFilter.includes("none") && (isAllSelected || currentStaffFilter.includes(s.id));
                     return (
                       <button
                         key={s.id}
@@ -887,7 +912,7 @@ export function BookingsClient({
                           if (isLocked) {
                             toast.error("This practitioner is locked because your plan limit is exceeded. Please upgrade under billing settings to unlock.");
                             return;
-                          }
+                            }
                           handleToggleStaff(s.id);
                         }}
                         className={`w-full px-4 py-2.5 text-left flex items-center justify-between group transition-colors ${
@@ -896,18 +921,28 @@ export function BookingsClient({
                             : isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20 cursor-pointer' : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
+                        <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                          <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-bold shrink-0" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
                             {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
                           </div>
-                          <span className={`text-xs font-semibold ${isLocked ? 'text-slate-500 dark:text-slate-400' : 'text-black dark:text-white'}`}>
-                            {s.name} {isLocked && "(Locked)"}
-                          </span>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className={`text-xs font-semibold truncate ${isLocked ? 'text-slate-500 dark:text-slate-400' : isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
+                              {s.name} {isLocked && "(Locked)"}
+                            </span>
+                            {s.locations && s.locations.length > 0 && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1 font-normal">
+                                <Building className="h-2.5 w-2.5 text-indigo-500 shrink-0" />
+                                <span className="truncate">
+                                  {s.locations.map((l: any) => l.address ? `${l.name} • ${l.address}` : l.name).join(", ")}
+                                </span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {isLocked ? (
-                          <Lock className="h-3.5 w-3.5 text-slate-400" />
+                          <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-2" />
                         ) : (
-                          <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all ${
+                          <div className={`h-[18px] w-[18px] rounded-md border flex items-center justify-center transition-all shrink-0 ml-2 ${
                             isSelected 
                               ? 'bg-indigo-600 border-indigo-600 text-white' 
                               : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:border-indigo-400'
@@ -922,18 +957,30 @@ export function BookingsClient({
               </div>
             )}
           </div>
+
+          <ManualBooking 
+            tenantId={tenant?.id || ""} 
+            services={services} 
+            staff={allowedStaffForBooking} 
+            tenant={tenant}
+            businessType={tenant?.businessType}
+            currency={tenant?.currency}
+            timeFormat={tenant?.timeFormat || "12h"}
+            timezone={tenant?.timezone || "UTC"}
+            weekStart={tenant?.weekStart || "sunday"}
+          />
         </div>
       </div>
 
       {/* Business Hours Modal */}
       {showHoursModal && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 overflow-y-auto">
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
               onClick={() => setShowHoursModal(false)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl my-auto rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
@@ -965,12 +1012,12 @@ export function BookingsClient({
       {/* Slot Action Modal */}
       {selectedSlotInfo && (
         <Portal>
-           <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+           <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 overflow-y-auto">
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
               onClick={() => setSelectedSlotInfo(null)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-lg my-auto rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                {actionType === null ? (
                  <div className="p-10 space-y-8 text-center">
                     <div className="space-y-2">
@@ -1064,12 +1111,12 @@ export function BookingsClient({
       {/* Cancel Confirmation Modal */}
       {cancelConfirmId && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 overflow-y-auto">
             <div 
               className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer" 
               onClick={() => setCancelConfirmId(null)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md my-auto rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="p-8 space-y-6 text-center">
                 <div className="mx-auto h-16 w-16 rounded-full bg-amber-50 dark:bg-amber-950/30 flex items-center justify-center text-amber-500 dark:text-amber-400 animate-bounce">
                   <AlertCircle className="h-8 w-8" />
@@ -1109,45 +1156,174 @@ export function BookingsClient({
       {/* Toolbar & Content Card */}
       <div className="w-full flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 p-1 sm:p-1.5 shadow-sm">
-              <button 
-                onClick={prevDate} 
-                className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button 
-                onClick={() => updateCurrentDate(new Date())} 
-                className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all mx-0.5 sm:mx-1 cursor-pointer"
-              >
-                Today
-              </button>
-              <button 
-                onClick={nextDate} 
-                className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-2.5 sm:mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-2 sm:p-3 rounded-none sm:rounded-[2rem] border-y sm:border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 p-0.5 sm:p-1.5 shadow-sm">
+                <button 
+                  onClick={prevDate} 
+                  className="p-1 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all active:scale-95 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </button>
+                <button 
+                  onClick={() => updateCurrentDate(new Date())} 
+                  className="px-2 sm:px-4 py-1 sm:py-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all mx-0.5 sm:mx-1 cursor-pointer"
+                >
+                  Today
+                </button>
+                <button 
+                  onClick={nextDate} 
+                  className="p-1 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all active:scale-95 text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                >
+                  <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </button>
+              </div>
+              
+              {viewMode !== "list" && (
+                <h3 className="text-xs sm:text-base font-normal text-black dark:text-white whitespace-nowrap px-1 sm:px-2 tracking-tight">
+                  {getHeaderText()}
+                </h3>
+              )}
             </div>
-            
-            {viewMode !== "list" && (
-              <h3 className="text-xs sm:text-base font-normal text-black dark:text-white whitespace-nowrap px-1 sm:px-2 tracking-tight">
-                {getHeaderText()}
-              </h3>
-            )}
+
+            {/* Mobile: "..." More Options Menu Button */}
+            <div className="relative sm:hidden" ref={mobileMoreRef}>
+              <button
+                onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer active:scale-95 transition-all ${
+                  isMobileMoreOpen
+                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm"
+                }`}
+                title="More Options"
+              >
+                <span className="capitalize text-[11px] font-bold">{viewMode}</span>
+                <span className="opacity-40">•</span>
+                <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
+              </button>
+
+              {isMobileMoreOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 p-3 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Calendar View Switcher */}
+                  <div className="mb-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 px-1">
+                      Calendar View
+                    </p>
+                    <div className="grid grid-cols-5 gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
+                      {(["month", "week", "day", "team", "list"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => {
+                            setViewMode(mode);
+                          }}
+                          className={`py-1.5 text-[11px] font-bold rounded-lg capitalize transition-all cursor-pointer ${
+                            viewMode === mode
+                              ? "bg-indigo-600 text-white shadow-sm"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700"
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Slot Duration Selector */}
+                  {viewMode !== "month" && viewMode !== "list" && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 px-1">
+                        Slot Duration
+                      </p>
+                      <div className="grid grid-cols-3 gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
+                        {([15, 30, 60] as const).map((mins) => (
+                          <button
+                            key={mins}
+                            onClick={() => {
+                              setSlotDuration(mins);
+                            }}
+                            className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                              slotDuration === mins
+                                ? "bg-indigo-600 text-white shadow-sm"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            {mins}m
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Calendar Zoom Controls */}
+                  {(viewMode === "week" || viewMode === "day" || viewMode === "team") && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 px-1">
+                        Zoom ({zoomLevel}%)
+                      </p>
+                      <div className="flex items-center justify-between bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
+                        <button
+                          onClick={() => setZoomLevel((prev) => Math.max(50, prev - 10))}
+                          disabled={zoomLevel <= 50}
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-40 active:scale-95 transition-all cursor-pointer"
+                        >
+                          <ZoomOut className="h-4 w-4" />
+                        </button>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 select-none">
+                          {zoomLevel}%
+                        </span>
+                        <button
+                          onClick={() => setZoomLevel((prev) => Math.min(200, prev + 10))}
+                          disabled={zoomLevel >= 200}
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-40 active:scale-95 transition-all cursor-pointer"
+                        >
+                          <ZoomIn className="h-4 w-4" />
+                        </button>
+                        {zoomLevel !== 100 && (
+                          <button
+                            onClick={() => setZoomLevel(100)}
+                            className="px-2 py-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Schedule View Modal (Admin) */}
+                  {userRole === "ADMIN" && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        onClick={() => {
+                          setIsMobileMoreOpen(false);
+                          setShowScheduleViewModal(true);
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>Visible Hours Range</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Desktop Toolbar Controls */}
+          <div className="hidden sm:flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Granularity Selector */}
             {viewMode !== "month" && viewMode !== "list" && (
-              <div className="flex items-center bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
                 {([15, 30, 60] as const).map((mins) => (
                   <button
                     key={mins}
                     onClick={() => setSlotDuration(mins)}
-                    className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-normal uppercase tracking-widest transition-all cursor-pointer ${
+                    className={`px-4 py-2 rounded-xl text-xs font-normal uppercase tracking-widest transition-all cursor-pointer ${
                       slotDuration === mins
                         ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none"
                         : "text-black dark:text-white"
@@ -1160,14 +1336,14 @@ export function BookingsClient({
             )}
 
             {/* View Switcher with Zoom */}
-            <div className="bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-0.5 max-w-full overflow-x-auto no-scrollbar">
+            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-0.5 max-w-full overflow-x-auto no-scrollbar">
               {(viewMode === "week" || viewMode === "day" || viewMode === "team") && (
                 <>
                   <div className="relative shrink-0" ref={zoomDropdownRef}>
                     <Tooltip content="Zoom" position="bottom" delay={100}>
                       <button
                         onClick={() => setIsZoomOpen(!isZoomOpen)}
-                        className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
+                        className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
                           isZoomOpen
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
                             : "text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
@@ -1220,7 +1396,7 @@ export function BookingsClient({
                       </div>
                     )}
                   </div>
-                  <div className="w-[1px] h-4 sm:h-5 bg-slate-100 dark:bg-slate-700 mx-1 sm:mx-1.5 self-center shrink-0" />
+                  <div className="w-[1px] h-5 bg-slate-100 dark:bg-slate-700 mx-1.5 self-center shrink-0" />
                 </>
               )}
 
@@ -1228,7 +1404,7 @@ export function BookingsClient({
                 <button 
                    key={mode}
                    onClick={() => setViewMode(mode)}
-                   className={`px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-normal tracking-normal transition-all cursor-pointer shrink-0 ${
+                   className={`px-4 md:px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer shrink-0 ${
                      viewMode === mode 
                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none" 
                        : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50"
@@ -1281,8 +1457,14 @@ export function BookingsClient({
                             <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
                               <div className={`text-sm font-normal ${booking.status === "CANCELLED" ? "text-slate-400 dark:text-slate-500 line-through" : "text-black dark:text-white"}`}>{formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", "MMM d, yyyy")}</div>
                               <div className="text-xs font-normal text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-1">
-                                <Clock className="h-3.5 w-3.5 text-indigo-500" /> {formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", listTimeFormat)}
+                                <Clock className="h-3.5 w-3.5 text-indigo-500 shrink-0" /> {formatInTimezone(new Date(booking.startTime), tenant?.timezone || "UTC", listTimeFormat)}
                               </div>
+                              {booking.location && (
+                                <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1 truncate max-w-[180px]">
+                                  <MapPin className="h-3 w-3 text-indigo-500 shrink-0" />
+                                  <span className="truncate">{booking.location.name}</span>
+                                </div>
+                              )}
                             </td>
                             <td className="px-6 py-4 sm:px-8 sm:py-4 whitespace-nowrap">
                               <div className={`text-sm font-normal ${booking.status === "CANCELLED" ? "text-slate-400 dark:text-slate-500" : "text-black dark:text-white"}`}>
@@ -1498,32 +1680,32 @@ export function BookingsClient({
       {/* Schedule View Modal */}
       {showScheduleViewModal && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 overflow-y-auto">
             <div
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-default"
               onClick={() => setShowScheduleViewModal(false)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md my-auto rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
+              <div className="p-5 sm:p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2rem] sm:rounded-t-[2.5rem]">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
-                    <Clock className="h-5 w-5" />
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-indigo-600 flex items-center justify-center text-white shrink-0">
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-black dark:text-white">Schedule View</h3>
-                    <p className="text-xs text-black dark:text-white font-normal opacity-60">Sets the visible hours on all calendars.</p>
+                    <h3 className="text-lg sm:text-xl font-black text-black dark:text-white">Schedule View</h3>
+                    <p className="text-[11px] sm:text-xs text-black dark:text-white font-normal opacity-60">Sets the visible hours on all calendars.</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setShowScheduleViewModal(false)}
-                  className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all cursor-pointer animate-none"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl sm:rounded-2xl transition-all cursor-pointer"
                 >
                   <X className="h-5 w-5 text-slate-400" />
                 </button>
               </div>
               
-              <div className="p-8 space-y-6 bg-white dark:bg-slate-900 rounded-b-[2.5rem]">
-                <div className="flex items-center justify-between gap-4">
+              <div className="p-5 sm:px-8 sm:pt-6 sm:pb-5 space-y-4 sm:space-y-5 bg-white dark:bg-slate-900 rounded-b-[2rem] sm:rounded-b-[2.5rem]">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0 space-y-2" ref={startDropdownRef}>
                     <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Start Time</label>
                     <div className="relative group">
@@ -1623,17 +1805,17 @@ export function BookingsClient({
                   </div>
                 )}
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button 
                     onClick={() => setShowScheduleViewModal(false)}
-                    className="px-6 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer animate-none"
+                    className="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer animate-none"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleSaveScheduleView}
                     disabled={saveViewLoading}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer animate-none"
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer animate-none"
                   >
                     {saveViewLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

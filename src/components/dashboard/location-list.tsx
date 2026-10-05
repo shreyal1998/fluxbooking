@@ -1,7 +1,8 @@
 "use client";
 
-import { MapPin, Plus, Trash2, Globe, Building2, Pencil, Loader2, X, Check, AlertCircle, Lock } from "lucide-react";
-import { useState } from "react";
+import { MapPin, Plus, Trash2, Globe, Building2, Pencil, Loader2, X, Check, AlertCircle, Lock, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
 import { addLocation, updateLocation, deleteLocation } from "@/app/actions/dashboard";
 import { toast } from "sonner";
@@ -24,10 +25,73 @@ interface LocationListProps {
   isPro: boolean;
   businessType?: any;
   userRole?: string;
+  country?: string;
 }
 
-export function LocationList({ locations: initialLocations, isPro, businessType, userRole }: LocationListProps) {
+export function LocationList({ locations: initialLocations, isPro, businessType, userRole, country }: LocationListProps) {
+  const router = useRouter();
   const [locations, setLocations] = useState(initialLocations);
+
+  useEffect(() => {
+    setLocations(initialLocations);
+  }, [initialLocations]);
+
+  // Pagination
+  const itemsPerPage = 5;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(locations.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = locations.slice(indexOfFirstItem, indexOfLastItem);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(locations.length / itemsPerPage));
+    if (currentPage > maxPage) {
+      setCurrentPage(maxPage);
+    }
+  }, [locations.length, currentPage]);
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const pageNumbersRange = useMemo(() => {
+    const pageNumbers: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+
+      if (currentPage > 3) {
+        pageNumbers.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      let adjustedStart = start;
+      let adjustedEnd = end;
+      if (currentPage <= 3) {
+        adjustedEnd = 4;
+      } else if (currentPage >= totalPages - 2) {
+        adjustedStart = totalPages - 3;
+      }
+
+      for (let i = adjustedStart; i <= adjustedEnd; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+    return pageNumbers;
+  }, [totalPages, currentPage]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(false);
@@ -118,15 +182,18 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
       const res = await updateLocation(editingLocation.id, formData);
       if (res.success) {
         toast.success("Location updated successfully!");
-        setLocations((prev) =>
-          prev.map((loc) => {
-            if (loc.id === editingLocation.id) {
-              return { ...loc, name, address, phone, isPrimary: isPrimary || loc.isPrimary };
-            }
-            return isPrimary ? { ...loc, isPrimary: false } : loc;
-          })
-        );
+        if (res.location) {
+          setLocations((prev) =>
+            prev.map((loc) => {
+              if (loc.id === editingLocation.id) {
+                return res.location;
+              }
+              return res.location.isPrimary ? { ...loc, isPrimary: false } : loc;
+            })
+          );
+        }
         setModalOpen(false);
+        router.refresh();
       } else {
         setGeneralError(res.error || "Failed to update location.");
       }
@@ -134,18 +201,15 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
       const res = await addLocation(formData);
       if (res.success) {
         toast.success("Location added successfully!");
-        // Refresh local state
-        setLocations((prev) => [
-          ...prev.map((l) => (isPrimary ? { ...l, isPrimary: false } : l)),
-          {
-            id: `temp-${Date.now()}`,
-            name,
-            address,
-            phone,
-            isPrimary: isPrimary || prev.length === 0,
-          },
-        ]);
+        if (res.location) {
+          setLocations((prev) => [
+            res.location,
+            ...prev.map((l) => (res.location.isPrimary ? { ...l, isPrimary: false } : l)),
+          ]);
+          setCurrentPage(1);
+        }
         setModalOpen(false);
+        router.refresh();
       } else {
         setGeneralError(res.error || "Failed to add location.");
       }
@@ -177,24 +241,27 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
         return filtered;
       });
       setDeletingLocation(null);
+      router.refresh();
     } else {
       toast.error(res.error || "Failed to delete location.");
     }
     setDeleteLoading(false);
   };
 
+  const activeLocationId = locations.find((l) => l.isPrimary)?.id || locations[0]?.id;
+
   return (
     <>
       <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4.5 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-950/50">
+        <div className="px-6 py-3.5 sm:px-8 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-950/50">
           <div className="flex items-center gap-3">
-            <MapPin className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="font-normal text-slate-900 dark:text-white">Business Locations</h3>
+            <MapPin className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-sm font-normal text-slate-900 dark:text-white">Business Locations</h3>
           </div>
           {isAdmin && (
             <button
               onClick={handleOpenAdd}
-              className={`h-9 px-4 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs self-start sm:self-auto shrink-0 ${
+              className={`h-8 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs self-start sm:self-auto shrink-0 ${
                 !isPro 
                   ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700" 
                   : "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-98"
@@ -212,56 +279,57 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
         </div>
 
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {locations.length > 0 ? (
-            locations.map((loc, idx) => {
-              const isLocked = !isPro && (!loc.isPrimary || idx > 0);
+          {currentItems.length > 0 ? (
+            currentItems.map((loc) => {
+              const isLocked = !isPro && loc.id !== activeLocationId;
 
               return (
-                <div key={loc.id} className={`p-6 flex items-start justify-between group transition-all ${isLocked ? 'bg-slate-50/50 dark:bg-slate-900/30 opacity-75' : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'}`}>
-                  <div className="flex items-start gap-4">
-                    <div className={`h-10 w-10 rounded-xl border flex items-center justify-center transition-all shadow-xs shrink-0 ${
+                <div key={loc.id} className={`px-5 py-3.5 sm:px-8 sm:py-3.5 flex items-center justify-between group transition-all ${isLocked ? 'bg-slate-50/50 dark:bg-slate-900/30 opacity-75' : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'}`}>
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className={`h-8 w-8 rounded-lg border flex items-center justify-center transition-all shadow-xs shrink-0 ${
                       isLocked 
                         ? 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-400' 
                         : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 text-slate-400 group-hover:text-indigo-600 group-hover:border-indigo-500/30'
                     }`}>
-                      {isLocked ? <Lock className="h-4 w-4" /> : <Building2 className="h-5 w-5" />}
+                      {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Building2 className="h-4 w-4" />}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-bold ${isLocked ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>{loc.name}</h4>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className={`text-sm font-medium leading-none ${isLocked ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'}`}>{loc.name}</h4>
                         {loc.isPrimary && (
-                          <span className="text-[10px] font-bold uppercase bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/50">
+                          <span className="text-[9px] font-medium uppercase bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/50 leading-none">
                             Primary Branch
                           </span>
                         )}
                         {isLocked && (
-                          <span className="text-[8px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-lg tracking-wider shrink-0 flex items-center gap-1">
-                            <Lock className="h-2.5 w-2.5" /> Locked
+                          <span className="text-[8px] font-medium uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded-md tracking-wider shrink-0 flex items-center gap-1 leading-none">
+                            <Lock className="h-2 w-2" /> Locked
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 font-normal">
-                        {isLocked ? "Pro Plan required to activate this location" : (loc.address || "No street address configured")}
-                      </p>
-                      {!isLocked && loc.phone && (
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-mono">
-                          {loc.phone}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400 font-normal">
+                        <span className="truncate">{isLocked ? "Pro Plan required to activate this location" : (loc.address || "No street address configured")}</span>
+                        {!isLocked && loc.phone && (
+                          <>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500 shrink-0">{loc.phone}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {isAdmin && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 shrink-0 ml-3">
                       {isLocked ? (
                         <Tooltip content="Upgrade Plan" position="bottom" delay={100}>
                           <button
                             type="button"
                             onClick={() => (window.location.href = "/settings/billing")}
-                            className="p-2.5 rounded-xl bg-transparent text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                            className="p-1.5 rounded-lg bg-transparent text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                             aria-label="Locked Location"
                           >
-                            <Lock className="h-[18px] w-[18px]" />
+                            <Lock className="h-4 w-4" />
                           </button>
                         </Tooltip>
                       ) : (
@@ -269,10 +337,10 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(loc)}
-                            className="p-2.5 rounded-xl bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
+                            className="p-1.5 rounded-lg bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-transparent active:scale-95 cursor-pointer"
                             aria-label="Edit"
                           >
-                            <Pencil className="h-[18px] w-[18px]" />
+                            <Pencil className="h-4 w-4" />
                           </button>
                         </Tooltip>
                       )}
@@ -280,10 +348,10 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
                         <button
                           type="button"
                           onClick={() => setDeletingLocation(loc)}
-                          className="p-2.5 rounded-xl bg-transparent text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all border border-transparent active:scale-95 cursor-pointer"
+                          className="p-1.5 rounded-lg bg-transparent text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all border border-transparent active:scale-95 cursor-pointer"
                           aria-label="Delete"
                         >
-                          <Trash2 className="h-[18px] w-[18px]" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </Tooltip>
                     </div>
@@ -292,24 +360,86 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
               );
             })
           ) : (
-            <div className="p-12 text-center">
-              <div className="h-12 w-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300">
-                <Globe className="h-6 w-6" />
+            <div className="p-8 text-center">
+              <div className="h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-300">
+                <Globe className="h-5 w-5" />
               </div>
-              <p className="text-sm font-medium text-slate-500">No locations added for this {labels.businessTypeName} yet.</p>
+              <p className="text-xs font-medium text-slate-500">No locations added for this {labels.businessTypeName} yet.</p>
             </div>
           )}
         </div>
 
+        {locations.length > itemsPerPage && (
+          <div className="px-6 py-4 sm:px-8 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
+              Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, locations.length)}</span> of <span className="text-black dark:text-white">{locations.length}</span> locations
+            </p>
+            
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center gap-1.5 px-2">
+                {pageNumbersRange.map((pageNum, idx) => {
+                  if (pageNum === "...") {
+                    return (
+                      <span 
+                        key={`ellipsis-${idx}`} 
+                        className="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400 dark:text-slate-500 select-none"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  const isActive = currentPage === pageNum;
+                  return (
+                    <button
+                      type="button"
+                      key={`page-${pageNum}`}
+                      onClick={() => paginate(pageNum as number)}
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {!isPro && isAdmin && (
-          <div className="p-4 bg-indigo-50/70 dark:bg-indigo-900/20 border-t border-indigo-100 dark:border-indigo-800 flex items-center justify-between">
-            <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              Business Locations is a Pro feature. Upgrade to Pro to add branch locations and assign staff.
+          <div className="p-4 bg-amber-50/80 dark:bg-amber-950/20 border-t border-amber-100 dark:border-amber-900/40 flex items-center justify-between gap-4">
+            <p className="text-xs font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              {locations.length > 1 
+                ? "Multiple locations is a Pro feature. Only your primary location is active for client bookings. Upgrade to Pro to reactivate all branches."
+                : "Multi-location support is a Pro feature. Upgrade to Pro to add branch locations and assign staff."}
             </p>
             <button
+              type="button"
               onClick={() => (window.location.href = "/settings/billing")}
-              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 underline cursor-pointer shrink-0 ml-4"
+              className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 underline cursor-pointer shrink-0"
             >
               Upgrade to Pro
             </button>
@@ -396,6 +526,7 @@ export function LocationList({ locations: initialLocations, isPro, businessType,
                     <PhoneInput
                       name="branchPhone"
                       defaultValue={phone}
+                      defaultCountry={country || "US"}
                       hasError={!!fieldErrors.phone}
                       onChange={(val) => {
                         setPhone(val);

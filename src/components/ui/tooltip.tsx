@@ -11,6 +11,7 @@ interface TooltipProps {
   interactive?: boolean;
   variant?: "default" | "light";
   className?: string;
+  closeOnClick?: boolean;
 }
 
 export function Tooltip({ 
@@ -20,7 +21,8 @@ export function Tooltip({
   delay = 300,
   interactive = true,
   variant = "default",
-  className = ""
+  className = "",
+  closeOnClick = true
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isPositioned, setIsPositioned] = useState(false);
@@ -101,6 +103,12 @@ export function Tooltip({
 
   const handleTriggerClick = (e: React.MouseEvent) => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    if (closeOnClick) {
+      setIsPinned(false);
+      setIsVisible(false);
+      setIsPositioned(false);
+      return;
+    }
     setIsPinned((prev) => {
       const next = !prev;
       if (next) {
@@ -112,6 +120,14 @@ export function Tooltip({
       return next;
     });
   };
+
+  // Reset tooltip if content changes
+  useEffect(() => {
+    setIsPinned(false);
+    setIsVisible(false);
+    setIsPositioned(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, [content]);
 
   // Outside click listener for pinned mode
   useEffect(() => {

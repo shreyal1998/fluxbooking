@@ -30,7 +30,8 @@ import {
   Lock,
   ZoomIn,
   ZoomOut,
-  RotateCcw
+  RotateCcw,
+  MoreHorizontal
 } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { StructuredAvailabilityEditor } from "@/components/dashboard/structured-availability-editor";
@@ -130,7 +131,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
   const isTrialActive = tenant?.planStatus === "TRIALING" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) > new Date(serverDateIso);
   const currentLimit = isTrialActive ? Math.max(baseLimit, 5) : baseLimit;
 
-  const [view, setView] = useState<any>(defaultView);
+  const [view, setView] = useState<any>(defaultView || "week");
 
   // Save view mode to database whenever it changes
   useEffect(() => {
@@ -198,6 +199,10 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
   const staffDropdownRef = useRef<HTMLDivElement>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const zoomDropdownRef = useRef<HTMLDivElement>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const viewDropdownRef = useRef<HTMLDivElement>(null);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const mobileMoreRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
   const [showScheduleViewModal, setShowScheduleViewModal] = useState(false);
@@ -315,7 +320,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
     }
   };
 
-  // Click outside to close staff/start/end dropdowns
+  // Click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: any) => {
       if (staffDropdownRef.current && !staffDropdownRef.current.contains(event.target as Node)) {
@@ -329,6 +334,12 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
       }
       if (zoomDropdownRef.current && !zoomDropdownRef.current.contains(event.target as Node)) {
         setIsZoomOpen(false);
+      }
+      if (viewDropdownRef.current && !viewDropdownRef.current.contains(event.target as Node)) {
+        setIsViewOpen(false);
+      }
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(event.target as Node)) {
+        setIsMobileMoreOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -520,79 +531,67 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
 
 
   return (
-    <div className="flex-1 flex flex-col transition-colors px-2.5 sm:px-4 md:px-6 lg:px-8 pt-3 sm:pt-4 md:pt-5 pb-8">
+    <div className="flex-1 flex flex-col transition-colors px-0 sm:px-4 md:px-6 lg:px-8 pt-2 sm:pt-4 md:pt-5 pb-8">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-5 px-1 sm:px-4">
-        <div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <h2 className="text-lg sm:text-xl font-medium text-black dark:text-slate-200 tracking-tight">Schedule Calendar</h2>
-            {(() => {
-              const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
-              if (formattedHours.length === 0) return null;
-              return (
-                <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700">
-                  <Building className="h-3.5 w-3.5 text-indigo-500" />
-                  <span className="group-hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Venue Hours</span>
-                  <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
-                      <div className="space-y-2">
-                        {formattedHours.map((fh, idx) => {
-                          const [day, hoursText] = fh.split(": ");
-                          return (
-                            <div key={idx} className="flex justify-between text-[11px] font-bold">
-                              <span className="text-slate-400">{day}</span>
-                              <span className="text-slate-700 dark:text-slate-200 tabular-nums">{hoursText}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+      <div className="flex items-center justify-between gap-2 sm:gap-6 mb-2.5 sm:mb-5 px-3 sm:px-4">
+        <div className="min-w-0 flex items-center gap-2 sm:gap-3">
+          <h2 className="text-base sm:text-xl font-medium text-black dark:text-slate-200 tracking-tight truncate">Schedule Calendar</h2>
+          {(() => {
+            const formattedHours = formatBusinessHours(tenant.businessHoursJson, tenant.timeFormat || "12h");
+            if (formattedHours.length === 0) return null;
+            return (
+              <div className="relative group cursor-pointer bg-slate-100/80 dark:bg-slate-800 px-2 sm:px-2.5 py-1 rounded-full flex items-center gap-1 sm:gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 select-none border border-slate-200/50 dark:border-slate-700 shrink-0">
+                <Building className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500" />
+                <span className="hidden xs:inline group-hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Venue Hours</span>
+                <div className="absolute left-0 top-full pt-3 hidden group-hover:block z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="w-52 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl shadow-2xl p-5 text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-3">Venue Hours</p>
+                    <div className="space-y-2">
+                      {formattedHours.map((fh, idx) => {
+                        const [day, hoursText] = fh.split(": ");
+                        return (
+                          <div key={idx} className="flex justify-between text-[11px] font-bold">
+                            <span className="text-slate-400">{day}</span>
+                            <span className="text-slate-700 dark:text-slate-200 tabular-nums">{hoursText}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })()}
         </div>
         
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {userRole === "ADMIN" && (
-            <>
-              <button 
-                onClick={() => setShowScheduleViewModal(true)}
-                className="flex items-center gap-1.5 sm:gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer"
-              >
-                <Clock className="h-4 w-4" />
-                <span>Schedule View</span>
-              </button>
-
-              <button 
-                onClick={() => {
-                  setModalKey(prev => prev + 1);
-                  setShowHoursModal(true);
-                }}
-                className="flex items-center gap-1.5 sm:gap-2 bg-indigo-600 text-white px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer"
-              >
-                <CalendarIcon className="h-4 w-4" />
-                <span>Create Schedule</span>
-              </button>
-            </>
+            <button 
+              onClick={() => setShowScheduleViewModal(true)}
+              className="hidden sm:flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-5 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all border border-indigo-100 dark:border-indigo-900/50 active:scale-95 shadow-sm cursor-pointer shrink-0"
+              title="Schedule View"
+            >
+              <Clock className="h-4 w-4 shrink-0" />
+              <span>Schedule View</span>
+            </button>
           )}
 
-          <div className="relative" ref={staffDropdownRef}>
+          <div className="relative min-w-0" ref={staffDropdownRef}>
             <button 
               onClick={() => setIsStaffFilterOpen(!isStaffFilterOpen)}
-              className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3.5 sm:px-4 py-2 sm:py-2 rounded-xl sm:rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-0 sm:min-w-[180px] md:min-w-[200px] cursor-pointer"
+              className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-slate-900 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border-2 border-indigo-100/50 dark:border-indigo-900/50 focus:border-indigo-600 hover:border-indigo-300 dark:hover:border-slate-700 transition-all group shadow-sm min-w-0 max-w-[125px] xs:max-w-[160px] sm:max-w-[240px] md:max-w-[260px] cursor-pointer"
             >
-              <Filter className={`h-4 w-4 shrink-0 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
-              <div className="flex flex-col flex-1 text-left min-w-0">
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+              <Filter className={`h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 ${isStaffFilterOpen ? 'text-indigo-600' : 'text-slate-400'} group-hover:text-indigo-500 transition-colors`} />
+              <div className="flex flex-col flex-1 text-left min-w-0 overflow-hidden">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate block">
                   {selectedStaffName}
                 </span>
                 {selectedStaff?.locations && selectedStaff.locations.length > 0 && (
-                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate flex items-center gap-1">
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold truncate hidden sm:flex items-center gap-1">
                     <Building className="h-2.5 w-2.5 shrink-0" />
-                    {selectedStaff.locations.map((l: any) => l.name).join(", ")}
+                    <span className="truncate">
+                      {selectedStaff.locations.map((l: any) => l.address ? `${l.name} • ${l.address}` : l.name).join(", ")}
+                    </span>
                   </span>
                 )}
               </div>
@@ -600,7 +599,7 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
             </button>
 
             {isStaffFilterOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl border-2 border-slate-100 dark:border-slate-800 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-4 py-2 border-b-2 border-slate-100 dark:border-slate-800 mb-1">
                   <p className="text-[10px] font-medium text-black dark:text-white uppercase tracking-widest opacity-40">Select Team Member</p>
                 </div>
@@ -630,18 +629,20 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                             : staffFilter === s.id ? 'bg-indigo-50/50 dark:bg-indigo-900/20 cursor-pointer' : 'hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                           <div className="h-8 w-8 rounded-xl flex items-center justify-center text-white text-[10px] font-medium shrink-0" style={{ backgroundColor: isLocked ? '#94A3B8' : s.color }}>
                             {isLocked ? <Lock className="h-4 w-4" /> : s.name.substring(0, 2).toUpperCase()}
                           </div>
-                          <div className="flex flex-col min-w-0">
+                          <div className="flex flex-col min-w-0 flex-1">
                             <span className={`text-xs font-semibold truncate ${isLocked ? 'text-slate-500 dark:text-slate-400' : staffFilter === s.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-black dark:text-white'}`}>
                               {s.name} {isLocked && "(Locked)"}
                             </span>
                             {s.locations && s.locations.length > 0 ? (
                               <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1 font-normal">
                                 <Building className="h-2.5 w-2.5 text-indigo-500 shrink-0" />
-                                {s.locations.map((l: any) => l.name).join(", ")}
+                                <span className="truncate">
+                                  {s.locations.map((l: any) => l.address ? `${l.name} • ${l.address}` : l.name).join(", ")}
+                                </span>
                               </span>
                             ) : null}
                           </div>
@@ -658,55 +659,184 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
               </div>
             )}
           </div>
+
+          <button 
+            onClick={() => {
+              setModalKey(prev => prev + 1);
+              setShowHoursModal(true);
+            }}
+            className="flex items-center justify-center gap-1 sm:gap-2 bg-indigo-600 text-white h-8 sm:h-auto px-2.5 sm:px-5 py-0 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer shrink-0"
+            title="Create Schedule"
+          >
+            <Plus className="h-4 w-4 shrink-0 sm:hidden" />
+            <CalendarIcon className="h-4 w-4 shrink-0 hidden sm:inline" />
+            <span className="hidden sm:inline">Create Schedule</span>
+          </button>
         </div>
       </div>
 
       {/* Toolbar & Calendar Grid */}
       <div className="flex-1 flex flex-col">
         {/* Navigation & View Control Toolbar */}
-        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <div className="flex items-center bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                 <button 
-                  onClick={() => {
-                    const next = view === 'week' ? addMinutes(currentDate, -10080) : addMinutes(currentDate, -1440);
-                    updateCurrentDate(next);
-                  }}
-                  className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button 
-                  onClick={() => updateCurrentDate(new Date())} 
-                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] font-bold uppercase tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all mx-0.5 sm:mx-1 cursor-pointer"
-                >
-                  Today
-                </button>
-                <button 
-                  onClick={() => {
-                    const next = view === 'week' ? addMinutes(currentDate, 10080) : addMinutes(currentDate, 1440);
-                    updateCurrentDate(next);
-                  }}
-                  className="p-1.5 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+        <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 mb-2.5 sm:mb-3 bg-white dark:bg-slate-900 backdrop-blur-xl p-2 sm:p-3 rounded-none sm:rounded-[2rem] border-y sm:border border-slate-100 dark:border-slate-800 shadow-sm">
+           <div className="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center bg-white dark:bg-slate-800 p-0.5 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                   <button 
+                    onClick={() => {
+                      const next = view === 'week' ? addMinutes(currentDate, -10080) : addMinutes(currentDate, -1440);
+                      updateCurrentDate(next);
+                    }}
+                    className="p-1 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </button>
+                  <button 
+                    onClick={() => updateCurrentDate(new Date())} 
+                    className="px-2 sm:px-4 py-1 sm:py-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest text-black dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all mx-0.5 sm:mx-1 cursor-pointer"
+                  >
+                    Today
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const next = view === 'week' ? addMinutes(currentDate, 10080) : addMinutes(currentDate, 1440);
+                      updateCurrentDate(next);
+                    }}
+                    className="p-1 sm:p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg sm:rounded-xl transition-all text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </button>
+                </div>
+                <span className="text-xs sm:text-base font-normal text-black dark:text-white whitespace-nowrap px-1 sm:px-2 tracking-tight">
+                  {getHeaderText()}
+                </span>
               </div>
-              <span className="text-xs sm:text-base font-normal text-black dark:text-white whitespace-nowrap px-1 sm:px-2 tracking-tight">
-                {getHeaderText()}
-              </span>
+
+              {/* Mobile: "..." More Options Menu Button */}
+              <div className="relative sm:hidden" ref={mobileMoreRef}>
+                <button
+                  onClick={() => setIsMobileMoreOpen(!isMobileMoreOpen)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer active:scale-95 transition-all ${
+                    isMobileMoreOpen
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm"
+                  }`}
+                  title="More Options"
+                >
+                  <span className="capitalize text-[11px] font-bold">{view}</span>
+                  <span className="opacity-40">•</span>
+                  <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
+                </button>
+
+                {isMobileMoreOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border-2 border-slate-100 dark:border-slate-800 p-3 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* View Switcher */}
+                    <div className="mb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 px-1">
+                        Calendar View
+                      </p>
+                      <div className={`grid ${userRole !== "STAFF" ? 'grid-cols-3' : 'grid-cols-2'} gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl`}>
+                        {(["day", "week"] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            onClick={() => {
+                              setView(mode);
+                            }}
+                            className={`py-1.5 text-[11px] font-bold rounded-lg capitalize transition-all cursor-pointer ${
+                              view === mode
+                                ? "bg-indigo-600 text-white shadow-sm"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                        {userRole !== "STAFF" && (
+                          <button
+                            onClick={() => {
+                              setView("team");
+                            }}
+                            className={`py-1.5 text-[11px] font-bold rounded-lg capitalize transition-all cursor-pointer ${
+                              view === "team"
+                                ? "bg-indigo-600 text-white shadow-sm"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700"
+                            }`}
+                          >
+                            Team
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Zoom Controls */}
+                    {view === "week" && (
+                      <div className="mb-3">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 px-1">
+                          Zoom ({zoomLevel}%)
+                        </p>
+                        <div className="flex items-center justify-between bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl">
+                          <button
+                            onClick={() => setZoomLevel((prev) => Math.max(50, prev - 10))}
+                            disabled={zoomLevel <= 50}
+                            className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-40 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <ZoomOut className="h-4 w-4" />
+                          </button>
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 select-none">
+                            {zoomLevel}%
+                          </span>
+                          <button
+                            onClick={() => setZoomLevel((prev) => Math.min(200, prev + 10))}
+                            disabled={zoomLevel >= 200}
+                            className="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-40 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <ZoomIn className="h-4 w-4" />
+                          </button>
+                          {zoomLevel !== 100 && (
+                            <button
+                              onClick={() => setZoomLevel(100)}
+                              className="px-2 py-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Schedule View Modal (Admin) */}
+                    {userRole === "ADMIN" && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          onClick={() => {
+                            setIsMobileMoreOpen(false);
+                            setShowScheduleViewModal(true);
+                          }}
+                          className="w-full flex items-center justify-between p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>Visible Hours Range</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
            </div>
 
-           <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar max-w-full">
-             {/* View Switcher with Zoom */}
-             <div className="flex items-center bg-white dark:bg-slate-800 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm gap-0.5 shrink-0">
+           {/* Desktop Toolbar Controls */}
+           <div className="hidden sm:flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar max-w-full">
+             <div className="flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm gap-0.5 shrink-0">
                {view === "week" && (
                  <>
                    <div className="relative shrink-0" ref={zoomDropdownRef}>
                      <Tooltip content="Zoom" position="bottom" delay={100}>
                        <button
                         onClick={() => setIsZoomOpen(!isZoomOpen)}
-                        className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
+                        className={`p-2 rounded-xl transition-all active:scale-95 flex items-center justify-center cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${
                           isZoomOpen
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-100 dark:shadow-none"
                             : "text-black dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
@@ -759,26 +889,26 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                        </div>
                      )}
                    </div>
-                   <div className="w-[1px] h-5 bg-slate-100 dark:bg-slate-700 mx-1.5 self-center" />
+                   <div className="w-[1px] h-5 bg-slate-100 dark:bg-slate-700 mx-1.5 self-center shrink-0" />
                  </>
                )}
 
                <button 
                 onClick={() => setView('day')} 
-                className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'day' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                className={`px-4 md:px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'day' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                >
                 Day
                </button>
                <button 
                 onClick={() => setView('week')} 
-                className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'week' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                className={`px-4 md:px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'week' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                >
                 Week
                </button>
                {userRole !== "STAFF" && (
                  <button 
                   onClick={() => setView('team')} 
-                  className={`px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'team' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                  className={`px-4 md:px-5 py-2 rounded-xl text-sm font-normal tracking-normal transition-all cursor-pointer ${view === 'team' ? 'bg-indigo-600 text-white shadow-md dark:shadow-none' : 'text-black dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
                  >
                   Team
                  </button>
@@ -816,33 +946,33 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
       {/* Master Schedule Modal */}
       {showHoursModal && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 overflow-y-auto">
             <div
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-default"
               onClick={() => setShowHoursModal(false)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-6 bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl my-auto rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
+              <div className="p-5 sm:p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-4 sm:gap-6 bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2rem] sm:rounded-t-[2.5rem]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
-                      <CalendarIcon className="h-5 w-5" />
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-indigo-600 flex items-center justify-center text-white shrink-0">
+                      <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-black dark:text-white">Create Schedule</h3>
-                      <p className="text-xs text-black dark:text-white font-normal opacity-60">Set recurring weekly opening and closing hours for the venue.</p>
+                      <h3 className="text-lg sm:text-xl font-black text-black dark:text-white">Create Schedule</h3>
+                      <p className="text-[11px] sm:text-xs text-black dark:text-white font-normal opacity-60">Set recurring weekly opening and closing hours for the venue.</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setShowHoursModal(false)}
-                    className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700 cursor-pointer"
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl sm:rounded-2xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700 cursor-pointer"
                   >
                     <X className="h-5 w-5 text-slate-400" />
                   </button>
                 </div>
               </div>
               
-              <div className="p-8 overflow-visible">
+              <div className="p-5 sm:p-8 overflow-visible">
                 <StructuredAvailabilityEditor 
                   key={modalKey}
                   staffList={activeStaff}
@@ -858,32 +988,32 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
       {/* Schedule View Modal */}
       {showScheduleViewModal && (
         <Portal>
-          <div className="fixed inset-0 z-[2147483647] absolute-top flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4 overflow-y-auto">
             <div
-              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-pointer"
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-default"
               onClick={() => setShowScheduleViewModal(false)}
             />
-            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2.5rem]">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md my-auto rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-visible animate-in fade-in zoom-in duration-300">
+              <div className="p-5 sm:p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-indigo-50/50 dark:bg-slate-950/50 rounded-t-[2rem] sm:rounded-t-[2.5rem]">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white">
-                    <Clock className="h-5 w-5" />
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-indigo-600 flex items-center justify-center text-white shrink-0">
+                    <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-black dark:text-white">Schedule View</h3>
-                    <p className="text-xs text-black dark:text-white font-normal opacity-60">Sets the visible hours on all calendars.</p>
+                    <h3 className="text-lg sm:text-xl font-black text-black dark:text-white">Schedule View</h3>
+                    <p className="text-[11px] sm:text-xs text-black dark:text-white font-normal opacity-60">Sets the visible hours on all calendars.</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setShowScheduleViewModal(false)}
-                  className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all animate-none cursor-pointer"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl sm:rounded-2xl transition-all animate-none cursor-pointer"
                 >
                   <X className="h-5 w-5 text-slate-400" />
                 </button>
               </div>
               
-              <div className="p-8 space-y-6 bg-white dark:bg-slate-900 rounded-b-[2.5rem]">
-                <div className="flex items-center justify-between gap-4">
+              <div className="p-5 sm:px-8 sm:pt-6 sm:pb-5 space-y-4 sm:space-y-5 bg-white dark:bg-slate-900 rounded-b-[2rem] sm:rounded-b-[2.5rem]">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0 space-y-2" ref={startDropdownRef}>
                     <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">Start Time</label>
                     <div className="relative group">
@@ -983,17 +1113,17 @@ export function ScheduleClient({ staff, tenant, userRole, defaultStaffId, defaul
                   </div>
                 )}
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button 
                     onClick={() => setShowScheduleViewModal(false)}
-                    className="px-6 py-3 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleSaveScheduleView}
                     disabled={saveViewLoading}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all disabled:opacity-50 shadow-md shadow-indigo-100 dark:shadow-none active:scale-95 cursor-pointer disabled:cursor-not-allowed"
                   >
                     {saveViewLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

@@ -1,7 +1,7 @@
 export const PLANS = [
   {
     id: "FREE",
-    name: "Free",
+    name: "Free Plan",
     description: "Perfect for solopreneurs starting out.",
     price: {
       amount: 0,
@@ -21,7 +21,7 @@ export const PLANS = [
   },
   {
     id: "STARTER",
-    name: "Starter",
+    name: "Starter Plan",
     description: "Ideal for growing stylists and small teams.",
     price: {
       amount: 6.99,
@@ -42,7 +42,7 @@ export const PLANS = [
   },
   {
     id: "PRO",
-    name: "Pro",
+    name: "Pro Plan",
     description: "The complete toolkit for full salons and gyms.",
     price: {
       amount: 14.99,

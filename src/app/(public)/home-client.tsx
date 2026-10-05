@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   ArrowRight, 
@@ -10,11 +10,18 @@ import {
   Shield, 
   CheckCircle2, 
   Plus, 
-  Zap 
+  Zap,
+  Sliders,
+  MapPin,
+  Mail,
+  Clock,
+  Sparkles,
+  RefreshCw,
+  UserCheck
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { PLANS } from "@/config/plans";
 
 export function HomeClient() {
   const [isYearly, setIsYearly] = useState(false);
@@ -23,66 +30,65 @@ export function HomeClient() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sectionId = pathname === "/features" ? "features" : pathname === "/pricing" ? "pricing" : null;
-      if (sectionId) {
-        const element = document.getElementById(sectionId);
-        if (element) {
+    const target = pathname === "/features" ? "features" : pathname === "/pricing" ? "pricing" : null;
+    if (target) {
+      const timeout = setTimeout(() => {
+        const el = document.getElementById(target);
+        if (el) {
           const headerOffset = 80;
-          const elementPosition = element.getBoundingClientRect().top;
+          const elementPosition = el.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
           window.scrollTo({ top: offsetPosition, behavior: "smooth" });
         }
-      } else if (pathname === "/") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    };
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [pathname]);
 
-    // Custom event listener for manual scroll triggers (header/footer clicks)
+  useEffect(() => {
     const handleManualScroll = (e: any) => {
       const sectionId = e.detail;
-      const element = document.getElementById(sectionId);
-      if (element) {
-        const headerOffset = 80;
-        const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-      } else if (sectionId === "top") {
+      
+      if (sectionId === "top") {
+        window.history.replaceState(null, "", "/");
         window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (sectionId) {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          window.history.replaceState(null, "", `/${sectionId}`);
+          const headerOffset = 80;
+          const elementPosition = el.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+        }
       }
     };
 
     window.addEventListener("flux-scroll", handleManualScroll);
-
-    // Small delay to ensure the DOM is fully ready
-    const timeout = setTimeout(handleScroll, 100);
-    return () => {
-      clearTimeout(timeout);
-      window.removeEventListener("flux-scroll", handleManualScroll);
-    };
-  }, [pathname]);
+    return () => window.removeEventListener("flux-scroll", handleManualScroll);
+  }, []);
 
   const registerHref = isAuthenticated ? "/overview" : "/register";
-  const registerText = isAuthenticated ? "Go to Dashboard" : "Start 14-Day Free Trial";
+  const registerText = isAuthenticated ? "Go to dashboard" : "Start 14-day free trial";
 
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-32 pb-8 lg:pt-48 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50 via-white to-white">
-        <div className="bg-grid-light absolute inset-0 opacity-[0.4] pointer-events-none"></div>
+      <section className="relative overflow-hidden pt-32 pb-16 lg:pt-44 lg:pb-24 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/80 via-white to-white dark:from-indigo-950/20 dark:via-slate-950 dark:to-slate-950">
+        <div className="bg-grid-light absolute inset-0 opacity-[0.4] dark:opacity-[0.08] pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 mb-8">
-            <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse"></span>
-            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Flux = Continuous Flow & Change</span>
+          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/60 mb-8">
+            <span className="flex h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+            <span className="text-sm sm:text-base font-semibold text-indigo-600 dark:text-indigo-400">The Adaptive Booking Engine</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 max-w-4xl mx-auto leading-[1.1]">
-            Keep Your Business in <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Constant Flux</span>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-6 max-w-4xl mx-auto leading-[1.1]">
+            Keep Your Business in <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600">Constant Flux</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-slate-500 text-lg md:text-xl mb-10 leading-relaxed">
-            The high-performance booking system built for movement. Scale your staff, services, and revenue with precision.
+          <p className="mx-auto max-w-2xl text-slate-600 dark:text-slate-300 text-lg md:text-xl mb-10 leading-relaxed font-normal">
+            The high-performance booking system with adaptive terminology for clinics, salons, fitness, and consulting. Scale staff, locations, and revenue with precision.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
@@ -93,78 +99,81 @@ export function HomeClient() {
               {registerText} <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <button
+              type="button"
               onClick={() => {
-                const element = document.getElementById("pricing");
-                if (element) {
-                  const headerOffset = 80;
-                  const elementPosition = element.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                  window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                }
+                window.history.replaceState(null, "", "/features");
+                window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "features" }));
               }}
-              className="w-full sm:w-auto inline-flex h-14 items-center justify-center rounded-2xl border-2 border-slate-100 bg-white px-10 text-base font-bold text-slate-900 transition-all hover:bg-slate-50 hover:border-slate-100 hover:shadow-md active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto inline-flex h-14 items-center justify-center rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-10 text-base font-bold text-slate-900 dark:text-white transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md active:scale-95 cursor-pointer"
             >
-              View Plans
+              Explore Features
             </button>
           </div>
 
           {/* Mock UI Showcase */}
           <div className="relative max-w-5xl mx-auto px-4">
-            <div className="rounded-[2.5rem] border border-slate-100 bg-white p-3 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
-              <div className="rounded-[2rem] border border-slate-100 bg-[#F8FAFC] flex flex-col overflow-hidden">
-                <div className="h-12 bg-white border-b border-slate-100 flex items-center px-8 justify-between text-left">
+            <div className="rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
+              <div className="rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-950 flex flex-col overflow-hidden">
+                <div className="h-12 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center px-8 justify-between text-left">
                   <div className="flex gap-2">
                     <div className="h-3 w-3 rounded-full bg-[#FF5F57] border border-[#E0443E] shadow-sm"></div>
                     <div className="h-3 w-3 rounded-full bg-[#FEBC2E] border border-[#D8A020] shadow-sm"></div>
                     <div className="h-3 w-3 rounded-full bg-[#28C840] border border-[#1AAB2F] shadow-sm"></div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg px-6 py-2 text-[10px] font-bold text-slate-400 font-mono tracking-tight flex items-center gap-2">
+                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-6 py-2 text-[10px] font-bold text-slate-400 dark:text-slate-300 font-mono tracking-tight flex items-center gap-2">
                     <Shield className="h-3 w-3" />
-                    fluxbooking.com/bookings
+                    fluxbooking.com/b/apex-clinic
                   </div>
                   <div className="w-12"></div>
                 </div>
 
-                <div className="flex-1 flex overflow-hidden min-h-[450px] text-left">
-                  <div className="w-56 bg-white border-r border-slate-100 p-6 space-y-6 hidden md:block">
+                <div className="flex-1 flex overflow-hidden min-h-[420px] text-left">
+                  <div className="w-56 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 p-6 space-y-6 hidden md:block">
                      <div className="space-y-4">
-                       <div className="h-10 w-full bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 flex items-center px-4 gap-3">
-                          <Calendar className="h-4.5 w-4.5" />
-                          <span className="text-xs font-black">Bookings</span>
+                       <div className="h-10 w-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-800 flex items-center px-4 gap-3">
+                          <Calendar className="h-4 w-4" />
+                          <span className="text-xs font-bold">Appointments</span>
                        </div>
-                       <div className="h-10 w-full bg-slate-50 rounded-xl flex items-center px-4 gap-3">
-                          <Users className="h-4.5 w-4.5 text-slate-300" />
-                          <span className="text-xs font-bold text-slate-400">Team Members</span>
+                       <div className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 rounded-xl flex items-center px-4 gap-3">
+                          <Users className="h-4 w-4 text-slate-400" />
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Practitioners</span>
                        </div>
-                       <div className="h-10 w-full bg-slate-50 rounded-xl flex items-center px-4 gap-3">
-                          <Scissors className="h-4.5 w-4.5 text-slate-300" />
-                          <span className="text-xs font-bold text-slate-400">Services</span>
+                       <div className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 rounded-xl flex items-center px-4 gap-3">
+                          <Scissors className="h-4 w-4 text-slate-400" />
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Treatments</span>
+                       </div>
+                       <div className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 rounded-xl flex items-center px-4 gap-3">
+                          <MapPin className="h-4 w-4 text-slate-400" />
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Locations</span>
                        </div>
                      </div>
                   </div>
 
-                  <div className="flex-1 bg-white p-10">
-                     <div className="flex justify-between items-center mb-10">
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Daily Schedule</h3>
-                        <div className="h-11 px-5 bg-indigo-600 rounded-xl text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-100">
+                  <div className="flex-1 bg-white dark:bg-slate-900 p-8 sm:p-10">
+                     <div className="flex justify-between items-center mb-8">
+                        <div>
+                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Today's Practice Schedule</h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Downtown Clinic • 3 Active Practitioners</p>
+                        </div>
+                        <div className="h-10 px-4 bg-indigo-600 rounded-xl text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-100 dark:shadow-none">
                            <Plus className="h-4 w-4" /> New Booking
                         </div>
                      </div>
-                     <div className="space-y-4">
+                     <div className="space-y-3">
                         {[
-                          { time: "09:00 AM", client: "Emma Wilson", service: "Hair Highlight", price: "$120", status: "CONFIRMED", color: "emerald" },
-                          { time: "11:30 AM", client: "Marcus Chen", service: "Men's Cut", price: "$45", status: "PENDING", color: "amber" },
-                          { time: "02:00 PM", client: "Sarah Smith", service: "Balayage", price: "$180", status: "COMPLETED", color: "indigo" }
+                          { time: "09:00 AM", client: "Emma Wilson", service: "Physiotherapy Session (45m + 15m buffer)", price: "$120", status: "CONFIRMED", color: "emerald", staff: "Dr. Sarah Adams" },
+                          { time: "11:30 AM", client: "Marcus Chen", service: "Deep Tissue Therapy", price: "$95", status: "PENDING", color: "amber", staff: "Dr. Alex Rivera" },
+                          { time: "02:00 PM", client: "Sarah Smith", service: "Post-Surgery Assessment", price: "$180", status: "COMPLETED", color: "indigo", staff: "Dr. Sarah Adams" }
                         ].map((item, i) => (
-                          <div key={i} className="p-5 border border-slate-100 rounded-[1.5rem] flex items-center justify-between hover:border-indigo-100 transition-colors">
-                             <div className="flex items-center gap-5">
-                                <div className="h-11 w-11 bg-slate-50 rounded-2xl flex items-center justify-center text-[10px] font-black text-slate-400">{item.time.split(' ')[0]}</div>
+                          <div key={i} className="p-4 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-between hover:border-indigo-100 dark:hover:border-indigo-800 transition-colors bg-slate-50/40 dark:bg-slate-800/30">
+                             <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-sm">{item.time.split(' ')[0]}</div>
                                 <div>
-                                   <p className="text-base font-black text-slate-900">{item.client}</p>
-                                   <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{item.service}</p>
+                                   <p className="text-sm font-bold text-slate-900 dark:text-white">{item.client}</p>
+                                   <p className="text-[11px] text-slate-500 dark:text-slate-400">{item.service} • with {item.staff}</p>
                                 </div>
                              </div>
-                             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black bg-${item.color}-50 text-${item.color}-600 border border-${item.color}-100`}>{item.status}</span>
+                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold bg-${item.color}-50 dark:bg-${item.color}-950/40 text-${item.color}-600 dark:text-${item.color}-400 border border-${item.color}-100 dark:border-${item.color}-900`}>{item.status}</span>
                           </div>
                         ))}
                      </div>
@@ -176,126 +185,209 @@ export function HomeClient() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-white relative overflow-hidden">
+      {/* Expanded 6-Pillar Features Grid */}
+      <section id="features" className="py-24 bg-white dark:bg-slate-950 relative overflow-hidden border-t border-slate-100 dark:border-slate-800/60">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="text-center mb-16">
-            <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3">The Platform</h2>
-            <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Engineered for Momentum</h3>
+            <h2 className="text-base sm:text-lg font-semibold text-indigo-600 dark:text-indigo-400 mb-3">Core Platform</h2>
+            <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">Engineered for Momentum & Scale</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-base max-w-2xl mx-auto">
+              Built with purpose for modern service businesses. Explore how our end-to-end booking infrastructure accelerates your day-to-day operations.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-[2.5rem] border border-indigo-100/50 bg-indigo-50/50 shadow-sm hover:bg-white hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group relative overflow-hidden">
-              <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-md mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                <Zap className="h-6 w-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* 1. Adaptive Terminology */}
+            <div className="p-8 rounded-[2.5rem] border border-indigo-100/60 dark:border-slate-800 bg-indigo-50/40 dark:bg-slate-900/40 shadow-sm hover:bg-white dark:hover:bg-slate-900 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-md mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                  <Sliders className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Adaptive Industry Language</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed font-normal">
+                  Switch between Healthcare (Patients & Treatments), Salons, Fitness, and Consulting with instant terminology transformation.
+                </p>
               </div>
-              <h4 className="text-xl font-bold text-slate-900 mb-2">Instant Flow</h4>
-              <p className="text-slate-600 text-sm leading-relaxed font-medium">Optimized booking funnel that converts visitors into customers in seconds.</p>
-              <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-indigo-100/50 rounded-full blur-2xl group-hover:bg-indigo-200/50 transition-colors"></div>
+              <Link href="/docs/business-profile" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-6 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
+                Read docs <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
-            <div className="p-8 rounded-[2.5rem] border border-emerald-100/50 bg-emerald-50/50 shadow-sm hover:bg-white hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all group relative overflow-hidden">
-              <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-md mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                <Shield className="h-6 w-6" />
+            {/* 2. Staff Portals & Leave */}
+            <div className="p-8 rounded-[2.5rem] border border-emerald-100/60 dark:border-slate-800 bg-emerald-50/40 dark:bg-slate-900/40 shadow-sm hover:bg-white dark:hover:bg-slate-900 hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all group relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-md mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                  <Users className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Staff Portals & Leave Management</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed font-normal">
+                  Equip team members with individual schedules, custom availability, and vacation/sick leave approval workflows.
+                </p>
               </div>
-              <h4 className="text-xl font-bold text-slate-900 mb-2">Deep Isolation</h4>
-              <p className="text-slate-600 text-sm leading-relaxed font-medium">Enterprise-grade multi-tenancy ensures your business data stays your own.</p>
-              <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-emerald-100/50 rounded-full blur-2xl group-hover:bg-emerald-200/50 transition-colors"></div>
+              <Link href="/docs/staff" className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-6 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+                Read docs <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
-            <div className="p-8 rounded-[2.5rem] border border-violet-100/50 bg-violet-50/50 shadow-sm hover:bg-white hover:border-violet-200 hover:shadow-2xl hover:shadow-violet-500/10 transition-all group relative overflow-hidden">
-              <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-violet-600 shadow-md mb-6 group-hover:bg-violet-600 group-hover:text-white transition-all">
-                <Users className="h-6 w-6" />
+            {/* 3. Multi-Location Operations */}
+            <div className="p-8 rounded-[2.5rem] border border-violet-100/60 dark:border-slate-800 bg-violet-50/40 dark:bg-slate-900/40 shadow-sm hover:bg-white dark:hover:bg-slate-900 hover:border-violet-200 dark:hover:border-violet-800 hover:shadow-2xl hover:shadow-violet-500/10 transition-all group relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-violet-600 dark:text-violet-400 shadow-md mb-6 group-hover:bg-violet-600 group-hover:text-white transition-all">
+                  <MapPin className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Multi-Location & Branches</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed font-normal">
+                  Manage multiple studios, clinics, or rooms. Assign staff and treatments to specific branch locations with ease.
+                </p>
               </div>
-              <h4 className="text-xl font-bold text-slate-900 mb-2">Team Scale</h4>
-              <p className="text-slate-600 text-sm leading-relaxed font-medium">Manage 1 to 100 staff members with zero scheduling overlaps.</p>
-              <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-violet-100/50 rounded-full blur-2xl group-hover:bg-violet-200/50 transition-colors"></div>
+              <Link href="/docs/locations" className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400 mt-6 hover:text-violet-700 dark:hover:text-violet-300 transition-colors">
+                Read docs <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {/* 4. Automated Emails & Rescheduling */}
+            <div className="p-8 rounded-[2.5rem] border border-rose-100/60 dark:border-slate-800 bg-rose-50/40 dark:bg-slate-900/40 shadow-sm hover:bg-white dark:hover:bg-slate-900 hover:border-rose-200 dark:hover:border-rose-800 hover:shadow-2xl hover:shadow-rose-500/10 transition-all group relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-md mb-6 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                  <Mail className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1-Click Rescheduling & Emails</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed font-normal">
+                  Automated Resend transactional emails with secure tokenized action links for instant client self-service changes.
+                </p>
+              </div>
+              <Link href="/docs/notifications" className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 mt-6 hover:text-rose-700 dark:hover:text-rose-300 transition-colors">
+                Read docs <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {/* 5. Calendar with Buffer Times */}
+            <div className="p-8 rounded-[2.5rem] border border-blue-100/60 dark:border-slate-800 bg-blue-50/40 dark:bg-slate-900/40 shadow-sm hover:bg-white dark:hover:bg-slate-900 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-2xl hover:shadow-blue-500/10 transition-all group relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-md mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Smart Calendar & Buffer Times</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed font-normal">
+                  Multi-view calendar (Day, Week, Month, Agenda) with automatic buffer time gaps before and after appointments.
+                </p>
+              </div>
+              <Link href="/docs/bookings" className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 mt-6 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                Read docs <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            {/* 6. Patient/Customer Directory & Security */}
+            <div className="p-8 rounded-[2.5rem] border border-amber-100/60 dark:border-slate-800 bg-amber-50/40 dark:bg-slate-900/40 shadow-sm hover:bg-white dark:hover:bg-slate-900 hover:border-amber-200 dark:hover:border-amber-800 hover:shadow-2xl hover:shadow-amber-500/10 transition-all group relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-md mb-6 group-hover:bg-amber-600 group-hover:text-white transition-all">
+                  <Shield className="h-6 w-6" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Data Isolation & Client Records</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed font-normal">
+                  Enterprise-grade tenantId database scoping, complete patient histories, notes, and LemonSqueezy subscription sync.
+                </p>
+              </div>
+              <Link href="/docs/multi-tenancy" className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 mt-6 hover:text-amber-700 dark:hover:text-amber-300 transition-colors">
+                Read docs <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-slate-50 relative overflow-hidden">
+      <section id="pricing" className="py-20 bg-slate-50 dark:bg-slate-900/50 relative overflow-hidden border-t border-slate-100 dark:border-slate-800/60">
         <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3">Simple Pricing</h2>
-            <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Pick your pace of flux</h3>
+          <div className="text-center mb-12">
+            <h2 className="text-base sm:text-lg font-semibold text-indigo-600 dark:text-indigo-400 mb-3">Transparent Pricing</h2>
+            <h3 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">Pick your pace of flux</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg mx-auto">
+              Every plan includes unlimited client bookings and our full adaptive terminology engine.
+            </p>
             
-            <div className="mt-8 flex items-center justify-center gap-4">
+            <div className="mt-7 inline-flex items-center p-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-full shadow-sm">
               <button 
                 type="button"
                 onClick={() => setIsYearly(false)}
-                className={`text-xs font-black transition-colors cursor-pointer ${!isYearly ? 'text-slate-900' : 'text-slate-400'}`}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${!isYearly ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
               >
                 Monthly
               </button>
               <button 
                 type="button"
-                onClick={() => setIsYearly(!isYearly)}
-                className={`w-12 h-6 rounded-full p-1 transition-all duration-300 relative cursor-pointer ${isYearly ? 'bg-indigo-600' : 'bg-slate-200'}`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${isYearly ? 'translate-x-6' : 'translate-x-0'}`}></div>
-              </button>
-              <button 
-                type="button"
                 onClick={() => setIsYearly(true)}
-                className={`text-xs font-black transition-colors cursor-pointer ${isYearly ? 'text-indigo-600' : 'text-slate-400'}`}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${isYearly ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                Yearly (-20%)
+                <span>Yearly</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-semibold px-1.5 py-0.5 rounded-full">-20%</span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
-            {/* Free Plan */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col hover:scale-[1.02] transition-transform">
-              <h4 className="font-black text-slate-400 uppercase tracking-widest text-xs mb-4">Start-up</h4>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-slate-900">$0</span>
-                <span className="text-slate-400 text-sm">{isYearly ? '/yr' : '/mo'}</span>
-              </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                {["1 Staff Member", "Unlimited Bookings", "Email Notifications", "Basic Calendar"].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm font-semibold text-slate-600"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> {f}</li>
-                ))}
-              </ul>
-              <div className="space-y-3">
-                <Link href={registerHref} className="block w-full py-4 bg-slate-100 text-slate-600 rounded-2xl text-center font-black text-sm hover:bg-slate-200 transition-all">{isAuthenticated ? "Dashboard" : "Start Free"}</Link>
-                <p className="text-[10px] text-center font-bold text-slate-400 px-2 leading-tight">Includes 14-day trial of <span className="text-indigo-500">Starter features</span></p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto px-2">
+            {PLANS.map((plan) => {
+              const isFree = plan.id === "FREE";
+              const isStarter = plan.id === "STARTER";
+              const price = isFree 
+                ? "0" 
+                : isStarter 
+                  ? (isYearly ? "69.90" : "6.99") 
+                  : (isYearly ? "149.90" : "14.99");
 
-            {/* Starter Plan */}
-            <div className="bg-white p-8 rounded-[2.5rem] border-2 border-indigo-600 shadow-2xl shadow-indigo-100 flex flex-col relative scale-105 z-10">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">Popular</div>
-              <h4 className="text-3xl font-black text-slate-900 mb-2">Starter Plan</h4>
-              <div className="mb-10 flex items-baseline gap-1">
-                <span className="text-5xl font-black text-slate-900">${isYearly ? '69.90' : '6.99'}</span>
-                <span className="text-slate-400 text-sm">{isYearly ? '/yr' : '/mo'}</span>
-              </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                {["Up to 5 Staff Members", "Unlimited Bookings", "Email Notifications", "No Flux Branding", "Advanced Analytics"].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm font-semibold text-slate-700"><CheckCircle2 className="h-4 w-4 text-indigo-500" /> {f}</li>
-                ))}
-              </ul>
-              <Link href={registerHref} className="w-full py-4 bg-indigo-600 text-white rounded-2xl text-center font-black text-sm hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all">{isAuthenticated ? "Go to Dashboard" : "Start 14-Day Trial"}</Link>
-            </div>
+              const planHref = `/register?plan=${plan.id}`;
 
-            {/* Pro Plan */}
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col hover:scale-[1.02] transition-transform">
-              <h4 className="text-3xl font-black text-slate-900 mb-2">Pro Plan</h4>
-              <div className="mb-10 flex items-baseline gap-1">
-                <span className="text-5xl font-black text-slate-900">${isYearly ? '149.90' : '14.99'}</span>
-                <span className="text-slate-400 text-sm">{isYearly ? '/yr' : '/mo'}</span>
-              </div>
-              <ul className="space-y-4 mb-8 flex-1">
-                {["Unlimited Staff Members", "Unlimited Bookings", "Email Notifications", "Multiple Location Support", "Priority 24/7 Support"].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm font-bold text-slate-600"><CheckCircle2 className="h-4 w-4 text-indigo-500" /> {f}</li>
-                ))}
-              </ul>
-              <Link href={registerHref} className="w-full py-4 bg-slate-900 text-white rounded-2xl text-center font-black text-sm hover:bg-slate-800 transition-all">{isAuthenticated ? "Go to Dashboard" : "Start 14-Day Trial"}</Link>
-            </div>
+              return (
+                <Link 
+                  key={plan.id}
+                  href={planHref}
+                  className={`bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl flex flex-col justify-between transition-all cursor-pointer group hover:-translate-y-1 ${
+                    isStarter 
+                      ? "border-2 border-indigo-600 shadow-xl shadow-indigo-500/10 hover:shadow-2xl hover:shadow-indigo-500/20 relative" 
+                      : "border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-indigo-200 dark:hover:border-indigo-800"
+                  }`}
+                >
+                  {isStarter && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-3 py-0.5 rounded-full text-[10px] font-medium tracking-wider uppercase shadow-sm">
+                      Popular
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-1">{plan.name}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{plan.description}</p>
+                    <div className="mb-6 flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-normal text-slate-900 dark:text-white">${price}</span>
+                      <span className="text-slate-400 text-xs font-normal">{isYearly ? '/yr' : '/mo'}</span>
+                    </div>
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2.5 text-xs sm:text-sm font-normal text-slate-600 dark:text-slate-300">
+                          <CheckCircle2 className={`h-4 w-4 shrink-0 ${isStarter ? 'text-indigo-500' : 'text-emerald-500'}`} /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-2 space-y-2.5">
+                    {isFree ? (
+                      <p className="text-[11px] text-center font-normal text-slate-400 dark:text-slate-500 px-2 leading-tight">
+                        Includes 14-day trial of <span className="text-indigo-500 font-medium">Starter features</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-center font-normal text-slate-400 dark:text-slate-500 px-2 leading-tight">
+                        Includes 14-day free trial • No credit card required
+                      </p>
+                    )}
+                    <div 
+                      className="block w-full py-3 rounded-xl text-center font-medium text-sm transition-all bg-indigo-600 text-white group-hover:bg-indigo-700 shadow-md shadow-indigo-500/25"
+                    >
+                      {isFree ? "Start free" : "Start here!"}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>

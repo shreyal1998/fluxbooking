@@ -57,7 +57,7 @@ export function DashboardShell({
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileModalMode, setProfileModalMode] = useState<"profile" | "security">("profile");
-  const [profileData, setProfileData] = useState<{ staff: any; services: any[] } | null>(null);
+  const [profileData, setProfileData] = useState<{ staff: any; services: any[]; locations?: any[] } | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   const handleProfileClick = async (mode: "profile" | "security" = "profile") => {
@@ -69,7 +69,8 @@ export function DashboardShell({
       if (res.success) {
         setProfileData({
           staff: res.staff,
-          services: res.services || []
+          services: res.services || [],
+          locations: res.locations || []
         });
       } else {
         toast.error(res.error || "Failed to load profile");
@@ -109,9 +110,9 @@ export function DashboardShell({
     };
   }, []);
 
-  // Lock body scroll when the security settings popup is open
+  // Lock body scroll when the profile / security popup is open
   useEffect(() => {
-    if (isProfileModalOpen && profileModalMode === "security") {
+    if (isProfileModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -119,7 +120,7 @@ export function DashboardShell({
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isProfileModalOpen, profileModalMode]);
+  }, [isProfileModalOpen]);
 
   useEffect(() => {
     // Only check if user is a staff member
@@ -548,12 +549,9 @@ export function DashboardShell({
             <aside className="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-slate-900 shadow-2xl animate-in slide-in-from-left duration-300 flex flex-col">
               <div className="h-20 px-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
                 <Logo size="xl" textClassName="text-slate-900 dark:text-white" />
-                <div className="flex items-center gap-2">
-                  <CompactThemeToggle />
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 cursor-pointer">
-                    <X className="h-6 w-6 text-slate-900 dark:text-white" />
-                  </button>
-                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 cursor-pointer">
+                  <X className="h-6 w-6 text-slate-900 dark:text-white" />
+                </button>
               </div>
               <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
                 {filteredNavItems.map((item) => {
@@ -604,14 +602,7 @@ export function DashboardShell({
         <Portal>
           <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
             <div 
-              className={`fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse ${
-                profileModalMode === "security" ? "cursor-default" : "cursor-pointer"
-              }`}
-              onClick={() => {
-                if (profileModalMode !== "security") {
-                  setIsProfileModalOpen(false);
-                }
-              }}
+              className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md animate-glass-pulse cursor-default"
             />
             <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-indigo-100/50 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
               <div className="px-8 py-6 border-b border-indigo-100/50 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 rounded-t-[2.4rem] z-10">
@@ -668,6 +659,7 @@ export function DashboardShell({
                       window.location.reload();
                     }}
                     services={profileData.services}
+                    locations={profileData.locations}
                     businessType={tenant?.businessType}
                     country={tenant?.country}
                     securityOnlyMode={profileModalMode === "security"}

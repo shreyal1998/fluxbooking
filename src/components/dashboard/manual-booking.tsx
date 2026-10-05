@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  Check
+  Check,
+  Building
 } from "lucide-react";
 import { createBooking, updateBooking } from "@/app/actions/booking";
 import { searchCustomers, addCustomer, getActiveCustomers, getPaginatedActiveCustomers } from "@/app/actions/customer";
@@ -1420,16 +1421,24 @@ export function ManualBooking({
           >
             {(() => {
               const isSelectedStaffLocked = selectedStaff ? (staff.indexOf(selectedStaff) >= currentLimit) : false;
+              const staffTitle = selectedStaff ? `${selectedStaff.name}${isSelectedStaffLocked ? " (Locked)" : ""}` : `Select ${labels.staff}`;
               return (
-                <span>
-                  {selectedStaff 
-                    ? `${selectedStaff.name}${isSelectedStaffLocked ? " (Locked)" : ""}` 
-                    : `Select ${labels.staff}`
-                  }
-                </span>
+                <div className="flex flex-col min-w-0 flex-1 pr-2 overflow-hidden">
+                  <span className="truncate block">
+                    {staffTitle}
+                  </span>
+                  {selectedStaff?.locations && selectedStaff.locations.length > 0 && (
+                    <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold truncate flex items-center gap-1 mt-0.5">
+                      <Building className="h-2.5 w-2.5 shrink-0" />
+                      <span className="truncate">
+                        {selectedStaff.locations.map((l: any) => l.address ? `${l.name} • ${l.address}` : l.name).join(", ")}
+                      </span>
+                    </span>
+                  )}
+                </div>
               );
             })()}
-            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-4 w-4 text-slate-400 shrink-0 transition-transform duration-200 ${isStaffOpen ? 'rotate-180' : ''}`} />
           </button>
           <InputError message={fieldErrors.staff} />
           {isStaffOpen && (
@@ -1450,8 +1459,18 @@ export function ManualBooking({
                     }}
                     className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between ${selectedStaffId === st.id ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}
                   >
-                    <span>{st.name}</span>
-                    {selectedStaffId === st.id && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+                    <div className="flex flex-col min-w-0 flex-1 pr-2 overflow-hidden">
+                      <span className="truncate block">{st.name}</span>
+                      {st.locations && st.locations.length > 0 && (
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1 font-normal min-w-0">
+                          <Building className="h-2.5 w-2.5 text-indigo-500 shrink-0" />
+                          <span className="truncate">
+                            {st.locations.map((l: any) => l.address ? `${l.name} • ${l.address}` : l.name).join(", ")}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    {selectedStaffId === st.id && <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />}
                   </button>
                 ));
               })()}
@@ -2108,10 +2127,11 @@ export function ManualBooking({
       {mode === "create" && (
         <button 
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10 cursor-pointer"
+          className="flex items-center justify-center gap-1 sm:gap-2 bg-indigo-600 text-white h-8 sm:h-auto px-2.5 sm:px-4 py-0 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs hover:bg-indigo-700 transition-all shadow-sm border border-transparent dark:border-white/10 cursor-pointer shrink-0"
+          title="Add Booking"
         >
-          <Plus className="h-4 w-4" />
-          Add
+          <Plus className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">Add</span>
         </button>
       )}
 

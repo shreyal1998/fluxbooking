@@ -995,6 +995,7 @@ export function SettingsClient({
               isPro={tenant?.plan === "PRO"} 
               businessType={tenant?.businessType}
               userRole={userRole}
+              country={tenant?.country}
             />
           </div>
         );

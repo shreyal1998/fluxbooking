@@ -67,7 +67,7 @@ export async function addStaff(formData: FormData) {
       targetUserId = newUser.id;
     }
 
-    await prisma.staff.create({
+    const newStaff = await prisma.staff.create({
       data: {
         name,
         bio,
@@ -88,6 +88,7 @@ export async function addStaff(formData: FormData) {
         staffName: name,
         staffEmail: email,
         businessName: tenant?.name || "the business",
+        staffId: newStaff.id,
       });
     }
 
@@ -124,6 +125,39 @@ export async function deleteStaff(staffId: string) {
   } catch (error) {
     console.error("Delete Staff Error:", error);
     return { error: "Failed to delete staff" };
+  }
+}
+
+export async function checkStaffInviteStatus(staffId: string) {
+  try {
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId },
+      include: {
+        tenant: {
+          select: { name: true }
+        },
+        user: {
+          select: { email: true }
+        }
+      }
+    });
+
+    if (!staff) {
+      return { 
+        valid: false, 
+        error: "This invitation link is no longer valid. The staff profile has been removed by the administrator." 
+      };
+    }
+
+    return { 
+      valid: true, 
+      businessName: staff.tenant?.name || "", 
+      staffName: staff.name,
+      email: staff.user?.email || "" 
+    };
+  } catch (error) {
+    console.error("Check Staff Invite Error:", error);
+    return { valid: false, error: "Unable to verify invitation link." };
   }
 }
 
@@ -352,18 +386,24 @@ export async function addService(formData: FormData) {
   const tenantId = session.user.tenantId;
   const name = formData.get("name") as string;
   const durationMinutes = parseInt(formData.get("duration") as string);
+  const bufferTime = parseInt(formData.get("bufferTime") as string) || 0;
   const priceInput = formData.get("price") as string;
   const price = priceInput && !isNaN(parseFloat(priceInput)) ? parseFloat(priceInput) : 0;
   const color = formData.get("color") as string;
+  const locationIds = formData.getAll("locations") as string[];
 
   try {
     await prisma.service.create({
       data: {
         name,
         durationMinutes,
+        bufferTime,
         price,
         color,
         tenantId: tenantId || "",
+        locations: locationIds.length > 0 ? {
+          connect: locationIds.map(id => ({ id }))
+        } : undefined,
       },
     });
 
@@ -384,6 +424,7 @@ export async function updateService(serviceId: string, formData: FormData) {
   const priceInput = formData.get("price") as string;
   const price = priceInput && !isNaN(parseFloat(priceInput)) ? parseFloat(priceInput) : 0;
   const color = formData.get("color") as string;
+  const locationIds = formData.getAll("locations") as string[];
 
   if (isNaN(durationMinutes) || isNaN(price)) {
     return { error: "Invalid duration or price format" };
@@ -398,6 +439,9 @@ export async function updateService(serviceId: string, formData: FormData) {
         bufferTime,
         price,
         color,
+        locations: {
+          set: locationIds.map(id => ({ id }))
+        },
       },
     });
 
@@ -949,23 +993,29 @@ export async function getPersonalProfile() {
   const tenantId = (session.user as any).tenantId;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        staffProfile: {
-          include: {
-            services: true
+    const [user, services, locations] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          staffProfile: {
+            include: {
+              services: true,
+              locations: true
+            }
           }
         }
-      }
-    });
+      }),
+      prisma.service.findMany({
+        where: { tenantId },
+        orderBy: { name: "asc" }
+      }),
+      prisma.location.findMany({
+        where: { tenantId: tenantId || "" },
+        orderBy: { isPrimary: "desc" }
+      })
+    ]);
 
     if (!user) return { error: "User not found" };
-
-    const services = await prisma.service.findMany({
-      where: { tenantId },
-      orderBy: { name: "asc" }
-    });
 
     const serializedServices = services.map(s => ({
       id: s.id,
@@ -1010,9 +1060,11 @@ export async function getPersonalProfile() {
           capacity: srv.capacity,
           createdAt: srv.createdAt,
           updatedAt: srv.updatedAt
-        }))
+        })),
+        locations: user.staffProfile.locations
       } : null,
-      services: serializedServices
+      services: serializedServices,
+      locations
     };
   } catch (err) {
     console.error("Error in getPersonalProfile:", err);
@@ -1056,7 +1108,7 @@ export async function addLocation(formData: FormData) {
     // If first location, force isPrimary = true
     const shouldBePrimary = isPrimary || (tenant?.locations.length === 0);
 
-    await prisma.location.create({
+    const newLocation = await prisma.location.create({
       data: {
         name,
         address,
@@ -1068,7 +1120,7 @@ export async function addLocation(formData: FormData) {
 
     revalidatePath("/settings");
     revalidatePath("/settings/locations");
-    return { success: true };
+    return { success: true, location: newLocation };
   } catch (error) {
     console.error("Add Location Error:", error);
     return { error: "Failed to create location." };
@@ -1090,6 +1142,14 @@ export async function updateLocation(locationId: string, formData: FormData) {
   if (!name) return { error: "Location name is required." };
 
   try {
+    const existing = await prisma.location.findUnique({
+      where: { id: locationId }
+    });
+
+    if (!existing || existing.tenantId !== tenantId) {
+      return { error: "Location not found." };
+    }
+
     if (isPrimary) {
       await prisma.location.updateMany({
         where: { tenantId: tenantId || "" },
@@ -1097,19 +1157,19 @@ export async function updateLocation(locationId: string, formData: FormData) {
       });
     }
 
-    await prisma.location.update({
-      where: { id: locationId, tenantId: tenantId || "" },
+    const updated = await prisma.location.update({
+      where: { id: locationId },
       data: {
         name,
         address,
         phone,
-        ...(isPrimary ? { isPrimary: true } : {})
+        isPrimary: isPrimary || existing.isPrimary,
       }
     });
 
     revalidatePath("/settings");
     revalidatePath("/settings/locations");
-    return { success: true };
+    return { success: true, location: updated };
   } catch (error) {
     console.error("Update Location Error:", error);
     return { error: "Failed to update location." };
@@ -1126,10 +1186,10 @@ export async function deleteLocation(locationId: string) {
 
   try {
     const loc = await prisma.location.findUnique({
-      where: { id: locationId, tenantId: tenantId || "" }
+      where: { id: locationId }
     });
 
-    if (!loc) return { error: "Location not found." };
+    if (!loc || loc.tenantId !== tenantId) return { error: "Location not found." };
 
     await prisma.location.delete({
       where: { id: locationId }

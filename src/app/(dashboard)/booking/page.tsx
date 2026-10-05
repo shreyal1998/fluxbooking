@@ -34,13 +34,18 @@ export default async function BookingsPage() {
   const overrideQuery: any = { tenantId };
   const leaveQuery: any = { tenantId, status: "APPROVED" };
 
-  const [bookings, blockedSlots, availabilityOverrides, services, staffRaw, tenant, leaveRequests] = await Promise.all([
+  const [bookings, blockedSlots, availabilityOverrides, services, staffRaw, tenant, leaveRequests, locations] = await Promise.all([
     prisma.booking.findMany({
       where: bookingQuery,
       include: {
         service: true,
-        staff: true,
+        staff: {
+          include: {
+            locations: true,
+          }
+        },
         customer: true,
+        location: true,
       },
       orderBy: { startTime: "desc" },
     }),
@@ -62,7 +67,10 @@ export default async function BookingsPage() {
     prisma.staff.findMany({ 
       where: { tenantId },
       orderBy: { createdAt: "asc" },
-      include: { services: true }
+      include: { 
+        services: true,
+        locations: true
+      }
     }),
     prisma.tenant.findUnique({ 
       where: { id: tenantId }
@@ -73,30 +81,46 @@ export default async function BookingsPage() {
         staff: true
       },
       orderBy: { startTime: "desc" }
+    }),
+    prisma.location.findMany({
+      where: { tenantId }
     })
   ]);
 
   const staff = staffRaw;
 
-  const serializedBookings = bookings.map(b => ({
-    id: b.id,
-    tenantId: b.tenantId,
-    serviceId: b.serviceId,
-    staffId: b.staffId,
-    customerId: b.customerId,
-    customerName: b.customerName,
-    customerEmail: b.customerEmail,
-    startTime: b.startTime,
-    endTime: b.endTime,
-    status: b.status,
-    price: b.price ? b.price.toString() : null,
-    createdAt: b.createdAt,
-    updatedAt: b.updatedAt,
-    service: b.service ? {
-      id: b.service.id,
-      tenantId: b.service.tenantId,
-      name: b.service.name,
-      durationMinutes: b.service.durationMinutes,
+  const serializedBookings = bookings.map(b => {
+    const resolvedLocation = b.location 
+      || (b.locationId ? locations.find(l => l.id === b.locationId) : null)
+      || (b.staff?.locations && b.staff.locations.length > 0 ? b.staff.locations[0] : null)
+      || (locations.length > 0 ? (locations.find(l => l.isPrimary) || locations[0]) : null);
+
+    return {
+      id: b.id,
+      tenantId: b.tenantId,
+      serviceId: b.serviceId,
+      staffId: b.staffId,
+      locationId: b.locationId || (resolvedLocation ? resolvedLocation.id : null),
+      customerId: b.customerId,
+      customerName: b.customerName,
+      customerEmail: b.customerEmail,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      status: b.status,
+      price: b.price ? b.price.toString() : null,
+      createdAt: b.createdAt,
+      updatedAt: b.updatedAt,
+      location: resolvedLocation ? {
+        id: resolvedLocation.id,
+        name: resolvedLocation.name,
+        address: resolvedLocation.address,
+        isPrimary: resolvedLocation.isPrimary,
+      } : null,
+      service: b.service ? {
+        id: b.service.id,
+        tenantId: b.service.tenantId,
+        name: b.service.name,
+        durationMinutes: b.service.durationMinutes,
       bufferTime: b.service.bufferTime,
       price: b.service.price.toString(),
       color: b.service.color,
@@ -119,7 +143,8 @@ export default async function BookingsPage() {
       name: b.customer.name,
       email: b.customer.email
     } : null
-  }));
+    };
+  });
 
   // Smart currency fallback
   let currency = tenant?.currency || "USD";
@@ -141,6 +166,7 @@ export default async function BookingsPage() {
     availabilityJson: s.availabilityJson,
     createdAt: s.createdAt,
     updatedAt: s.updatedAt,
+    locations: (s as any).locations || [],
     services: s.services?.map(srv => ({
       id: srv.id,
       tenantId: srv.tenantId,

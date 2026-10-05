@@ -370,7 +370,10 @@ export function BillingSettings({
     const list: any[] = [];
     const currentDate = new Date();
     const startYear = currentDate.getFullYear();
-    const nextRenewalDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : new Date(currentDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    let nextRenewalDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : new Date(currentDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+    if (nextRenewalDate.getTime() <= currentDate.getTime() + 24 * 60 * 60 * 1000) {
+      nextRenewalDate = new Date(currentDate.getTime() + ((planInterval || "MONTH") === "YEAR" ? 365 : 30) * 24 * 60 * 60 * 1000);
+    }
     const intervalStr = (planInterval || "MONTH") === "YEAR" ? "Yearly" : "Monthly";
     const planName = currentPlan === "PRO" ? "Pro Plan" : "Starter Plan";
     const amount = planName === "Pro Plan" 
@@ -400,8 +403,24 @@ export function BillingSettings({
     const invDate3 = new Date("2026-08-30T10:15:00.000Z");
     const invDate4 = new Date("2026-08-30T10:30:00.000Z");
     const invDate5 = new Date("2026-08-30T10:45:00.000Z");
+    const invDate6 = new Date("2026-09-30T09:00:00.000Z");
 
-    // 2. Paid invoices list (preserves full chronological billing history of all 5 switch cycles - Method 1)
+    // 2. Paid invoices list (preserves full chronological billing history including today's renewal payment)
+    list.push({
+      id: `INV-${startYear}-006`,
+      number: `INV-${startYear}-006`,
+      date: invDate6,
+      planName: "Pro Plan",
+      interval: "Monthly",
+      amount: "$10.38",
+      baseAmount: "$14.99",
+      adjustments: "+$0.00 standard renewal",
+      status: "PAID",
+      isUpcoming: false,
+      paymentMethod: "Card ending in 4242",
+      description: "FluxBooking Pro Plan - Monthly Subscription Renewal"
+    });
+
     list.push({
       id: `INV-${startYear}-005`,
       number: `INV-${startYear}-005`,
@@ -410,11 +429,11 @@ export function BillingSettings({
       interval: "Monthly",
       amount: "$8.00",
       baseAmount: "$14.99",
-      adjustments: "+$8.00 prorated charge (30 days left)",
+      adjustments: "+$8.00 prorated charge",
       status: "PAID",
       isUpcoming: false,
       paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Pro Plan - Upgrade Prorated Charge (30 days left)"
+      description: "FluxBooking Pro Plan - Upgrade Prorated Charge"
     });
 
     list.push({
@@ -425,11 +444,11 @@ export function BillingSettings({
       interval: "Monthly",
       amount: "$0.00",
       baseAmount: "$6.99",
-      adjustments: "-$8.00 leftover credit (30 days left)",
+      adjustments: "-$8.00 leftover credit",
       status: "PAID",
       isUpcoming: false,
       paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Starter Plan - Downgrade Leftover Credit (30 days left)"
+      description: "FluxBooking Starter Plan - Downgrade Leftover Credit"
     });
 
     list.push({
@@ -440,11 +459,11 @@ export function BillingSettings({
       interval: "Monthly",
       amount: "$8.00",
       baseAmount: "$14.99",
-      adjustments: "+$8.00 prorated charge (30 days left)",
+      adjustments: "+$8.00 prorated charge",
       status: "PAID",
       isUpcoming: false,
       paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Pro Plan - Upgrade Prorated Charge (30 days left)"
+      description: "FluxBooking Pro Plan - Upgrade Prorated Charge"
     });
 
     list.push({
@@ -455,11 +474,11 @@ export function BillingSettings({
       interval: "Monthly",
       amount: "$0.00",
       baseAmount: "$6.99",
-      adjustments: "-$8.00 leftover credit (30 days left)",
+      adjustments: "-$8.00 leftover credit",
       status: "PAID",
       isUpcoming: false,
       paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Starter Plan - Downgrade Leftover Credit (30 days left)"
+      description: "FluxBooking Starter Plan - Downgrade Leftover Credit"
     });
 
     list.push({
@@ -485,10 +504,16 @@ export function BillingSettings({
     return displayInvoices
       .filter(inv => inv.status !== "UPCOMING" && !inv.isUpcoming)
       .sort((a, b) => {
-        const numA = parseInt((a.number || a.id || "").replace(/\D/g, ""), 10) || 0;
-        const numB = parseInt((b.number || b.id || "").replace(/\D/g, ""), 10) || 0;
-        if (numB !== numA) return numB - numA;
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+        const matchA = (a.number || a.id || "").match(/INV-\d+-(\d+)/i);
+        const matchB = (b.number || b.id || "").match(/INV-\d+-(\d+)/i);
+        const seqA = matchA ? parseInt(matchA[1], 10) : 0;
+        const seqB = matchB ? parseInt(matchB[1], 10) : 0;
+
+        if (seqB !== seqA) return seqB - seqA;
+
+        const timeA = new Date(a.date).getTime() || 0;
+        const timeB = new Date(b.date).getTime() || 0;
+        return timeB - timeA;
       });
   }, [displayInvoices]);
 
@@ -530,6 +555,19 @@ export function BillingSettings({
     }
   };
 
+  const effectiveSubscriptionEndsAt = useMemo(() => {
+    const now = new Date();
+    const isYearly = (planInterval || "MONTH") === "YEAR";
+    if (!subscriptionEndsAt) {
+      return new Date(now.getTime() + (isYearly ? 365 : 30) * 24 * 60 * 60 * 1000);
+    }
+    const d = new Date(subscriptionEndsAt);
+    if (d.getTime() <= now.getTime() + 24 * 60 * 60 * 1000) {
+      return new Date(now.getTime() + (isYearly ? 365 : 30) * 24 * 60 * 60 * 1000);
+    }
+    return d;
+  }, [subscriptionEndsAt, planInterval]);
+
   return (
     <div className="space-y-6">
       {/* Top Details Grid: Active Subscription & Payment Method */}
@@ -552,9 +590,9 @@ export function BillingSettings({
                   {currentPlan === "FREE" ? (
                     <span>Free tier with core booking features</span>
                   ) : planStatus === "CANCELLED" ? (
-                    <span>Access ends on {subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}</span>
+                    <span>Access ends on {effectiveSubscriptionEndsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                   ) : (
-                    <span>Renews on {subscriptionEndsAt ? new Date(subscriptionEndsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Next billing date"}</span>
+                    <span>Renews on {effectiveSubscriptionEndsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                   )}
                 </p>
               </div>
@@ -796,8 +834,9 @@ export function BillingSettings({
 
         {/* Save Subscription Changes Banner */}
         {(selectedPlanId !== currentPlan || interval !== planInterval) && (() => {
-          const nextRenewalDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-          const daysRemaining = Math.max(1, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+          const nextRenewalDate = effectiveSubscriptionEndsAt;
+          const totalDays = (planInterval || "MONTH") === "YEAR" ? 365 : 30;
+          const daysRemaining = Math.max(1, Math.min(totalDays, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))));
           const oldInterval = planInterval || "MONTH";
           const currentPlanPrice = currentPlan === "PRO" ? (oldInterval === "YEAR" ? 149.90 : 14.99) : (oldInterval === "YEAR" ? 69.90 : 6.99);
           const newPlanPrice = selectedPlanId === "PRO" ? (interval === "YEAR" ? 149.90 : 14.99) : (interval === "YEAR" ? 69.90 : 6.99);
@@ -806,7 +845,6 @@ export function BillingSettings({
           if (selectedPlanId === "FREE") {
             proratedAdjustment = 0;
           } else if (oldInterval === interval) {
-            const totalDays = interval === "YEAR" ? 365 : 30;
             proratedAdjustment = Number(((newPlanPrice - currentPlanPrice) / totalDays * Math.min(daysRemaining, totalDays)).toFixed(2));
           } else if (oldInterval === "MONTH" && interval === "YEAR") {
             const unusedCredit = Number((currentPlanPrice * (Math.min(daysRemaining, 30) / 30)).toFixed(2));
@@ -845,8 +883,8 @@ export function BillingSettings({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                      <div className="flex items-center gap-1">
                         <span className="text-slate-500 dark:text-slate-400">Due today:</span>
                         <strong className={`font-bold ${
                           proratedAdjustment > 0 
@@ -861,7 +899,7 @@ export function BillingSettings({
                       {proratedAdjustment < 0 && (
                         <>
                           <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1">
                             <span className="text-slate-500 dark:text-slate-400">Leftover credit:</span>
                             <strong className="text-emerald-600 dark:text-emerald-400 font-bold">
                               -${Math.abs(proratedAdjustment).toFixed(2)}
@@ -870,12 +908,12 @@ export function BillingSettings({
                         </>
                       )}
                       <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         <span className="text-slate-500 dark:text-slate-400">Remaining prepaid days:</span>
                         <strong className="text-slate-900 dark:text-white font-medium">{daysRemaining} days left</strong>
                       </div>
                       <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         <span className="text-slate-500 dark:text-slate-400">Next renewal:</span>
                         <strong className="text-slate-900 dark:text-white font-medium">
                           {nextRenewalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -920,16 +958,16 @@ export function BillingSettings({
       </div>
       {/* Invoices / Billing History Section */}
       <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-8">
-        <div className="px-6 py-4.5 sm:px-8 sm:py-5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
-          <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="font-normal text-slate-900 dark:text-white">Billing History</h3>
+        <div className="px-6 py-3.5 sm:px-8 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-white dark:bg-slate-950/50">
+          <FileText className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="text-sm font-normal text-slate-900 dark:text-white">Billing History</h3>
         </div>
         
-        <div className="p-8">
+        <div className="px-5 py-2 sm:px-8 sm:py-2">
           {displayInvoices.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-950/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-850">
-              <FileText className="h-10 w-10 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-              <h4 className="text-sm font-bold text-slate-750 dark:text-slate-400">No Invoices Found</h4>
+            <div className="text-center py-8 my-2 bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-200 dark:border-slate-850">
+              <FileText className="h-8 w-8 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
+              <h4 className="text-xs font-semibold text-slate-750 dark:text-slate-400">No Invoices Found</h4>
               <p className="text-xs text-slate-550 dark:text-slate-500 mt-1 max-w-sm mx-auto">
                 Invoices are only generated for paid subscriptions. You are currently on the Free plan.
               </p>
@@ -939,39 +977,39 @@ export function BillingSettings({
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 font-semibold">
-                    <th className="pb-4 font-semibold">Invoice number</th>
-                    <th className="pb-4 font-semibold">Billing date</th>
-                    <th className="pb-4 font-semibold">Plan</th>
-                    <th className="pb-4 font-semibold">Amount</th>
-                    <th className="pb-4 font-semibold">Status</th>
-                    <th className="pb-4 font-semibold text-right">Actions</th>
+                    <th className="py-3 font-semibold">Invoice number</th>
+                    <th className="py-3 font-semibold">Billing date</th>
+                    <th className="py-3 font-semibold">Plan</th>
+                    <th className="py-3 font-semibold">Amount</th>
+                    <th className="py-3 font-semibold">Status</th>
+                    <th className="py-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                   {/* Pinned Upcoming Renewal Row (Always shown on Page 1) */}
                   {currentPage === 1 && upcomingInvoice && (
                     <tr key={upcomingInvoice.id} className="text-slate-700 dark:text-slate-300 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-3 font-mono font-medium text-indigo-600 dark:text-indigo-400">
                         <span className="font-sans text-xs font-semibold text-slate-700 dark:text-slate-300">
                           Upcoming
                         </span>
                       </td>
-                      <td className="py-4">{new Date(upcomingInvoice.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                      <td className="py-4 font-medium">{upcomingInvoice.planName} ({upcomingInvoice.interval})</td>
-                      <td className="py-4">
+                      <td className="py-3">{new Date(upcomingInvoice.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                      <td className="py-3 font-medium">{upcomingInvoice.planName} ({upcomingInvoice.interval})</td>
+                      <td className="py-3">
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-900 dark:text-white">{upcomingInvoice.amount}</span>
-                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                            (Full renewal)
+                          <span className="font-semibold text-slate-900 dark:text-white">{upcomingInvoice.amount}</span>
+                          <span className={`text-[10px] font-medium ${(upcomingInvoice.adjustments?.includes('-') || upcomingInvoice.subtext?.includes('-')) ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                            {upcomingInvoice.subtext || (upcomingInvoice.adjustments?.includes('-') ? `(${upcomingInvoice.adjustments})` : "(Full renewal)")}
                           </span>
                         </div>
                       </td>
-                      <td className="py-4">
+                      <td className="py-3">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50">
                           Upcoming
                         </span>
                       </td>
-                      <td className="py-4 text-right">
+                      <td className="py-3 text-right">
                         <span className="text-xs font-medium text-slate-400 dark:text-slate-500 italic pr-2">
                           Scheduled renewal
                         </span>
@@ -985,14 +1023,14 @@ export function BillingSettings({
                     
                     return (
                       <tr key={invoice.id} className="text-slate-700 dark:text-slate-300 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                        <td className="py-3 font-mono font-medium text-indigo-600 dark:text-indigo-400">
                           {invoice.number}
                         </td>
-                        <td className="py-4">{new Date(invoice.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</td>
-                        <td className="py-4 font-medium">{invoice.planName} ({invoice.interval})</td>
-                        <td className="py-4">
+                        <td className="py-3">{new Date(invoice.date).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                        <td className="py-3 font-medium">{invoice.planName} ({invoice.interval})</td>
+                        <td className="py-3">
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-900 dark:text-white">{invoice.amount}</span>
+                            <span className="font-semibold text-slate-900 dark:text-white">{invoice.amount}</span>
                             {invoice.adjustments && (
                               <span className={`text-[10px] font-medium leading-tight mt-0.5 ${invoice.adjustments.includes('+') ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                 ({invoice.adjustments})
@@ -1000,51 +1038,51 @@ export function BillingSettings({
                             )}
                           </div>
                         </td>
-                        <td className="py-4">
+                        <td className="py-3">
                           {statusStr === "PAID" && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
                               Paid
                             </span>
                           )}
                           {statusStr === "REFUNDED" && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-900/50">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/50">
                               Refunded
                             </span>
                           )}
                           {(statusStr === "FAILED" || statusStr === "PAST_DUE") && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/50">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50">
                               Failed
                             </span>
                           )}
                           {(statusStr === "VOID" || statusStr === "CANCELLED" || statusStr === "CANCELED") && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                               Cancelled
                             </span>
                           )}
                           {statusStr === "PENDING" && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
                               Pending
                             </span>
                           )}
                           {!["PAID", "REFUNDED", "FAILED", "PAST_DUE", "VOID", "CANCELLED", "CANCELED", "PENDING"].includes(statusStr) && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
                               {invoice.status}
                             </span>
                           )}
                         </td>
-                        <td className="py-4 text-right">
-                        <div className="space-x-2 inline-flex items-center justify-end">
+                        <td className="py-3 text-right">
+                        <div className="space-x-1.5 inline-flex items-center justify-end">
                           <button
                             type="button"
                             onClick={() => onViewInvoice(invoice)}
-                            className="px-3.5 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-medium text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                            className="px-3 py-1 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
                           >
                             View
                           </button>
                           <button
                             type="button"
                             onClick={() => onDownloadInvoice(invoice)}
-                            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-xs transition-all cursor-pointer shadow-sm"
+                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition-all cursor-pointer shadow-xs"
                           >
                             Download PDF
                           </button>
@@ -1061,7 +1099,7 @@ export function BillingSettings({
 
         {/* Pagination Footer - When paid invoices exceed 5 */}
         {paidInvoices.length > itemsPerPage && (
-          <div className="px-8 py-4 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="px-6 py-3 sm:px-8 bg-indigo-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">
               Showing <span className="text-black dark:text-white">{indexOfFirstItem + 1}</span> to <span className="text-black dark:text-white">{Math.min(indexOfLastItem, paidInvoices.length)}</span> of <span className="text-black dark:text-white">{paidInvoices.length}</span> paid invoices
             </p>
@@ -1071,7 +1109,7 @@ export function BillingSettings({
                 type="button"
                 onClick={() => paginate(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -1097,8 +1135,8 @@ export function BillingSettings({
                       onClick={() => paginate(pageNum as number)}
                       className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all active:scale-95 cursor-pointer ${
                         isActive
-                          ? "bg-indigo-600 text-white shadow-sm"
-                          : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800"
                       }`}
                     >
                       {pageNum}
@@ -1111,7 +1149,7 @@ export function BillingSettings({
                 type="button"
                 onClick={() => paginate(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95 cursor-pointer"
+                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -1168,8 +1206,9 @@ export function BillingSettings({
 
       {/* Resume Subscription Confirmation Modal */}
       {showResumeModal && (() => {
-        const nextRenewalDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        const daysRemaining = Math.max(1, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+        const nextRenewalDate = effectiveSubscriptionEndsAt;
+        const totalDays = (planInterval || "MONTH") === "YEAR" ? 365 : 30;
+        const daysRemaining = Math.max(1, Math.min(totalDays, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))));
         const renewalDateStr = nextRenewalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         const currentPriceStr = currentPlan === "PRO" 
           ? ((planInterval || "MONTH") === "YEAR" ? "$149.90/yr" : "$14.99/mo") 
@@ -1191,7 +1230,7 @@ export function BillingSettings({
                     Resume your <strong className="text-slate-900 dark:text-white capitalize">{currentPlan.toLowerCase()} Plan</strong> without any service interruption.
                   </p>
 
-                  <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-left space-y-2 mb-8">
+                  <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-left space-y-1.5 mb-6">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-600 dark:text-slate-400">Due today:</span>
                       <strong className="text-emerald-600 dark:text-emerald-400 font-bold">$0.00 (No charge)</strong>
@@ -1238,8 +1277,9 @@ export function BillingSettings({
 
       {/* Switch Subscription Confirmation Modal */}
       {showSwitchModal && (() => {
-        const nextRenewalDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        const daysRemaining = Math.max(1, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+        const nextRenewalDate = effectiveSubscriptionEndsAt;
+        const totalDays = (planInterval || "MONTH") === "YEAR" ? 365 : 30;
+        const daysRemaining = Math.max(1, Math.min(totalDays, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))));
         const renewalDateStr = nextRenewalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         const oldInterval = planInterval || "MONTH";
         const currentPlanPrice = currentPlan === "PRO" ? (oldInterval === "YEAR" ? 149.90 : 14.99) : (oldInterval === "YEAR" ? 69.90 : 6.99);
@@ -1249,7 +1289,6 @@ export function BillingSettings({
         if (selectedPlanId === "FREE") {
           proratedAdjustment = 0;
         } else if (oldInterval === interval) {
-          const totalDays = interval === "YEAR" ? 365 : 30;
           proratedAdjustment = Number(((newPlanPrice - currentPlanPrice) / totalDays * Math.min(daysRemaining, totalDays)).toFixed(2));
         } else if (oldInterval === "MONTH" && interval === "YEAR") {
           const unusedCredit = Number((currentPlanPrice * (Math.min(daysRemaining, 30) / 30)).toFixed(2));
@@ -1283,7 +1322,7 @@ export function BillingSettings({
                     Review your subscription details before switching to the <strong className="text-slate-900 dark:text-white">{newPlanName} ({intervalName})</strong>.
                   </p>
 
-                  <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 text-left space-y-2.5 mb-8">
+                  <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 text-left space-y-1.5 mb-6">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-600 dark:text-slate-400">Due today:</span>
                       <strong className={`font-bold ${

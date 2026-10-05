@@ -34,7 +34,11 @@ export default async function SettingsTabPage({ params }: { params: Promise<{ ta
   const [tenant, dbUser, initialInvoices] = await Promise.all([
     prisma.tenant.findUnique({
       where: { id: tenantId },
-      include: { locations: true }
+      include: {
+        locations: {
+          orderBy: { createdAt: "desc" }
+        }
+      }
     }),
     prisma.user.findUnique({
       where: { id: userId },

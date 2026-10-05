@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { getLabels } from "@/lib/labels";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { validatePhoneNumber } from "@/lib/utils";
+import { BranchMultiSelect } from "@/components/dashboard/branch-multi-select";
 
 export function AddStaffForm({ 
   users, 
@@ -70,12 +71,25 @@ export function AddStaffForm({
   };
 
   const toggleService = (serviceId: string) => {
+    clearFieldError("services");
     setSelectedServices(prev => 
       prev.includes(serviceId) 
         ? prev.filter(id => id !== serviceId) 
         : [...prev, serviceId]
     );
   };
+
+  const isServiceAvailableInBranches = (service: any, locIds: string[]) => {
+    if (!locations || locations.length === 0) return true;
+    if (!service?.locations || service.locations.length === 0) return true;
+    if (!locIds || locIds.length === 0) return false;
+    const serviceLocIds = service.locations.map((l: any) => typeof l === 'string' ? l : l.id);
+    return serviceLocIds.some((id: string) => locIds.includes(id));
+  };
+
+  const invalidSelectedServices = selectedServices
+    .map(id => (services || []).find(s => s.id === id))
+    .filter((s): s is any => !!s && !isServiceAvailableInBranches(s, selectedLocations));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,6 +117,10 @@ export function AddStaffForm({
       errors.confirmPassword = "Please confirm your password";
     } else if (password && password !== confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
+    }
+
+    if (invalidSelectedServices.length > 0) {
+      errors.services = `${invalidSelectedServices.map(s => `"${s.name}"`).join(", ")} not available at assigned branch location. Please select matching branch.`;
     }
 
     if (Object.keys(errors).length > 0) {
@@ -317,6 +335,7 @@ export function AddStaffForm({
                   ref={triggerRef}
                   type="button"
                   onClick={() => {
+                    clearFieldError("services");
                     if (!isDropdownOpen && triggerRef.current && scrollContainerRef.current) {
                       const triggerRect = triggerRef.current.getBoundingClientRect();
                       const containerRect = scrollContainerRef.current.getBoundingClientRect();
@@ -325,7 +344,11 @@ export function AddStaffForm({
                     }
                     setIsDropdownOpen(!isDropdownOpen);
                   }}
-                  className="w-full flex items-center justify-between rounded-2xl border-2 border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm hover:border-indigo-200 dark:hover:border-slate-800 text-left cursor-pointer"
+                  className={`w-full flex items-center justify-between rounded-2xl border-2 px-5 py-3 text-sm focus:outline-none transition-all dark:text-white shadow-sm text-left cursor-pointer ${
+                    fieldErrors.services
+                      ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500"
+                      : "border-indigo-100/50 dark:border-slate-800 bg-indigo-50/30 dark:bg-slate-900 hover:border-indigo-200 dark:hover:border-slate-800 focus:border-indigo-600 focus:bg-white dark:focus:bg-slate-900"
+                  }`}
                 >
                   <span className="truncate text-slate-700 dark:text-slate-200">
                     {selectedServices.length === 0 
@@ -354,6 +377,7 @@ export function AddStaffForm({
                       <div className="overflow-y-auto space-y-1 pr-1 flex-1 premium-scrollbar">
                         {filteredServices.map((service: any) => {
                           const isSelected = selectedServices.includes(service.id);
+                          const isAvailable = isServiceAvailableInBranches(service, selectedLocations);
                           return (
                             <button
                               key={service.id}
@@ -365,7 +389,7 @@ export function AddStaffForm({
                                   : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-350"
                               }`}
                             >
-                              <div className="flex items-center gap-2.5 truncate">
+                              <div className="flex items-center gap-2.5 truncate flex-1 min-w-0 pr-2">
                                 <div className="w-1.5 h-4 rounded-full shrink-0" style={{ backgroundColor: service.color }}></div>
                                 <span className="truncate">{service.name}</span>
                               </div>
@@ -381,31 +405,7 @@ export function AddStaffForm({
                   </>
                 )}
               </div>
-
-              {selectedServices.length > 0 && (
-                <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto pr-1">
-                  {selectedServices.map(serviceId => {
-                    const service = services.find(s => s.id === serviceId);
-                    if (!service) return null;
-                    return (
-                      <div 
-                        key={serviceId}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/20 text-xs font-bold text-slate-700 dark:text-slate-200 border border-indigo-100/30 dark:border-slate-800"
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: service.color }}></div>
-                        <span>{service.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => toggleService(serviceId)}
-                          className="text-slate-400 hover:text-rose-500 transition-colors cursor-pointer shrink-0 ml-0.5"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <InputError message={fieldErrors.services} />
             </div>
           ) : (
             <p className="text-[10px] text-slate-400 italic bg-indigo-50/30 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-indigo-100/50 dark:border-slate-800 shadow-sm">
@@ -414,61 +414,18 @@ export function AddStaffForm({
           )}
         </div>
 
-        {/* Branch Locations Selection */}
+        {/* Branch Locations Dropdown Selection */}
         {locations && locations.length > 0 && (
-          <div>
-            <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-3 flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-slate-400" />
-              Assigned Branch Locations
-            </label>
-            <div className="space-y-2">
-              {locations.map((loc) => {
-                const isChecked = selectedLocations.includes(loc.id);
-                return (
-                  <label
-                    key={loc.id}
-                    className={`flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer select-none ${
-                      isChecked
-                        ? "border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/30"
-                        : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        name="locations"
-                        value={loc.id}
-                        checked={isChecked}
-                        onChange={() => {
-                          setSelectedLocations((prev) =>
-                            prev.includes(loc.id)
-                              ? prev.filter((id) => id !== loc.id)
-                              : [...prev, loc.id]
-                          );
-                        }}
-                        className="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
-                      />
-                      <div>
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                          {loc.name}
-                        </span>
-                        {loc.address && (
-                          <p className="text-[11px] text-slate-400 truncate max-w-[240px]">
-                            {loc.address}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {loc.isPrimary && (
-                      <span className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/40">
-                        Primary
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
+          <BranchMultiSelect
+            locations={locations}
+            selectedLocations={selectedLocations}
+            onChange={(locs) => {
+              clearFieldError("services");
+              setSelectedLocations(locs);
+            }}
+            label="Assigned Branch Locations"
+            hasError={!!fieldErrors.services}
+          />
         )}
 
       </div>

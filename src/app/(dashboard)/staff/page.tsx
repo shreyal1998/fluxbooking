@@ -51,6 +51,7 @@ export default async function StaffPage() {
     }),
     prisma.service.findMany({
       where: { tenantId },
+      include: { locations: true },
       orderBy: { name: "asc" }
     }),
     prisma.location.findMany({
@@ -102,7 +103,8 @@ export default async function StaffPage() {
     color: s.color,
     capacity: s.capacity,
     createdAt: s.createdAt,
-    updatedAt: s.updatedAt
+    updatedAt: s.updatedAt,
+    locations: (s as any).locations || []
   }));
 
   const serializedStaff = staffMembers.map(s => ({
@@ -114,7 +116,6 @@ export default async function StaffPage() {
     color: s.color,
     availabilityJson: s.availabilityJson,
     createdAt: s.createdAt,
-    updatedAt: s.updatedAt,
     user: s.user ? {
       id: s.user.id,
       name: s.user.name,
@@ -133,7 +134,8 @@ export default async function StaffPage() {
       color: srv.color,
       capacity: srv.capacity,
       createdAt: srv.createdAt,
-      updatedAt: srv.updatedAt
+      updatedAt: srv.updatedAt,
+      locations: (srv as any).locations || []
     })),
     locations: s.locations.map(l => ({
       id: l.id,
@@ -144,12 +146,19 @@ export default async function StaffPage() {
     }))
   }));
 
+  const isPro = tenant?.plan === "PRO" || tenant?.planStatus === "TRIALING";
+  const activeLocations = isPro 
+    ? locations 
+    : (locations.filter(l => l.isPrimary).length > 0 
+        ? locations.filter(l => l.isPrimary).slice(0, 1) 
+        : locations.slice(0, 1));
+
   return (
     <StaffClient 
       initialStaff={serializedStaff}
       initialUsers={users}
       initialServices={serializedServices}
-      locations={locations}
+      locations={activeLocations}
       pendingRequests={requestsWithConflicts}
       currentLimit={currentLimit}
       businessType={tenant?.businessType}

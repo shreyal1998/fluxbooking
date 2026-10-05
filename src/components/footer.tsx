@@ -17,6 +17,9 @@ const Github = ({ className }: { className?: string }) => (
 
 export function Footer() {
   const scrollToTop = () => {
+    if (window.location.pathname === "/" || window.location.pathname === "/features" || window.location.pathname === "/pricing") {
+      window.history.replaceState(null, "", "/");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -47,7 +50,13 @@ export function Footer() {
                 <Link 
                   href="/features" 
                   scroll={false} 
-                  onClick={() => window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "features" }))}
+                  onClick={(e) => {
+                    if (window.location.pathname === "/" || window.location.pathname === "/features" || window.location.pathname === "/pricing") {
+                      e.preventDefault();
+                      window.history.replaceState(null, "", "/features");
+                      window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "features" }));
+                    }
+                  }}
                   className="hover:text-white transition-colors"
                 >
                   Features
@@ -57,7 +66,13 @@ export function Footer() {
                 <Link 
                   href="/pricing" 
                   scroll={false} 
-                  onClick={() => window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "pricing" }))}
+                  onClick={(e) => {
+                    if (window.location.pathname === "/" || window.location.pathname === "/features" || window.location.pathname === "/pricing") {
+                      e.preventDefault();
+                      window.history.replaceState(null, "", "/pricing");
+                      window.dispatchEvent(new CustomEvent("flux-scroll", { detail: "pricing" }));
+                    }
+                  }}
                   className="hover:text-white transition-colors"
                 >
                   Pricing

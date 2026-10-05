@@ -120,6 +120,7 @@ model Location {
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   staff    Staff[]   @relation("StaffLocations")
+  services Service[] @relation("ServiceLocations")
   bookings Booking[]
 
   @@index([tenantId])
@@ -197,9 +198,10 @@ model Service {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings Booking[]
-  staff    Staff[]   @relation("StaffServices")
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+  staff     Staff[]    @relation("StaffServices")
+  locations Location[] @relation("ServiceLocations")
 }
 
 model Staff {

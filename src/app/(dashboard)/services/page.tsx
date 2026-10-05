@@ -11,19 +11,26 @@ export default async function ServicesPage() {
   const tenantId = (session.user as any).tenantId;
   const userRole = (session.user as any).role;
 
-  const [services, tenant] = await Promise.all([
+  const [services, tenant, locations] = await Promise.all([
     prisma.service.findMany({
       where: { tenantId },
+      include: { locations: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { 
+        plan: true,
+        planStatus: true,
         businessType: true,
         currency: true,
         country: true,
         timeFormat: true
       }
+    }),
+    prisma.location.findMany({
+      where: { tenantId },
+      orderBy: [{ isPrimary: "desc" }, { name: "asc" }]
     })
   ]);
 
@@ -37,7 +44,8 @@ export default async function ServicesPage() {
     color: s.color,
     capacity: s.capacity,
     createdAt: s.createdAt,
-    updatedAt: s.updatedAt
+    updatedAt: s.updatedAt,
+    locations: (s as any).locations || []
   }));
 
   // Smart currency fallback
@@ -48,10 +56,19 @@ export default async function ServicesPage() {
     if (countryData) currency = countryData.currency;
   }
 
+  const isPro = tenant?.plan === "PRO" || tenant?.planStatus === "TRIALING";
+  const activeLocations = isPro 
+    ? locations 
+    : (locations.filter(l => l.isPrimary).length > 0 
+        ? locations.filter(l => l.isPrimary).slice(0, 1) 
+        : locations.slice(0, 1));
+
   return (
     <div className="h-full flex flex-col animate-fade-in p-4 md:p-6 lg:p-8 overflow-y-auto custom-scrollbar">
       <ServicesClient 
         initialServices={serializedServices} 
+        locations={activeLocations}
+        isPro={isPro}
         userRole={userRole} 
         businessType={tenant?.businessType}
         currency={currency}

@@ -659,7 +659,7 @@ export function StructuredAvailabilityEditor({ staffList, tenant, onSuccess }: S
       {/* Confirmation Dialog Pop-up */}
       {showConfirm && (
         <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md cursor-pointer" onClick={() => setShowConfirm(false)} />
+          <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/70 backdrop-blur-md cursor-default" />
           <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
 
             {/* Top accent bar */}

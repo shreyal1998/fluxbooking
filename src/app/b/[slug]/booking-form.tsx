@@ -32,7 +32,8 @@ import {
   Search,
   X,
   MapPin,
-  Building2
+  Building2,
+  ChevronDown
 } from "lucide-react";
 import { createBooking, rescheduleBookingByCustomer, getNextAvailableDate } from "@/app/actions/booking";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ interface Service {
   durationMinutes: number;
   price: string;
   color: string;
+  locations?: { id: string }[];
 }
 
 interface Location {
@@ -127,8 +129,23 @@ export function BookingForm({
   };
 
   const [hasMounted, setHasMounted] = useState(false);
-  const [step, setStep] = useState(1);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+
+  const initialServiceId = searchParams.get("serviceId");
+  const initialLocationId = searchParams.get("locationId") || searchParams.get("branchId");
+
+  const [selectedService, setSelectedService] = useState<Service | null>(() => {
+    if (initialServiceId && services) {
+      return services.find(s => s.id === initialServiceId) || null;
+    }
+    return null;
+  });
+
+  const [step, setStep] = useState<number>(() => {
+    if (initialServiceId && services && services.some(s => s.id === initialServiceId)) {
+      return 2;
+    }
+    return 1;
+  });
   const [selectedStaffId, setSelectedStaffId] = useState<string>(
     searchParams.get("staffId") || "any"
   );
@@ -198,13 +215,57 @@ export function BookingForm({
 
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(() => {
     if (locations && locations.length > 0) {
+      if (initialLocationId) {
+        const matched = locations.find(l => l.id === initialLocationId);
+        if (matched) return matched.id;
+      }
       const primary = locations.find(l => l.isPrimary);
       return primary ? primary.id : locations[0].id;
     }
     return null;
   });
 
-  const activeLocation = locations.find(l => l.id === selectedLocationId) || (locations.length > 0 ? locations[0] : null);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [branchSearch, setBranchSearch] = useState("");
+  const branchDropdownRef = useRef<HTMLDivElement>(null);
+  const branchMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target as Node)) {
+        setIsBranchDropdownOpen(false);
+      }
+    }
+    if (isBranchDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      const timer = setTimeout(() => {
+        if (branchMenuRef.current) {
+          branchMenuRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }, 60);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        clearTimeout(timer);
+      };
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isBranchDropdownOpen]);
+
+  const selectedStaff = staff.find(s => s.id === selectedStaffId);
+
+  // Applicable branch locations: if practitioner is pre-selected, only show branches where they work!
+  const applicableLocations = (selectedStaffId !== "any" && selectedStaff?.locations && selectedStaff.locations.length > 0)
+    ? locations.filter(loc => selectedStaff.locations?.some((l: any) => l.id === loc.id))
+    : locations;
+
+  const activeLocation = applicableLocations.find(l => l.id === selectedLocationId) || (applicableLocations.length > 0 ? applicableLocations[0] : null);
+
+  const filteredBranchLocations = applicableLocations.filter(loc =>
+    loc.name.toLowerCase().includes(branchSearch.toLowerCase().trim()) ||
+    (loc.address && loc.address.toLowerCase().includes(branchSearch.toLowerCase().trim()))
+  );
 
   // Filter staff by assigned branch location
   const branchStaff = (selectedLocationId && locations.length > 1)
@@ -214,6 +275,14 @@ export function BookingForm({
       })
     : staff;
 
+  // Filter services by assigned branch location
+  const branchServices = (selectedLocationId && locations.length > 1)
+    ? services.filter(srv => {
+        if (!srv.locations || srv.locations.length === 0) return true;
+        return srv.locations.some((l: any) => l.id === selectedLocationId);
+      })
+    : services;
+
   // Filter staff available for the selected service
   const filteredStaff = branchStaff.filter(s => 
     !selectedService || s.services?.some((srv) => srv.id === selectedService.id)
@@ -221,11 +290,11 @@ export function BookingForm({
 
   // Filter services based on selected staff if one is preselected via query parameter
   const filteredServices = selectedStaffId !== "any"
-    ? services.filter(srv => {
+    ? branchServices.filter(srv => {
         const selectedStaff = staff.find(s => s.id === selectedStaffId);
         return selectedStaff?.services?.some((sSrv: any) => sSrv.id === srv.id);
       })
-    : services;
+    : branchServices;
 
   // Filter services by search query
   const searchedServices = filteredServices.filter(s =>
@@ -435,6 +504,17 @@ export function BookingForm({
                 {selectedDate && format(selectedDate, "EEE, MMM d, yyyy")} • {selectedSlot && format(parse(selectedSlot.time, "HH:mm", new Date()), timeDisplayFormat)}
               </span>
            </div>
+           {activeLocation && (
+             <div className="flex justify-between items-start pb-2.5 border-b border-slate-200/60 gap-4">
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider shrink-0 mt-0.5">Branch</span>
+                <div className="text-right">
+                  <span className="text-sm font-semibold text-slate-900 block">{activeLocation.name}</span>
+                  {activeLocation.address && (
+                    <span className="text-xs text-slate-500 font-normal block">{activeLocation.address}</span>
+                  )}
+                </div>
+             </div>
+           )}
            <div className="flex justify-between items-center pb-2.5 border-b border-slate-200/60">
               <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{labels.staff}</span>
               <span className="text-sm font-semibold text-slate-900">{selectedSlot?.staffName}</span>
@@ -486,13 +566,16 @@ export function BookingForm({
               const isPast = step > st.num;
               return (
                 <div key={st.num} className="flex items-center gap-1 sm:gap-2">
-                  <div 
+                  <button 
+                    type="button"
+                    disabled={!isPast}
+                    onClick={() => isPast && setStep(st.num)}
                     className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium transition-all ${
                       isCurrent 
-                        ? "text-white shadow-xs" 
+                        ? "text-white shadow-xs cursor-default" 
                         : isPast 
-                          ? "bg-emerald-500 text-white" 
-                          : "bg-slate-200/80 text-slate-600"
+                          ? "bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600 active:scale-95" 
+                          : "bg-slate-200/80 text-slate-600 cursor-default"
                     }`}
                     style={{ 
                       backgroundColor: isCurrent ? primaryColor : undefined,
@@ -504,7 +587,7 @@ export function BookingForm({
                       <span className="text-[10px] sm:text-[11px] font-semibold">{st.num}</span>
                     )}
                     <span className="hidden min-[400px]:inline font-medium">{st.label}</span>
-                  </div>
+                  </button>
                   {idx < stepsList.length - 1 && (
                     <div className={`w-2.5 sm:w-4 md:w-8 h-0.5 rounded-full ${isPast ? "bg-emerald-500" : "bg-slate-200"}`} />
                   )}
@@ -530,19 +613,34 @@ export function BookingForm({
                   <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
                   {isRescheduling ? `Confirm ${labels.service}` : `Select a ${labels.service}`}
                 </h2>
-                {selectedStaffId !== "any" && staff.find(s => s.id === selectedStaffId) && (
-                  <span 
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border shadow-2xs"
-                    style={{
-                      backgroundColor: `${primaryColor}0c`,
-                      borderColor: `${primaryColor}25`,
-                      color: primaryColor
-                    }}
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{staff.find(s => s.id === selectedStaffId)?.name}</span>
-                  </span>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {activeLocation && (
+                    <span 
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-2xs max-w-[180px] sm:max-w-[240px]"
+                      style={{
+                        backgroundColor: `${primaryColor}08`,
+                        borderColor: `${primaryColor}20`,
+                        color: primaryColor
+                      }}
+                    >
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{activeLocation.name}{activeLocation.address ? ` • ${activeLocation.address}` : ""}</span>
+                    </span>
+                  )}
+                  {selectedStaffId !== "any" && staff.find(s => s.id === selectedStaffId) && (
+                    <span 
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-2xs max-w-[180px] sm:max-w-[220px]"
+                      style={{
+                        backgroundColor: `${primaryColor}0c`,
+                        borderColor: `${primaryColor}25`,
+                        color: primaryColor
+                      }}
+                    >
+                      <Users className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{staff.find(s => s.id === selectedStaffId)?.name}</span>
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-slate-500 text-xs font-normal">
                 {isRescheduling 
@@ -553,75 +651,157 @@ export function BookingForm({
               </p>
             </div>
 
-            {/* Multi-Location Branch Selector */}
-            {locations && locations.length > 1 && (
-              <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                    <MapPin className="h-3.5 w-3.5" style={{ color: primaryColor }} />
-                    <span>Select Location Branch</span>
+            {/* Compact Branch Selector Bar */}
+            {applicableLocations && applicableLocations.length > 1 && (
+              <div ref={branchDropdownRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+                  className="w-full px-3 py-2 rounded-xl border bg-slate-50/70 hover:bg-white flex items-center justify-between gap-2.5 text-left transition-all hover:border-slate-300 focus:outline-none shadow-2xs cursor-pointer"
+                  style={{
+                    borderColor: isBranchDropdownOpen ? primaryColor : "#e2e8f0",
+                    backgroundColor: isBranchDropdownOpen ? `${primaryColor}06` : undefined,
+                  }}
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div 
+                      className="h-6 w-6 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        backgroundColor: `${primaryColor}15`,
+                        color: primaryColor
+                      }}
+                    >
+                      <Building2 className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+                      <span className="text-xs font-medium text-slate-500 shrink-0">
+                        Branch:
+                      </span>
+                      <span className="text-xs font-bold text-slate-900 truncate shrink-0 max-w-[140px] sm:max-w-[200px]">
+                        {activeLocation?.name || "Select Branch"}
+                      </span>
+                      {activeLocation?.address && (
+                        <span className="text-[11px] text-slate-500 font-normal truncate hidden sm:inline min-w-0 flex-1">
+                          • {activeLocation.address}
+                        </span>
+                      )}
+                      {activeLocation?.isPrimary && (
+                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200/60 shrink-0">
+                          Main
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {activeLocation && (
-                    <span className="text-[11px] font-semibold" style={{ color: primaryColor }}>
-                      {activeLocation.name}
-                    </span>
-                  )}
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {locations.map((loc) => {
-                    const isLocSelected = selectedLocationId === loc.id;
-                    return (
-                      <button
-                        key={loc.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedLocationId(loc.id);
-                          if (selectedStaffId !== "any") {
-                            const isStaffAtLoc = staff.find(s => s.id === selectedStaffId)?.locations?.some(l => l.id === loc.id) ?? true;
-                            if (!isStaffAtLoc) setSelectedStaffId("any");
-                          }
-                        }}
-                        className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer flex items-start gap-2.5 ${
-                          isLocSelected
-                            ? "shadow-2xs"
-                            : "bg-white border-slate-200 hover:border-slate-300"
-                        }`}
-                        style={{
-                          borderColor: isLocSelected ? primaryColor : undefined,
-                          backgroundColor: isLocSelected ? `${primaryColor}08` : undefined,
-                        }}
-                      >
-                        <div
-                          className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                          style={{
-                            backgroundColor: isLocSelected ? `${primaryColor}20` : "#f1f5f9",
-                            color: isLocSelected ? primaryColor : "#64748b",
-                          }}
-                        >
-                          <Building2 className="h-3.5 w-3.5" />
+                  <div className="flex items-center gap-1.5 shrink-0 pl-1">
+                    <span className="text-[11px] font-medium text-slate-400 hidden min-[360px]:inline">
+                      Change ({applicableLocations.length})
+                    </span>
+                    <div className={`h-5 w-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-500 transition-transform duration-200 ${isBranchDropdownOpen ? "rotate-180" : ""}`}>
+                      <ChevronDown className="h-3 w-3" />
+                    </div>
+                  </div>
+                </button>
+
+                {isBranchDropdownOpen && (
+                  <div
+                    ref={branchMenuRef}
+                    className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-2xl border-2 border-slate-200 shadow-xl p-2 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150"
+                  >
+                    {applicableLocations.length > 5 && (
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={branchSearch}
+                          onChange={(e) => setBranchSearch(e.target.value)}
+                          placeholder="Search branch..."
+                          className="w-full pl-8 pr-8 py-1.5 text-xs rounded-lg bg-slate-50 border border-slate-200 outline-none text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-300 transition-all"
+                        />
+                        {branchSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setBranchSearch("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <div className="max-h-52 overflow-y-auto space-y-1 custom-scrollbar">
+                      {filteredBranchLocations.length === 0 ? (
+                        <div className="py-5 px-4 text-center">
+                          <Building2 className="h-5 w-5 text-slate-300 mx-auto mb-1.5" />
+                          <p className="text-xs font-semibold text-slate-500">No branches found</p>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-xs font-semibold text-slate-900 truncate">
-                              {loc.name}
-                            </p>
-                            {loc.isPrimary && (
-                              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full">
-                                Main
-                              </span>
-                            )}
-                          </div>
-                          {loc.address && (
-                            <p className="text-[11px] text-slate-500 truncate font-normal">
-                              {loc.address}
-                            </p>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                      ) : (
+                        filteredBranchLocations.map((loc) => {
+                          const isSelected = selectedLocationId === loc.id;
+                          return (
+                            <button
+                              key={loc.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedLocationId(loc.id);
+                                setIsBranchDropdownOpen(false);
+                                setBranchSearch("");
+                                if (selectedService) {
+                                  const isServiceAtLoc = !selectedService.locations || selectedService.locations.length === 0 || selectedService.locations.some(l => l.id === loc.id);
+                                  if (!isServiceAtLoc) setSelectedService(null);
+                                }
+                                if (selectedStaffId !== "any") {
+                                  const isStaffAtLoc = staff.find(s => s.id === selectedStaffId)?.locations?.some(l => l.id === loc.id) ?? true;
+                                  if (!isStaffAtLoc) setSelectedStaffId("any");
+                                }
+                              }}
+                              className={`w-full p-2.5 rounded-xl text-left transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                                isSelected 
+                                  ? "shadow-2xs font-semibold" 
+                                  : "hover:bg-slate-50 text-slate-700"
+                              }`}
+                              style={{
+                                backgroundColor: isSelected ? `${primaryColor}0e` : undefined,
+                              }}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div 
+                                  className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{
+                                    backgroundColor: isSelected ? `${primaryColor}20` : "#f1f5f9",
+                                    color: isSelected ? primaryColor : "#64748b"
+                                  }}
+                                >
+                                  <Building2 className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="min-w-0 flex-1 overflow-hidden">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-semibold text-slate-900 truncate">
+                                      {loc.name}
+                                    </span>
+                                    {loc.isPrimary && (
+                                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200/50 shrink-0">
+                                        Main
+                                      </span>
+                                    )}
+                                  </div>
+                                  {loc.address && (
+                                    <p className="text-[11px] text-slate-500 font-normal truncate mt-0.5">
+                                      {loc.address}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} />
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -737,9 +917,47 @@ export function BookingForm({
             
             {/* Header */}
             <div className="space-y-0.5">
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                {isRescheduling ? "Select New Time" : "Choose Date & Time"}
-              </h2>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                  {isRescheduling ? "Select New Time" : "Choose Date & Time"}
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {activeLocation && (
+                    <span 
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-2xs max-w-[180px] sm:max-w-[240px]"
+                      style={{
+                        backgroundColor: `${primaryColor}08`,
+                        borderColor: `${primaryColor}20`,
+                        color: primaryColor
+                      }}
+                    >
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{activeLocation.name}{activeLocation.address ? ` • ${activeLocation.address}` : ""}</span>
+                    </span>
+                  )}
+                  {(() => {
+                    const currentPractitioner = selectedStaffId !== "any" 
+                      ? staff.find(s => s.id === selectedStaffId) 
+                      : (filteredStaff.length === 1 ? filteredStaff[0] : null);
+                    if (currentPractitioner) {
+                      return (
+                        <span 
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border shadow-2xs max-w-[180px] sm:max-w-[220px]"
+                          style={{
+                            backgroundColor: `${primaryColor}0c`,
+                            borderColor: `${primaryColor}25`,
+                            color: primaryColor
+                          }}
+                        >
+                          <Users className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{currentPractitioner.name}</span>
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              </div>
               <p className="text-slate-500 text-xs font-normal">
                 Showing available slots for <strong className="font-semibold text-slate-900">{selectedService?.name}</strong> ({selectedService?.durationMinutes} mins).
               </p>
@@ -932,15 +1150,37 @@ export function BookingForm({
 
             {/* TIME SLOTS SECTION */}
             <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-slate-500" />
-                  <span className="text-xs font-medium text-slate-900">
+                  <span className="text-xs font-semibold text-slate-900">
                     {selectedDate 
                       ? `Available Times • ${format(selectedDate, "EEEE, MMMM d")}`
                       : "Available Times"}
                   </span>
                 </div>
+
+                {(() => {
+                  const currentPractitioner = selectedStaffId !== "any" 
+                    ? staff.find(s => s.id === selectedStaffId) 
+                    : (filteredStaff.length === 1 ? filteredStaff[0] : null);
+                  if (currentPractitioner) {
+                    return (
+                      <span 
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border shadow-2xs"
+                        style={{
+                          backgroundColor: `${primaryColor}0c`,
+                          borderColor: `${primaryColor}25`,
+                          color: primaryColor
+                        }}
+                      >
+                        <Users className="h-3 w-3" />
+                        <span>With {currentPractitioner.name}</span>
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {!selectedDate ? (
@@ -1081,17 +1321,17 @@ export function BookingForm({
 
               <button 
                 type="button"
-                disabled={!selectedSlot}
+                disabled={!selectedSlot || loadingSlots}
                 onClick={() => {
-                  if (selectedSlot) setStep(3);
+                  if (selectedSlot && !loadingSlots) setStep(3);
                 }}
                 className={`px-6 h-11 md:h-12 rounded-2xl font-semibold text-xs md:text-sm transition-all flex items-center justify-center active:scale-98 ${
-                  selectedSlot 
+                  selectedSlot && !loadingSlots
                     ? "text-white shadow-md hover:opacity-95 cursor-pointer" 
                     : "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed shadow-none"
                 }`}
                 style={{ 
-                  backgroundColor: selectedSlot ? primaryColor : undefined 
+                  backgroundColor: selectedSlot && !loadingSlots ? primaryColor : undefined 
                 }}
               >
                 <span>Continue</span>

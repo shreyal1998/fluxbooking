@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useTheme } from "next-themes";
 import {
@@ -43,7 +43,8 @@ import {
   Trash2,
   ZoomIn,
   ZoomOut,
-  RotateCcw
+  RotateCcw,
+  MapPin
 } from "lucide-react";
 import { rescheduleBooking } from "@/app/actions/booking";
 import { toast } from "sonner";
@@ -67,6 +68,8 @@ interface Event {
   customerName?: string;
   serviceName?: string;
   bufferTime?: number;
+  locationName?: string | null;
+  locationAddress?: string | null;
 }
 
 interface DaySchedule {
@@ -248,16 +251,27 @@ export function CalendarView({
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [tooltipInfo, setTooltipInfo] = useState<{ event: Event; x: number; cardRight: number; y: number } | null>(null);
+  const [tooltipInfo, setTooltipInfo] = useState<{ event: Event; x: number; cardRight: number; y: number; bottom: number } | null>(null);
+  const [tooltipHeight, setTooltipHeight] = useState<number>(0);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState<Date | null>(null);
   const closeTimeoutRef = useRef<any>(null);
 
-  const showTooltip = useCallback((event: Event, x: number, cardRight: number, y: number) => {
+  useLayoutEffect(() => {
+    if (tooltipRef.current) {
+      const rect = tooltipRef.current.getBoundingClientRect();
+      if (rect.height > 0 && Math.abs(rect.height - tooltipHeight) > 1) {
+        setTooltipHeight(rect.height);
+      }
+    }
+  }, [tooltipInfo, tooltipHeight]);
+
+  const showTooltip = useCallback((event: Event, x: number, cardRight: number, y: number, bottom: number) => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    setTooltipInfo({ event, x, cardRight, y });
+    setTooltipInfo({ event, x, cardRight, y, bottom });
   }, []);
 
   const hideTooltip = useCallback(() => {
@@ -659,7 +673,7 @@ export function CalendarView({
       : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     return (
-      <div className={`flex flex-col border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-slate-950 overflow-hidden shadow-sm ${mode === 'booking' ? '' : 'flex-1 min-h-0'}`}>
+      <div className={`flex flex-col border-y sm:border border-slate-200 dark:border-slate-800 rounded-none sm:rounded-3xl bg-white dark:bg-slate-950 overflow-hidden shadow-sm ${mode === 'booking' ? '' : 'flex-1 min-h-0'}`}>
         <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
           {dayHeaders.map((day) => (
             <div key={day} className="py-4 text-center text-[10px] font-bold text-black dark:text-white uppercase tracking-widest bg-slate-50/50 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-800 last:border-r-0">
@@ -704,7 +718,7 @@ export function CalendarView({
                         }}
                         onMouseEnter={mode === 'booking' ? (e) => {
                           const r = e.currentTarget.getBoundingClientRect();
-                          showTooltip(event, r.left, r.right, r.top);
+                          showTooltip(event, r.left, r.right, r.top, r.bottom);
                         } : undefined}
                         onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                         className={`text-[10px] px-2 py-0.5 rounded-md border truncate font-normal flex-shrink-0 cursor-pointer transition-all active:scale-95 ${typeof styleData === 'string' ? styleData : styleData.className}`}
@@ -761,11 +775,11 @@ export function CalendarView({
     const singleStaffParam = getSingleStaffParam();
 
     return (
-      <div className="relative bg-white dark:bg-slate-950">
+      <div className="relative bg-white dark:bg-slate-950 [--time-col-w:44px] sm:[--time-col-w:75px] rounded-none sm:rounded-2xl border-y sm:border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="relative p-0 overflow-hidden" style={{ minHeight: `${(displayRange.end - displayRange.start) * pixelsPerMinute}px` }}>
            {now && isSameDay(currentDate, now) && now.getHours() * 60 + now.getMinutes() >= displayRange.start && now.getHours() * 60 + now.getMinutes() <= displayRange.end && (
              <div className="absolute left-0 right-0 z-30 flex items-center pointer-events-none" style={{ top: `${(now.getHours() * 60 + now.getMinutes() - displayRange.start) * pixelsPerMinute}px` }}>
-               <div className="w-[80px]"></div>
+               <div className="w-[var(--time-col-w)]"></div>
                <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse shadow-indigo-500"></div>
                <div className="flex-1 h-0.5 bg-indigo-600"></div>
              </div>
@@ -781,9 +795,9 @@ export function CalendarView({
                       className={`flex border-slate-300 dark:border-slate-600 transition-colors ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`}
                       style={{ height: `${slotHeight}px` }}
                     >
-                        <span className="w-[80px] h-full p-2 text-[13px] font-normal flex items-center justify-center border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-slate-800 dark:text-slate-300 tabular-nums">
+                        <span className="w-[var(--time-col-w)] h-full p-1 sm:p-2 text-[10px] sm:text-[13px] font-normal flex items-center justify-center border-r border-slate-300 dark:border-slate-600 bg-slate-100/95 dark:bg-slate-800/95 z-10 text-slate-800 dark:text-slate-300 tabular-nums">
                           {currentSlotTime.getMinutes() !== 0 ? (
-                            <span className="text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
+                            <span className="text-[10px] sm:text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
                               {currentSlotTime.getMinutes()}
                             </span>
                           ) : (
@@ -818,7 +832,7 @@ export function CalendarView({
                               return (
                                  <div 
                                    key={subIdx}
-                                   className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
+                                   className={`flex-1 relative group transition-colors ${subSlotsCount > 1 && subIdx < subSlotsCount - 1 ? 'border-b border-dashed border-slate-200/80 dark:border-slate-800/80' : ''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                    style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                    onDragOver={handleDragOver}
                                    onDrop={(e) => handleDrop(e, subSlotTime, singleStaffParam)}
@@ -930,12 +944,12 @@ export function CalendarView({
                       top: `${top}px`, 
                       height: `${totalHeight}px`, 
                       minHeight: '4px', 
-                      left: `calc(80px + (100% - 80px) * ${left / 100})`,
-                      width: `calc((100% - 80px) * ${width / 100})`,
+                      left: `calc(var(--time-col-w) + (100% - var(--time-col-w)) * ${left / 100})`,
+                      width: `calc((100% - var(--time-col-w)) * ${width / 100})`,
                       ...(hasBuffer && typeof styleData === 'object' ? { borderLeftColor: styleData.style?.borderLeftColor } : {}),
                       ...(!hasBuffer && typeof styleData === 'object' ? styleData.style : {}) 
                     }}
-                    onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                    onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top, r.bottom); } : undefined}
                     onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                   >
                     {hasBuffer ? (
@@ -1035,13 +1049,15 @@ export function CalendarView({
     const isSplit = N > 1;
     const totalCols = isSplit ? 7 * N : 7;
 
-    // For 1 practitioner at 100% zoom, fit 100% of the screen.
-    // For 2+ practitioners, ensure minimum readable column width so it becomes scrollable when needed.
-    const minColWidth = N > 1 ? Math.round(80 * (zoomLevel / 100)) : 0;
-    const gridMinWidth = N > 1 
-      ? `max(${Math.max(100, zoomLevel)}%, ${totalCols * minColWidth}px)`
+    // When isSplit is true (more than 1 staff member selected): use minColWidth so horizontal scroll is active
+    // When isSplit is false (default or 1 staff member selected): fit all 7 days on 100% of the screen width without horizontal scroll
+    const minColWidth = Math.round(80 * (zoomLevel / 100));
+    const gridMinWidth = isSplit 
+      ? `max(${Math.max(100, zoomLevel)}%, ${totalCols * minColWidth}px)` 
       : `${Math.max(100, zoomLevel)}%`;
-    const gridCols = `repeat(${totalCols}, minmax(${minColWidth ? `${minColWidth}px` : '0'}, 1fr))`;
+    const gridCols = isSplit 
+      ? `repeat(${totalCols}, minmax(${minColWidth}px, 1fr))` 
+      : `repeat(7, minmax(0, 1fr))`;
     const headerHeight = isSplit ? 111 : 76;
 
     const getSingleStaffParam = () => {
@@ -1053,23 +1069,23 @@ export function CalendarView({
     const singleStaffParam = getSingleStaffParam();
 
     return (
-      <div className="flex bg-white dark:bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+      <div className="flex bg-white dark:bg-slate-950 rounded-none sm:rounded-2xl overflow-hidden border-y sm:border border-slate-200 dark:border-slate-800">
         {/* Left Side: Fixed Time Column */}
-        <div className="w-[80px] shrink-0 border-r border-slate-300 dark:border-slate-600 bg-slate-50/95 dark:bg-slate-900/95 z-20 flex flex-col">
+        <div className="w-[44px] sm:w-[75px] shrink-0 border-r border-slate-300 dark:border-slate-600 bg-slate-50/95 dark:bg-slate-900/95 z-20 flex flex-col">
           {/* Corner Header */}
           <div 
-            className="sticky top-0 z-40 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex flex-col items-start justify-center p-4 pl-4 shrink-0"
+            className="sticky top-0 z-40 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex flex-col items-center sm:items-start justify-center p-1 sm:p-4 shrink-0"
             style={{ height: `${headerHeight}px` }}
           >
-            <p className="text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-widest mb-0.5">Week</p>
-            <p className="text-base font-bold text-indigo-600 dark:text-indigo-400">{getWeek(startDate)}</p>
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wider sm:tracking-widest mb-0.5 text-center sm:text-left">Week</p>
+            <p className="text-xs sm:text-base font-bold text-indigo-600 dark:text-indigo-400">{getWeek(startDate)}</p>
           </div>
           {/* Time Labels */}
           <div className="bg-white/95 dark:bg-slate-950/95">
              {visibleSlots.map((slot, slotIdx) => (
-                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 text-[13px] font-normal flex items-center justify-center text-slate-800 dark:text-slate-300 tabular-nums ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-1 sm:p-2 text-[10px] sm:text-[13px] font-normal flex items-center justify-center text-slate-800 dark:text-slate-300 tabular-nums ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
                  {slot.time.getMinutes() !== 0 ? (
-                    <span className="text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
+                    <span className="text-[10px] sm:text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
                       {slot.time.getMinutes()}
                     </span>
                   ) : (
@@ -1088,10 +1104,11 @@ export function CalendarView({
             {weekDays.map((day, dayIdx) => {
               const colStart = isSplit ? 1 + dayIdx * N : 1 + dayIdx;
               const colEnd = isSplit ? colStart + N : colStart + 1;
+              const isLastDay = dayIdx === 6;
               return (
                 <div 
                   key={day.toString()} 
-                  className={`sticky top-0 z-30 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-r border-slate-300 dark:border-slate-600 p-4 text-center h-[76px] flex flex-col items-center justify-center ${dayIdx === 6 ? 'border-r-0' : ''} ${now && isSameDay(day, now) ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}
+                  className={`sticky top-0 z-30 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 p-1 sm:p-4 text-center h-[76px] flex flex-col items-center justify-center ${isLastDay ? '' : 'border-r'} ${now && isSameDay(day, now) ? 'bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}
                   style={{
                     gridColumnStart: colStart,
                     gridColumnEnd: colEnd,
@@ -1099,8 +1116,8 @@ export function CalendarView({
                     gridRowEnd: 2
                   }}
                 >
-                  <p className="text-[10px] uppercase tracking-widest opacity-60 text-black dark:text-white">{format(day, "EEE")}</p>
-                  <p className={`text-lg font-bold ${now && isSameDay(day, now) ? "text-indigo-600 dark:text-indigo-400" : "text-black dark:text-white"}`}>{format(day, "d")}</p>
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider sm:tracking-widest opacity-60 text-black dark:text-white">{format(day, "EEE")}</p>
+                  <p className={`text-sm sm:text-lg font-bold ${now && isSameDay(day, now) ? "text-indigo-600 dark:text-indigo-400" : "text-black dark:text-white"}`}>{format(day, "d")}</p>
                 </div>
               );
             })}
@@ -1122,7 +1139,7 @@ export function CalendarView({
                 return (
                   <div 
                     key={`${day.toString()}-${staff.id}`} 
-                    className={`sticky z-30 bg-slate-50/95 dark:bg-slate-900/95 border-b border-r border-slate-300 dark:border-slate-600 p-1 flex items-center justify-center h-[35px] ${isLastCell ? 'border-r-0' : ''}`}
+                    className={`sticky z-30 bg-slate-50/95 dark:bg-slate-900/95 border-b border-slate-300 dark:border-slate-600 p-1 flex items-center justify-center h-[35px] ${isLastCell ? '' : 'border-r'}`}
                     style={{
                       gridColumnStart: colStart,
                       gridRowStart: 2,
@@ -1157,14 +1174,14 @@ export function CalendarView({
                       height: `${visibleSlots.length * slotHeight}px`
                     }}
                   >
-                    <div className={`absolute inset-0 border-slate-300 dark:border-slate-600 ${isLastColumn ? 'border-r-0' : 'border-r'}`}>
+                    <div className="absolute inset-0">
                       {visibleSlots.map((slot, slotIdx) => {
                         const currentSlotTime = parse(`${Math.floor(slot.minutes / 60)}:${slot.minutes % 60}`, "H:m", dayRefDate);
 
                         return (
                           <div 
                             key={slotIdx} 
-                            className={`border-b border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900 ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} 
+                            className={`border-b ${isLastColumn ? '' : 'border-r'} border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900 ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} 
                             style={{ height: `${slotHeight}px` }} 
                           >
                              {(() => {
@@ -1194,7 +1211,7 @@ export function CalendarView({
                                  return (
                                     <div 
                                       key={subIdx}
-                                      className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
+                                      className={`flex-1 relative group transition-colors ${subSlotsCount > 1 && subIdx < subSlotsCount - 1 ? 'border-b border-dashed border-slate-200/80 dark:border-slate-800/80' : ''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                       style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                       onDragOver={handleDragOver}
                                       onDrop={(e) => handleDrop(e, subSlotTime, activeStaffParam)}
@@ -1313,7 +1330,7 @@ export function CalendarView({
                               ...(hasBuffer && typeof styleData === 'object' ? { borderLeftColor: styleData.style?.borderLeftColor } : {}),
                               ...(!hasBuffer && typeof styleData === 'object' ? styleData.style : {})
                             }}
-                            onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                            onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top, r.bottom); } : undefined}
                             onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                           >
                             {hasBuffer ? (
@@ -1407,19 +1424,19 @@ export function CalendarView({
       : staffList;
 
     return (
-      <div className="flex bg-white dark:bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+      <div className="flex bg-white dark:bg-slate-950 rounded-none sm:rounded-2xl overflow-hidden border-y sm:border border-slate-200 dark:border-slate-800">
         {/* Left Side: Fixed Time Column */}
-        <div className="w-[80px] shrink-0 border-r border-slate-300 dark:border-slate-600 bg-slate-50/95 dark:bg-slate-900/95 z-20 flex flex-col">
+        <div className="w-[44px] sm:w-[75px] shrink-0 border-r border-slate-300 dark:border-slate-600 bg-slate-50/95 dark:bg-slate-900/95 z-20 flex flex-col">
           {/* Team Corner Header */}
-          <div className="sticky top-0 z-40 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex items-center justify-start p-4 pl-4 h-[76px] shrink-0">
-             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-800 dark:text-slate-300">Team</span>
+          <div className="sticky top-0 z-40 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 flex items-center justify-center sm:justify-start p-1 sm:p-4 h-[76px] shrink-0">
+             <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider sm:tracking-widest text-slate-800 dark:text-slate-300">Team</span>
           </div>
           {/* Time Labels */}
           <div className="bg-white/95 dark:bg-slate-950/95">
              {visibleSlots.map((slot, slotIdx) => (
-                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-2 text-[13px] font-normal flex items-center justify-center text-slate-800 dark:text-slate-300 tabular-nums ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
+                <div key={slotIdx} className={`border-slate-300 dark:border-slate-600 p-1 sm:p-2 text-[10px] sm:text-[13px] font-normal flex items-center justify-center text-slate-800 dark:text-slate-300 tabular-nums ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} style={{ height: `${slotHeight}px` }}>
                  {slot.time.getMinutes() !== 0 ? (
-                    <span className="text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
+                    <span className="text-[10px] sm:text-[13px] font-medium text-slate-400 dark:text-slate-400 tabular-nums">
                       {slot.time.getMinutes()}
                     </span>
                   ) : (
@@ -1433,8 +1450,11 @@ export function CalendarView({
         {/* Right Side: Horizontal Scrollable Columns */}
         {(() => {
           const totalCols = Math.max(1, activeStaffList.length);
-          const gridCols = activeStaffList.length > 0 ? `repeat(${totalCols}, minmax(0, 1fr))` : "1fr";
-          const gridMinWidth = `${Math.max(100, zoomLevel)}%`;
+          const minTeamColWidth = Math.round(80 * (zoomLevel / 100));
+          const gridMinWidth = activeStaffList.length > 1 
+            ? `max(${Math.max(100, zoomLevel)}%, ${totalCols * minTeamColWidth}px)` 
+            : `${Math.max(100, zoomLevel)}%`;
+          const gridCols = activeStaffList.length > 0 ? `repeat(${totalCols}, minmax(${activeStaffList.length > 1 ? `${minTeamColWidth}px` : '0'}, 1fr))` : "1fr";
 
           return (
             <div className={`flex-1 ${mode === 'booking' ? 'overflow-y-hidden' : 'overflow-y-hidden premium-scrollbar'} relative pb-0 overflow-x-auto`}>
@@ -1443,24 +1463,27 @@ export function CalendarView({
                 minWidth: gridMinWidth 
               }}>
                 {/* Staff Headers (Row 1) */}
-            {activeStaffList.map((staff, staffIdx) => (
-              <div 
-                key={staff.id} 
-                className={`sticky top-0 z-30 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-r border-slate-300 dark:border-slate-600 p-4 text-center h-[76px] flex flex-col items-center justify-center ${staffIdx === activeStaffList.length - 1 ? 'border-r-0' : ''}`}
-                style={{
-                  gridColumnStart: staffIdx + 1,
-                  gridRowStart: 1,
-                  gridRowEnd: 2
-                }}
-              >
-                 <div className="flex flex-col items-center gap-2">
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: staff.color }}>
-                      {staff.name.substring(0, 2).toUpperCase()}
-                    </div>
-                    <p className="text-[10px] font-bold tracking-wider truncate w-full text-black dark:text-white">{staff.name}</p>
-                 </div>
-              </div>
-            ))}
+            {activeStaffList.map((staff, staffIdx) => {
+              const isLastStaff = staffIdx === activeStaffList.length - 1;
+              return (
+                <div 
+                  key={staff.id} 
+                  className={`sticky top-0 z-30 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 p-1.5 sm:p-4 text-center h-[76px] flex flex-col items-center justify-center ${isLastStaff ? '' : 'border-r'}`}
+                  style={{
+                    gridColumnStart: staffIdx + 1,
+                    gridRowStart: 1,
+                    gridRowEnd: 2
+                  }}
+                >
+                   <div className="flex flex-col items-center gap-1 sm:gap-2">
+                      <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full flex items-center justify-center text-white text-[9px] sm:text-[10px] font-bold" style={{ backgroundColor: staff.color }}>
+                        {staff.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <p className="text-[9px] sm:text-[10px] font-bold tracking-wider truncate w-full text-black dark:text-white">{staff.name}</p>
+                   </div>
+                </div>
+              );
+            })}
             {activeStaffList.length === 0 && (
               <div className="sticky top-0 z-30 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-600 p-4 h-[76px]">
                  &nbsp;
@@ -1497,14 +1520,14 @@ export function CalendarView({
                      height: `${visibleSlots.length * slotHeight}px`
                    }}
                  >
-                    <div className={`absolute inset-0 border-slate-300 dark:border-slate-600 ${isLastColumn ? 'border-r-0' : 'border-r'}`}>
+                    <div className="absolute inset-0">
                      {visibleSlots.map((slot, slotIdx) => {
                        const currentSlotTime = parse(`${Math.floor(slot.minutes / 60)}:${slot.minutes % 60}`, "H:m", refDate);
 
                        return (
                          <div 
                            key={slotIdx} 
-                           className={`border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900 ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} 
+                           className={`border-b ${isLastColumn ? '' : 'border-r'} border-slate-300 dark:border-slate-600 transition-colors flex flex-col bg-white dark:bg-slate-900 ${slotIdx === visibleSlots.length - 1 ? 'border-b-0' : 'border-b'}`} 
                            style={{ height: `${slotHeight}px` }} 
                          >
                             {(() => {
@@ -1532,7 +1555,7 @@ export function CalendarView({
                                  return (
                                     <div 
                                       key={subIdx}
-                                       className={`flex-1 relative group transition-colors ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
+                                       className={`flex-1 relative group transition-colors ${subSlotsCount > 1 && subIdx < subSlotsCount - 1 ? 'border-b border-dashed border-slate-200/80 dark:border-slate-800/80' : ''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                      style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                      onDragOver={handleDragOver}
                                      onDrop={(e) => handleDrop(e, subSlotTime, staff.id)}
@@ -1648,7 +1671,7 @@ export function CalendarView({
                               ...(hasBuffer && typeof styleData === 'object' ? { borderLeftColor: styleData.style?.borderLeftColor } : {}),
                               ...(!hasBuffer && typeof styleData === 'object' ? styleData.style : {})
                             }}
-                            onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top); } : undefined}
+                            onMouseEnter={mode === 'booking' ? (e) => { const r = e.currentTarget.getBoundingClientRect(); showTooltip(event, r.left, r.right, r.top, r.bottom); } : undefined}
                             onMouseLeave={mode === 'booking' ? hideTooltip : undefined}
                           >
                             {hasBuffer ? (
@@ -1725,8 +1748,18 @@ export function CalendarView({
   const tooltipEl = tooltipInfo && mode === 'booking' ? (() => {
     const TOOLTIP_WIDTH = 220;
     const TOOLTIP_GAP = 8;
-    const rawXPos = tooltipInfo.x - TOOLTIP_WIDTH - TOOLTIP_GAP;
-    const xPos = Math.max(8, rawXPos);
+    const viewportW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    let xPos = tooltipInfo.x - TOOLTIP_WIDTH - TOOLTIP_GAP;
+    if (xPos < 8 && tooltipInfo.cardRight) {
+      const rightSidePos = tooltipInfo.cardRight + TOOLTIP_GAP;
+      if (rightSidePos + TOOLTIP_WIDTH <= viewportW - 8) {
+        xPos = rightSidePos;
+      }
+    }
+    xPos = Math.max(8, Math.min(xPos, viewportW - TOOLTIP_WIDTH - 8));
+
     const treatmentColor = tooltipInfo.event.color || '#6366f1';
     
     // Detect dark mode reactively using next-themes
@@ -1736,19 +1769,32 @@ export function CalendarView({
     const boldTextColorClass = isDark ? 'text-white' : 'text-black';
     const iconColorClass = isDark ? 'text-white' : 'text-black';
 
-
-
     const lightBg = blendColors(treatmentColor, baseBg, isDark ? 0.25 : 0.15);
     const borderBg = blendColors(treatmentColor, baseBg, isDark ? 0.55 : 0.45);
 
-    const TOOLTIP_HEIGHT_ESTIMATE = 165; // generous estimate for max tooltip height
-    const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const rawYPos = tooltipInfo.y;
-    const yPos = Math.min(Math.max(8, rawYPos), viewportH - TOOLTIP_HEIGHT_ESTIMATE - 8);
+    const effectiveHeight = tooltipHeight > 0 ? tooltipHeight : 160;
+    const cardTop = tooltipInfo.y;
+    const cardBottom = tooltipInfo.bottom || tooltipInfo.y;
+    const cardCenterY = (cardTop + cardBottom) / 2;
+
+    // Center tooltip vertically relative to the booking card (half upper side, half down side)
+    let yPos = cardCenterY - (effectiveHeight / 2);
+
+    // If overflowing bottom of viewport, shift up just enough so the bottom of the tooltip is 8px from viewport bottom
+    const maxAllowedY = viewportH - effectiveHeight - 8;
+    if (yPos > maxAllowedY) {
+      yPos = maxAllowedY;
+    }
+
+    // If overflowing top of viewport, shift down just enough
+    if (yPos < 8) {
+      yPos = 8;
+    }
 
     return (
       <div
-        className="fixed z-[200000] flex flex-col p-3 rounded-xl text-xs shadow-2xl backdrop-blur-sm pointer-events-auto border"
+        ref={tooltipRef}
+        className="fixed z-[200000] flex flex-col p-3 rounded-xl text-xs shadow-2xl backdrop-blur-sm pointer-events-auto border max-h-[calc(100vh-24px)] overflow-y-auto custom-scrollbar"
         style={{ 
           top: yPos, 
           left: xPos, 
@@ -1784,6 +1830,15 @@ export function CalendarView({
             <div className="flex items-center gap-1.5">
               <User className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
               <span>{tooltipInfo.event.resourceName}</span>
+            </div>
+          )}
+          {tooltipInfo.event.locationName && (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className={`h-3.5 w-3.5 ${iconColorClass} shrink-0`} />
+              <span className="truncate">
+                {tooltipInfo.event.locationName}
+                {tooltipInfo.event.locationAddress ? ` • ${tooltipInfo.event.locationAddress}` : ""}
+              </span>
             </div>
           )}
         </div>

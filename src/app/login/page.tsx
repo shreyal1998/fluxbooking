@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { ThemeCleaner } from "@/components/providers/theme-cleaner";
+import { checkStaffInviteStatus } from "@/app/actions/dashboard";
 
 const InputError = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -27,6 +28,30 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
   const reason = searchParams.get("reason");
+  const staffId = searchParams.get("staffId");
+
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteChecking, setInviteChecking] = useState<boolean>(!!staffId);
+  const [prefilledEmail, setPrefilledEmail] = useState<string>("");
+
+  useEffect(() => {
+    if (!staffId) return;
+
+    let isMounted = true;
+    checkStaffInviteStatus(staffId).then((res) => {
+      if (!isMounted) return;
+      setInviteChecking(false);
+      if (!res.valid) {
+        setInviteError(res.error || "This invitation is no longer valid.");
+      } else if (res.email) {
+        setPrefilledEmail(res.email);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [staffId]);
 
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
@@ -79,18 +104,22 @@ function LoginForm() {
           <Link href="/" className="mb-6 outline-none">
             <Logo size="xl" />
           </Link>
-          <h2 className="text-center text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Welcome back
-          </h2>
-          <p className="mt-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
-              Register business
-            </Link>
-          </p>
+          {!inviteError && !inviteChecking && (
+            <>
+              <h2 className="text-center text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Welcome back
+              </h2>
+              <p className="mt-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+                Don&apos;t have an account?{" "}
+                <Link href="/register" className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
+                  Register business
+                </Link>
+              </p>
+            </>
+          )}
         </div>
 
-        {registered && (
+        {registered && !inviteError && (
           <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl text-sm font-bold border border-emerald-100 dark:border-emerald-900/30 text-center animate-fade-in">
             {registered === "password_reset_success" 
               ? "Password reset successfully! Please log in with your new password."
@@ -98,40 +127,56 @@ function LoginForm() {
           </div>
         )}
 
-        {reason === "inactive" && (
+        {reason === "inactive" && !inviteError && (
           <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 p-4 rounded-2xl text-sm font-bold border border-amber-100 dark:border-amber-900/30 text-center animate-fade-in flex items-center justify-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>For your security, you have been logged out due to inactivity.</span>
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
-          {generalError && (
-            <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 p-4 rounded-2xl text-sm font-bold border border-rose-100 dark:border-rose-900/30 animate-shake">
-              {generalError}
-            </div>
-          )}
-          <div className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
-                Email address <span className="text-rose-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                onChange={() => clearFieldError("email")}
-                className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm ${
-                  fieldErrors.email 
-                    ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
-                    : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
-                }`}
-                placeholder="john@example.com"
-              />
-              <InputError message={fieldErrors.email} />
-            </div>
-            <div>
+        {inviteChecking ? (
+          <div className="flex flex-col items-center justify-center py-10 space-y-3">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Verifying invitation...</p>
+          </div>
+        ) : inviteError ? (
+          <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 p-6 rounded-2xl text-center border border-rose-100 dark:border-rose-900/30 space-y-3 animate-fade-in">
+            <AlertCircle className="h-8 w-8 text-rose-500 mx-auto" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Invitation No Longer Valid</h3>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
+              {inviteError}
+            </p>
+          </div>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
+            {generalError && (
+              <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 p-4 rounded-2xl text-sm font-bold border border-rose-100 dark:border-rose-900/30 animate-shake">
+                {generalError}
+              </div>
+            )}
+            <div className="space-y-5">
+              <div>
+                <label htmlFor="email" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
+                  Email address <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  defaultValue={prefilledEmail}
+                  key={prefilledEmail}
+                  onChange={() => clearFieldError("email")}
+                  className={`block w-full rounded-2xl border-2 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all sm:text-sm font-normal shadow-sm ${
+                    fieldErrors.email 
+                      ? "border-rose-100 bg-rose-50 dark:bg-rose-900/10 focus:border-rose-500" 
+                      : "border-indigo-100/50 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-slate-900 focus:border-indigo-600 hover:border-indigo-200 dark:hover:border-indigo-800"
+                  }`}
+                  placeholder="john@example.com"
+                />
+                <InputError message={fieldErrors.email} />
+              </div>
+              <div>
               <label htmlFor="password" className="block text-sm font-bold text-slate-500 dark:text-slate-400 ml-1 mb-2">
                 Password <span className="text-rose-500">*</span>
               </label>
@@ -184,6 +229,7 @@ function LoginForm() {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

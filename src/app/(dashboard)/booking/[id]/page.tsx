@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   Timer,
   Phone,
-  FileText
+  FileText,
+  MapPin
 } from "lucide-react";
 import { StatusButtons } from "./status-buttons";
 import Link from "next/link";
@@ -34,8 +35,8 @@ export default async function BookingDetailPage({ params }: PageProps) {
   const userRole = (session.user as any).role;
   const userId = (session.user as any).id;
 
-  // Fetch booking, services, staff, and tenant in parallel
-  const [booking, services, staff, tenant] = await Promise.all([
+  // Fetch booking, services, staff, tenant, and locations in parallel
+  const [booking, services, staff, tenant, locations] = await Promise.all([
     prisma.booking.findUnique({
       where: { 
         id,
@@ -43,18 +44,26 @@ export default async function BookingDetailPage({ params }: PageProps) {
       },
       include: {
         service: true,
-        staff: true,
+        staff: {
+          include: {
+            locations: true,
+          }
+        },
         customer: true,
+        location: true,
       }
     }),
     prisma.service.findMany({ where: { tenantId: tenantId || "" } }),
     prisma.staff.findMany({ 
       where: { tenantId: tenantId || "" },
       orderBy: { createdAt: "asc" },
-      include: { services: true }
+      include: { services: true, locations: true }
     }),
     prisma.tenant.findUnique({
       where: { id: tenantId || "" }
+    }),
+    prisma.location.findMany({
+      where: { tenantId: tenantId || "" }
     })
   ]);
 
@@ -133,6 +142,11 @@ export default async function BookingDetailPage({ params }: PageProps) {
     })) || []
   }));
 
+  const resolvedLocation = booking.location 
+    || (booking.locationId ? locations.find(l => l.id === booking.locationId) : null)
+    || (booking.staff?.locations && booking.staff.locations.length > 0 ? booking.staff.locations[0] : null)
+    || (locations.length > 0 ? (locations.find(l => l.isPrimary) || locations[0]) : null);
+
   const serializedBooking = {
     id: booking.id,
     tenantId: booking.tenantId,
@@ -146,8 +160,15 @@ export default async function BookingDetailPage({ params }: PageProps) {
     status: booking.status,
     price: booking.price ? booking.price.toString() : null,
     notes: booking.notes,
+    locationId: booking.locationId || (resolvedLocation ? resolvedLocation.id : null),
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
+    location: resolvedLocation ? {
+      id: resolvedLocation.id,
+      name: resolvedLocation.name,
+      address: resolvedLocation.address,
+      isPrimary: resolvedLocation.isPrimary,
+    } : null,
     service: booking.service ? {
       id: booking.service.id,
       tenantId: booking.service.tenantId,
@@ -213,7 +234,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
     <div className="flex-1 flex flex-col w-full max-w-full min-w-0 animate-fade-in p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header breadcrumb */}
       <div className="flex items-center gap-2 text-xs sm:text-sm font-medium tracking-wider flex-wrap">
-        <Link href={`/${appointmentSlug}`} className="text-black dark:text-white hover:text-indigo-600 transition-colors">Booking Calendar</Link>
+        <Link href={`/${appointmentSlug}`} className="text-black dark:text-white transition-colors">Booking Calendar</Link>
         <span className="text-slate-700 dark:text-slate-300">&gt;&gt;</span>
         <span className="text-indigo-600 dark:text-indigo-400">Booking Detail</span>
       </div>
@@ -349,7 +370,35 @@ export default async function BookingDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* 4. Billing Details */}
+            {/* 4. Branch Location */}
+            {resolvedLocation && (
+              <div className="space-y-3 bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-medium text-black dark:text-slate-400 tracking-wider">Branch Location</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-medium text-black dark:text-slate-300">{resolvedLocation.name}</p>
+                    {resolvedLocation.isPrimary && (
+                      <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded-full border border-emerald-200/50">
+                        Main
+                      </span>
+                    )}
+                  </div>
+                  {resolvedLocation.address && (
+                    <p className="text-xs text-black dark:text-slate-400 font-normal leading-relaxed">{resolvedLocation.address}</p>
+                  )}
+                  {resolvedLocation.phone && (
+                    <p className="text-xs text-black dark:text-slate-400 font-mono mt-0.5">{resolvedLocation.phone}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 5. Billing Details */}
             <div className="space-y-3 bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
