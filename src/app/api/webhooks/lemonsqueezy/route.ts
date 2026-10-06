@@ -62,14 +62,32 @@ export async function POST(req: Request) {
 
       console.log(`✅ Updating Subscription: Tenant ${tenantId} -> Plan ${planId} (${interval}) Status: ${status}`);
       
+      const customerId = attributes.customer_id.toString();
+      const subscriptionId = payload.data.id.toString();
+
+      // Clear any conflicting tenant records holding the same customerId or subscriptionId (prevents unique constraint errors during test recreations)
+      await prisma.tenant.updateMany({
+        where: {
+          id: { not: tenantId },
+          OR: [
+            { lemonSqueezyCustomerId: customerId },
+            { lemonSqueezySubscriptionId: subscriptionId }
+          ]
+        },
+        data: {
+          lemonSqueezyCustomerId: null,
+          lemonSqueezySubscriptionId: null
+        }
+      });
+
       await prisma.tenant.update({
         where: { id: tenantId },
         data: {
           planStatus: status.toUpperCase(),
           plan: planId,
           planInterval: interval,
-          lemonSqueezyCustomerId: attributes.customer_id.toString(),
-          lemonSqueezySubscriptionId: payload.data.id.toString(),
+          lemonSqueezyCustomerId: customerId,
+          lemonSqueezySubscriptionId: subscriptionId,
           subscriptionEndsAt: attributes.renews_at ? new Date(attributes.renews_at) : null,
         },
       });

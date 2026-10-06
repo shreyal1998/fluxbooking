@@ -25,7 +25,7 @@ export default async function SettingsTabPage({ params }: { params: Promise<{ ta
 
   if (tab === "billing") {
     try {
-      await syncLemonSqueezySubscription();
+      await syncLemonSqueezySubscription({ skipRevalidate: true });
     } catch (e) {
       console.error("Auto sync on page load error:", e);
     }

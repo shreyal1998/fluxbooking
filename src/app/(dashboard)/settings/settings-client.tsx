@@ -621,10 +621,10 @@ export function SettingsClient({
                   <td>Base plan price</td>
                   <td class="right">${invoice.baseAmount || invoice.amount}</td>
                 </tr>
-                ${invoice.adjustments ? `
+                ${invoice.adjustments && invoice.adjustments !== "+$0.00" ? `
                 <tr>
                   <td>Adjustment / Proration</td>
-                  <td class="right" style="color: ${invoice.adjustments.includes('+') ? '#4f46e5' : '#059669'}; font-weight: 600;">
+                  <td class="right" style="color: ${(invoice.adjustments.includes('Leftover') || invoice.adjustments.includes('credit applied')) ? '#059669' : '#4f46e5'}; font-weight: 600;">
                     ${invoice.adjustments}
                   </td>
                 </tr>
@@ -1272,10 +1272,14 @@ export function SettingsClient({
                       <span>Base plan price</span>
                       <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedInvoice.baseAmount || displayAmount}</span>
                     </div>
-                    {selectedInvoice.adjustments && (
+                    {selectedInvoice.adjustments && selectedInvoice.adjustments !== "+$0.00" && (
                       <div className="flex justify-between text-xs font-medium">
                         <span className="text-slate-600 dark:text-slate-400">Adjustment / Proration</span>
-                        <span className={`text-[11px] font-semibold ${selectedInvoice.adjustments.includes('+') ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        <span className={`text-[11px] font-semibold ${
+                          selectedInvoice.adjustments.includes("Leftover") || selectedInvoice.adjustments.includes("credit applied")
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-indigo-600 dark:text-indigo-400"
+                        }`}>
                           {selectedInvoice.adjustments}
                         </span>
                       </div>

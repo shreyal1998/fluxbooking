@@ -39,7 +39,8 @@ export function BillingSettings({
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showUpdateCardModal, setShowUpdateCardModal] = useState(false);
-  const [savedCardLast4, setSavedCardLast4] = useState("4242");
+  const [hasCustomCard, setHasCustomCard] = useState(false);
+  const [savedCardLast4, setSavedCardLast4] = useState(subscriptionId ? "4242" : "");
   const [savedCardBrand, setSavedCardBrand] = useState("Visa");
   const [savedCardExp, setSavedCardExp] = useState("12/28");
   const [cardHolderName, setCardHolderName] = useState("");
@@ -48,6 +49,8 @@ export function BillingSettings({
   const [newCardCvc, setNewCardCvc] = useState("");
   const [cardErrors, setCardErrors] = useState<{ [key: string]: string }>({});
   const [savingCard, setSavingCard] = useState(false);
+
+  const hasCard = Boolean(hasCustomCard || (subscriptionId && savedCardLast4));
 
   const isTrialActive = planStatus === "TRIALING" && trialEndsAt && new Date(trialEndsAt) > new Date();
 
@@ -174,6 +177,7 @@ export function BillingSettings({
       setSavedCardLast4(last4);
       setSavedCardBrand(brand);
       setSavedCardExp(newCardExp);
+      setHasCustomCard(true);
       setSavingCard(false);
       setShowUpdateCardModal(false);
       setNewCardNumber("");
@@ -362,142 +366,12 @@ export function BillingSettings({
     }
   };
 
-  const displayInvoices = (() => {
-    if (invoices && invoices.length > 0) {
+  const displayInvoices = useMemo(() => {
+    if (invoices && Array.isArray(invoices)) {
       return invoices;
     }
-
-    const list: any[] = [];
-    const currentDate = new Date();
-    const startYear = currentDate.getFullYear();
-    let nextRenewalDate = subscriptionEndsAt ? new Date(subscriptionEndsAt) : new Date(currentDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-    if (nextRenewalDate.getTime() <= currentDate.getTime() + 24 * 60 * 60 * 1000) {
-      nextRenewalDate = new Date(currentDate.getTime() + ((planInterval || "MONTH") === "YEAR" ? 365 : 30) * 24 * 60 * 60 * 1000);
-    }
-    const intervalStr = (planInterval || "MONTH") === "YEAR" ? "Yearly" : "Monthly";
-    const planName = currentPlan === "PRO" ? "Pro Plan" : "Starter Plan";
-    const amount = planName === "Pro Plan" 
-      ? (intervalStr === "Yearly" ? "$149.90" : "$14.99")
-      : (intervalStr === "Yearly" ? "$69.90" : "$6.99");
-
-    // 1. Upcoming renewal invoice entry (if not cancelled and not free)
-    if (currentPlan !== "FREE" && planStatus !== "CANCELLED" && planStatus !== "CANCELED") {
-      list.push({
-        id: "INV-UPCOMING",
-        number: "Upcoming",
-        date: nextRenewalDate,
-        planName: planName,
-        interval: intervalStr,
-        amount: amount,
-        adjustments: "+$0.00",
-        baseAmount: amount,
-        status: "UPCOMING",
-        isUpcoming: true,
-        paymentMethod: "Card ending in 4242",
-        description: `FluxBooking ${planName} - Next ${intervalStr} Renewal`
-      });
-    }
-
-    const invDate1 = new Date("2026-08-01T09:00:00.000Z");
-    const invDate2 = new Date("2026-08-30T10:00:00.000Z");
-    const invDate3 = new Date("2026-08-30T10:15:00.000Z");
-    const invDate4 = new Date("2026-08-30T10:30:00.000Z");
-    const invDate5 = new Date("2026-08-30T10:45:00.000Z");
-    const invDate6 = new Date("2026-09-30T09:00:00.000Z");
-
-    // 2. Paid invoices list (preserves full chronological billing history including today's renewal payment)
-    list.push({
-      id: `INV-${startYear}-006`,
-      number: `INV-${startYear}-006`,
-      date: invDate6,
-      planName: "Pro Plan",
-      interval: "Monthly",
-      amount: "$10.38",
-      baseAmount: "$14.99",
-      adjustments: "+$0.00 standard renewal",
-      status: "PAID",
-      isUpcoming: false,
-      paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Pro Plan - Monthly Subscription Renewal"
-    });
-
-    list.push({
-      id: `INV-${startYear}-005`,
-      number: `INV-${startYear}-005`,
-      date: invDate5,
-      planName: "Pro Plan",
-      interval: "Monthly",
-      amount: "$8.00",
-      baseAmount: "$14.99",
-      adjustments: "+$8.00 prorated charge",
-      status: "PAID",
-      isUpcoming: false,
-      paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Pro Plan - Upgrade Prorated Charge"
-    });
-
-    list.push({
-      id: `INV-${startYear}-004`,
-      number: `INV-${startYear}-004`,
-      date: invDate4,
-      planName: "Starter Plan",
-      interval: "Monthly",
-      amount: "$0.00",
-      baseAmount: "$6.99",
-      adjustments: "-$8.00 leftover credit",
-      status: "PAID",
-      isUpcoming: false,
-      paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Starter Plan - Downgrade Leftover Credit"
-    });
-
-    list.push({
-      id: `INV-${startYear}-003`,
-      number: `INV-${startYear}-003`,
-      date: invDate3,
-      planName: "Pro Plan",
-      interval: "Monthly",
-      amount: "$8.00",
-      baseAmount: "$14.99",
-      adjustments: "+$8.00 prorated charge",
-      status: "PAID",
-      isUpcoming: false,
-      paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Pro Plan - Upgrade Prorated Charge"
-    });
-
-    list.push({
-      id: `INV-${startYear}-002`,
-      number: `INV-${startYear}-002`,
-      date: invDate2,
-      planName: "Starter Plan",
-      interval: "Monthly",
-      amount: "$0.00",
-      baseAmount: "$6.99",
-      adjustments: "-$8.00 leftover credit",
-      status: "PAID",
-      isUpcoming: false,
-      paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Starter Plan - Downgrade Leftover Credit"
-    });
-
-    list.push({
-      id: `INV-${startYear}-001`,
-      number: `INV-${startYear}-001`,
-      date: invDate1,
-      planName: "Pro Plan",
-      interval: "Monthly",
-      amount: "$14.99",
-      baseAmount: "$14.99",
-      adjustments: "+$0.00 initial checkout",
-      status: "PAID",
-      isUpcoming: false,
-      paymentMethod: "Card ending in 4242",
-      description: "FluxBooking Pro Plan - Monthly Subscription (Initial)"
-    });
-
-    return list;
-  })();
+    return [];
+  }, [invoices]);
 
   const upcomingInvoice = displayInvoices.find(inv => inv.status === "UPCOMING" || inv.isUpcoming);
   const paidInvoices = useMemo(() => {
@@ -636,25 +510,42 @@ export function BillingSettings({
         <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-8 flex flex-col justify-between gap-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <CreditCard className="h-6 w-6 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <CreditCard className={`h-6 w-6 shrink-0 ${hasCard ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-normal text-slate-900 dark:text-white">
-                    {savedCardBrand} ending in •••• {savedCardLast4}
-                  </h3>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
-                    Default
-                  </span>
-                </div>
-                <p className="text-sm font-normal text-slate-700 dark:text-slate-200 mt-1">
-                  Expires {savedCardExp} • Used for automatic renewals
-                </p>
+                {hasCard ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-normal text-slate-900 dark:text-white">
+                        {savedCardBrand} ending in •••• {savedCardLast4}
+                      </h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
+                        Default
+                      </span>
+                    </div>
+                    <p className="text-sm font-normal text-slate-700 dark:text-slate-200 mt-1">
+                      Expires {savedCardExp} • Used for automatic renewals
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-normal text-slate-900 dark:text-white">
+                        No payment method on file
+                      </h3>
+                    </div>
+                    <p className="text-sm font-normal text-slate-500 dark:text-slate-400 mt-1">
+                      {currentPlan === "FREE" 
+                        ? "No credit card required for the Free plan." 
+                        : "Add a payment method for automatic subscription renewals."}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
-            <span className="text-xs text-slate-700 dark:text-slate-200 font-normal">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
               Vaulted securely via Lemon Squeezy
             </span>
             <button
@@ -662,7 +553,7 @@ export function BillingSettings({
               className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all active:scale-95 border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1.5"
             >
               <CreditCard className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Update card</span>
+              <span>{hasCard ? "Update card" : "Add card"}</span>
             </button>
           </div>
         </div>
@@ -764,7 +655,16 @@ export function BillingSettings({
                     </ul>
                   </div>
 
-                  <div className="mt-auto pt-2">
+                  <div className="mt-auto pt-4 flex flex-col justify-end">
+                    <div className="min-h-[22px] mb-3 flex items-center justify-center">
+                      {plan.price.amount === 0 && (isTrialActive || currentPlan === "FREE") ? (
+                        <p className="text-xs text-amber-500 dark:text-amber-400 font-bold flex items-center justify-center gap-1 text-center">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Includes 14-day trial of Starter features</span>
+                        </p>
+                      ) : null}
+                    </div>
+
                     {currentPlan === "FREE" ? (
                       <button 
                         onClick={(e) => {
@@ -818,13 +718,6 @@ export function BillingSettings({
                             : `Switch to ${plan.name}`}
                       </button>
                     )}
-
-                    {plan.price.amount === 0 && isTrialActive && (
-                      <p className="text-xs text-amber-500 dark:text-amber-400 font-bold mt-3 flex items-center justify-center gap-1">
-                        <AlertCircle className="h-3 w-3 shrink-0" />
-                        Includes 14-day trial of Starter features
-                      </p>
-                    )}
                   </div>
                 </div>
               );
@@ -832,8 +725,8 @@ export function BillingSettings({
           </div>
         </div>
 
-        {/* Save Subscription Changes Banner */}
-        {(selectedPlanId !== currentPlan || interval !== planInterval) && (() => {
+        {/* Save Subscription Changes Banner (Only for active paid subscribers switching plans/intervals) */}
+        {currentPlan !== "FREE" && (selectedPlanId !== currentPlan || interval !== planInterval) && (() => {
           const nextRenewalDate = effectiveSubscriptionEndsAt;
           const totalDays = (planInterval || "MONTH") === "YEAR" ? 365 : 30;
           const daysRemaining = Math.max(1, Math.min(totalDays, Math.ceil((nextRenewalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))));
@@ -1031,8 +924,12 @@ export function BillingSettings({
                         <td className="py-3">
                           <div className="flex flex-col">
                             <span className="font-semibold text-slate-900 dark:text-white">{invoice.amount}</span>
-                            {invoice.adjustments && (
-                              <span className={`text-[10px] font-medium leading-tight mt-0.5 ${invoice.adjustments.includes('+') ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {invoice.adjustments && invoice.adjustments !== "+$0.00" && (
+                              <span className={`text-[10px] font-semibold leading-tight mt-0.5 ${
+                                invoice.adjustments.includes("Leftover") || invoice.adjustments.includes("credit applied")
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-indigo-600 dark:text-indigo-400"
+                              }`}>
                                 ({invoice.adjustments})
                               </span>
                             )}

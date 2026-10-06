@@ -472,7 +472,7 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 lg:gap-6">
-            {tenant?.plan !== "FREE" && (
+            {tenant?.planStatus === "TRIALING" && (
               <TrialBadge planStatus={tenant?.planStatus} trialEndsAt={tenant?.trialEndsAt} plan={tenant?.plan} />
             )}
             {tenant?.plan !== "FREE" && tenant?.planStatus !== "TRIALING" && (
@@ -499,7 +499,7 @@ export function DashboardShell({
                 </span>
               </Link>
             )}
-            {tenant?.plan === "FREE" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) < new Date() && (
+            {tenant?.planStatus !== "TRIALING" && tenant?.plan === "FREE" && tenant?.trialEndsAt && new Date(tenant.trialEndsAt) < new Date() && (
               <Link 
                 href="/settings/billing"
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 transition-all active:scale-95 group shadow-sm text-amber-600 dark:text-amber-400 shrink-0"

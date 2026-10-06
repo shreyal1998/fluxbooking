@@ -166,7 +166,7 @@ export async function cancelLemonSqueezySubscription(subscriptionId: string) {
   }
 }
 
-export async function syncLemonSqueezySubscription() {
+export async function syncLemonSqueezySubscription(options?: { skipRevalidate?: boolean }) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Not authenticated" };
 
@@ -183,45 +183,72 @@ export async function syncLemonSqueezySubscription() {
       select: { lemonSqueezyCustomerId: true, lemonSqueezySubscriptionId: true }
     });
 
-    let endpoint = `${LEMON_SQUEEZY_API_BASE}/subscriptions?filter[store_id]=${storeId}`;
-    if (tenant?.lemonSqueezyCustomerId) {
-      endpoint += `&filter[customer_id]=${tenant.lemonSqueezyCustomerId}`;
+    let matchedSub: any = null;
+
+    // 1. Try fetching directly by known subscriptionId if present on tenant
+    if (tenant?.lemonSqueezySubscriptionId) {
+      try {
+        const directRes = await fetch(`${LEMON_SQUEEZY_API_BASE}/subscriptions/${tenant.lemonSqueezySubscriptionId}`, {
+          method: "GET",
+          headers: {
+            "Accept": "application/vnd.api+json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          cache: "no-store"
+        });
+        if (directRes.ok) {
+          const directJson = await directRes.json();
+          if (directJson.data) {
+            matchedSub = directJson.data;
+          }
+        }
+      } catch (err) {
+        console.warn("Direct subscription fetch fallback:", err);
+      }
     }
 
-    const response = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        "Accept": "application/vnd.api+json",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      cache: "no-store"
-    });
+    // 2. If not matched, query store subscriptions
+    if (!matchedSub) {
+      const endpoint = `${LEMON_SQUEEZY_API_BASE}/subscriptions?filter[store_id]=${storeId}`;
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Accept": "application/vnd.api+json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        cache: "no-store"
+      });
 
-    if (response.ok) {
-      const json = await response.json();
-      const subs = json.data;
-      if (subs && subs.length > 0) {
-        // Find subscriptions matching tenant customer ID or email, prioritized by active status and recency
-        const userSubs = subs.filter((s: any) => 
-          s.attributes.user_email?.toLowerCase() === userEmail?.toLowerCase() ||
-          s.attributes.customer_id?.toString() === tenant?.lemonSqueezyCustomerId
-        );
+      if (response.ok) {
+        const json = await response.json();
+        const subs = json.data;
+        if (subs && subs.length > 0) {
+          const userSubs = subs.filter((s: any) => 
+            s.attributes.user_email?.toLowerCase() === userEmail?.toLowerCase() ||
+            s.attributes.customer_id?.toString() === tenant?.lemonSqueezyCustomerId ||
+            s.id?.toString() === tenant?.lemonSqueezySubscriptionId
+          );
 
-        const candidates = userSubs.length > 0 ? userSubs : subs;
-
-        candidates.sort((a: any, b: any) => {
-          const aActive = ["active", "on_trial", "trialing", "resumed", "unpaused"].includes(a.attributes?.status?.toLowerCase()) ? 1 : 0;
-          const bActive = ["active", "on_trial", "trialing", "resumed", "unpaused"].includes(b.attributes?.status?.toLowerCase()) ? 1 : 0;
-          if (aActive !== bActive) {
-            return bActive - aActive; // Active first
+          if (userSubs && userSubs.length > 0) {
+            userSubs.sort((a: any, b: any) => {
+              const aActive = ["active", "on_trial", "trialing", "resumed", "unpaused"].includes(a.attributes?.status?.toLowerCase()) ? 1 : 0;
+              const bActive = ["active", "on_trial", "trialing", "resumed", "unpaused"].includes(b.attributes?.status?.toLowerCase()) ? 1 : 0;
+              if (aActive !== bActive) return bActive - aActive;
+              const timeA = new Date(a.attributes?.created_at || a.attributes?.updated_at || 0).getTime();
+              const timeB = new Date(b.attributes?.created_at || b.attributes?.updated_at || 0).getTime();
+              return timeB - timeA;
+            });
+            matchedSub = userSubs[0];
           }
-          const timeA = new Date(a.attributes?.created_at || a.attributes?.updated_at || 0).getTime();
-          const timeB = new Date(b.attributes?.created_at || b.attributes?.updated_at || 0).getTime();
-          return timeB - timeA; // Newest first
-        });
+        }
+      }
+    }
 
-        const matchedSub = candidates[0];
+    if (!matchedSub) {
+      return { error: "No active subscription found on Lemon Squeezy for your account" };
+    }
 
         if (matchedSub) {
           const attributes = matchedSub.attributes;
@@ -245,28 +272,49 @@ export async function syncLemonSqueezySubscription() {
             interval = "MONTH";
           }
 
+          const customerId = attributes.customer_id?.toString() || tenant?.lemonSqueezyCustomerId || null;
+          const subscriptionId = matchedSub.id.toString();
+
+          // Safely detach duplicate customerId or subscriptionId from other tenants to prevent unique constraint violations
+          const orConditions: any[] = [];
+          if (customerId) orConditions.push({ lemonSqueezyCustomerId: customerId });
+          if (subscriptionId) orConditions.push({ lemonSqueezySubscriptionId: subscriptionId });
+
+          if (orConditions.length > 0) {
+            await prisma.tenant.updateMany({
+              where: {
+                id: { not: tenantId },
+                OR: orConditions,
+              },
+              data: {
+                lemonSqueezyCustomerId: null,
+                lemonSqueezySubscriptionId: null,
+              },
+            });
+          }
+
           await prisma.tenant.update({
             where: { id: tenantId },
             data: {
               planStatus: status.toUpperCase(),
               plan: planId as any,
               planInterval: interval as any,
-              lemonSqueezyCustomerId: attributes.customer_id?.toString() || tenant?.lemonSqueezyCustomerId,
-              lemonSqueezySubscriptionId: matchedSub.id.toString(),
+              lemonSqueezyCustomerId: customerId,
+              lemonSqueezySubscriptionId: subscriptionId,
               subscriptionEndsAt: attributes.renews_at ? new Date(attributes.renews_at) : null,
             }
           });
 
-          revalidatePath("/settings");
-          revalidatePath("/settings/billing");
-          revalidatePath("/staff");
-          revalidatePath("/schedule");
-          revalidatePath("/overview");
-          revalidatePath("/");
+          if (!options?.skipRevalidate) {
+            revalidatePath("/settings");
+            revalidatePath("/settings/billing");
+            revalidatePath("/staff");
+            revalidatePath("/schedule");
+            revalidatePath("/overview");
+            revalidatePath("/");
+          }
 
-          return { success: true, plan: planId, planStatus: status };
-        }
-      }
+      return { success: true, plan: planId, planStatus: status };
     }
 
     return { error: "No active subscription found on Lemon Squeezy" };
@@ -546,8 +594,14 @@ export async function getLemonSqueezyInvoices() {
     : (tenant.planInterval === "YEAR" ? 69.90 : 6.99);
   const intervalStr = tenant.planInterval === "YEAR" ? "Yearly" : "Monthly";
 
-  // 1. Upcoming renewal invoice entry (if subscription is active and not cancelled and not free)
-  if (tenant.plan !== "FREE" && tenant.planStatus !== "CANCELLED" && tenant.planStatus !== "CANCELED") {
+  // 1. Upcoming renewal invoice entry ONLY if active paid subscription exists and not cancelled and not trialing
+  if (
+    tenant.plan !== "FREE" &&
+    tenant.lemonSqueezySubscriptionId &&
+    tenant.planStatus !== "CANCELLED" &&
+    tenant.planStatus !== "CANCELED" &&
+    tenant.planStatus !== "TRIALING"
+  ) {
     let nextDate = tenant.subscriptionEndsAt ? new Date(tenant.subscriptionEndsAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     if (nextDate.getTime() <= Date.now() + 24 * 60 * 60 * 1000) {
       nextDate = new Date(Date.now() + (tenant.planInterval === "YEAR" ? 365 : 30) * 24 * 60 * 60 * 1000);
@@ -556,14 +610,6 @@ export async function getLemonSqueezyInvoices() {
     let upcomingAmount = amountNum;
     let upcomingSubtext = "(Full renewal)";
     let upcomingAdjustments = "+$0.00 standard renewal";
-
-    // If tenant is on Starter Plan with leftover credit from downgrade ($8.00 credit - $6.99 Starter = $1.01 credit)
-    if (tenant.plan === "STARTER" && (tenant.planInterval || "MONTH") === "MONTH") {
-      const leftoverCredit = 1.01;
-      upcomingAmount = Math.max(0, 6.99 - leftoverCredit);
-      upcomingSubtext = `(-$${leftoverCredit.toFixed(2)} credit applied)`;
-      upcomingAdjustments = `-$${leftoverCredit.toFixed(2)} leftover credit applied`;
-    }
 
     invoices.push({
       id: "INV-UPCOMING",
@@ -582,53 +628,12 @@ export async function getLemonSqueezyInvoices() {
     });
   }
 
-  // 2. Fetch persistent switch & subscription invoices from database
+  // 2. Fetch genuine invoices from database
   try {
     await ensureInvoiceTable();
 
-    const startYear = new Date().getFullYear();
-    // 1. Initial subscription date: uses the genuine tenant.createdAt timestamp or Lemon Squeezy checkout date
-    const invDate1 = tenant.createdAt ? new Date(tenant.createdAt) : new Date("2026-08-01T09:00:00.000Z");
-    // 2-5. Plan switches performed on the switch test day (Aug 30, 2026) spaced chronologically
-    const invDate2 = new Date("2026-08-30T10:00:00.000Z"); // Starter Plan (Downgrade Credit $0.00)
-    const invDate3 = new Date("2026-08-30T10:15:00.000Z"); // Pro Plan (Prorated Upgrade $8.00)
-    const invDate4 = new Date("2026-08-30T10:30:00.000Z"); // Starter Plan (Downgrade Credit $0.00)
-    const invDate5 = new Date("2026-08-30T10:45:00.000Z"); // Pro Plan (Prorated Upgrade $8.00)
-
-    // 1. Reset & ensure historical invoices INV-001 through INV-005 have their correct fixed dates and amounts
-    await prisma.$executeRaw`
-      UPDATE "Invoice"
-      SET "createdAt" = ${invDate1}, "amount" = '$14.99', "description" = 'FluxBooking Pro Plan - Monthly Subscription (Initial)'
-      WHERE "tenantId" = ${tenantId} AND "invoiceNumber" LIKE '%-001'
-    `;
-    await prisma.$executeRaw`
-      UPDATE "Invoice"
-      SET "createdAt" = ${invDate2}, "amount" = '$0.00', "description" = 'FluxBooking Starter Plan - Downgrade Leftover Credit'
-      WHERE "tenantId" = ${tenantId} AND "invoiceNumber" LIKE '%-002'
-    `;
-    await prisma.$executeRaw`
-      UPDATE "Invoice"
-      SET "createdAt" = ${invDate3}, "amount" = '$8.00', "description" = 'FluxBooking Pro Plan - Upgrade Prorated Charge'
-      WHERE "tenantId" = ${tenantId} AND "invoiceNumber" LIKE '%-003'
-    `;
-    await prisma.$executeRaw`
-      UPDATE "Invoice"
-      SET "createdAt" = ${invDate4}, "amount" = '$0.00', "description" = 'FluxBooking Starter Plan - Downgrade Leftover Credit'
-      WHERE "tenantId" = ${tenantId} AND "invoiceNumber" LIKE '%-004'
-    `;
-    await prisma.$executeRaw`
-      UPDATE "Invoice"
-      SET "createdAt" = ${invDate5}, "amount" = '$8.00', "description" = 'FluxBooking Pro Plan - Upgrade Prorated Charge'
-      WHERE "tenantId" = ${tenantId} AND "invoiceNumber" LIKE '%-005'
-    `;
-    await prisma.$executeRaw`
-      UPDATE "Invoice"
-      SET "description" = 'FluxBooking Pro Plan - Upgrade Prorated Charge (8 days left)'
-      WHERE "tenantId" = ${tenantId} AND "amount" = '$2.13'
-    `;
-
-    // Query Lemon Squeezy API to fetch upcoming renewal price & date
-    if (apiKey && tenant.lemonSqueezySubscriptionId) {
+    // Query Lemon Squeezy API to fetch live upcoming renewal price & date if subscription exists
+    if (apiKey && tenant.lemonSqueezySubscriptionId && invoices.length > 0 && invoices[0].isUpcoming) {
       try {
         const subDetailRes = await fetch(`${LEMON_SQUEEZY_API_BASE}/subscriptions/${tenant.lemonSqueezySubscriptionId}`, {
           headers: { "Accept": "application/vnd.api+json", "Authorization": `Bearer ${apiKey}` },
@@ -639,7 +644,7 @@ export async function getLemonSqueezyInvoices() {
           const subAttr = subDetailJson.data?.attributes;
           if (subAttr) {
             const liveUpcomingAmount = subAttr.subtotal_formatted || subAttr.total_formatted || (subAttr.subtotal ? `$${(subAttr.subtotal / 100).toFixed(2)}` : null);
-            if (liveUpcomingAmount && invoices.length > 0 && invoices[0].isUpcoming) {
+            if (liveUpcomingAmount) {
               invoices[0].amount = liveUpcomingAmount;
               invoices[0].baseAmount = liveUpcomingAmount;
             }
@@ -650,44 +655,12 @@ export async function getLemonSqueezyInvoices() {
       }
     }
 
-    let dbInvoices = await prisma.$queryRaw<any[]>`
+    const dbInvoices = await prisma.$queryRaw<any[]>`
       SELECT "id", "invoiceNumber", "planName", "interval", "amount", "status", "paymentMethod", "description", "pdfUrl", "createdAt"
       FROM "Invoice"
       WHERE "tenantId" = ${tenantId}
       ORDER BY "createdAt" DESC, "invoiceNumber" DESC
     `;
-
-    // Ensure today's renewal (Sep 30, 2026) has its own unique invoice (e.g. INV-2026-014)
-    const existingRenewal = (dbInvoices || []).find((inv: any) => {
-      const d = new Date(inv.createdAt);
-      return (
-        inv.invoiceNumber?.endsWith("-014") ||
-        (d.getFullYear() === 2026 && d.getMonth() === 8 && d.getDate() === 30 && inv.description?.toLowerCase().includes("renewal"))
-      );
-    });
-
-    if (!existingRenewal) {
-      const maxNum = (dbInvoices || []).reduce((max: number, inv: any) => {
-        const n = parseInt((inv.invoiceNumber || "").replace(/\D/g, ""), 10) || 0;
-        return Math.max(max, n % 1000);
-      }, 0);
-
-      const nextInvNum = `INV-${startYear}-${String(Math.max(14, maxNum + 1)).padStart(3, "0")}`;
-      const invId = `inv_renewal_sep30_${tenantId}`;
-      const invDate6 = new Date("2026-09-30T09:00:00.000Z");
-
-      await prisma.$executeRaw`
-        INSERT INTO "Invoice" ("id", "tenantId", "invoiceNumber", "planName", "interval", "amount", "status", "paymentMethod", "description", "createdAt")
-        VALUES (${invId}, ${tenantId}, ${nextInvNum}, 'Pro Plan', 'Monthly', '$10.38', 'PAID', 'Card ending in 4242', 'FluxBooking Pro Plan - Monthly Subscription Renewal', ${invDate6})
-      `;
-
-      dbInvoices = await prisma.$queryRaw<any[]>`
-        SELECT "id", "invoiceNumber", "planName", "interval", "amount", "status", "paymentMethod", "description", "pdfUrl", "createdAt"
-        FROM "Invoice"
-        WHERE "tenantId" = ${tenantId}
-        ORDER BY "createdAt" DESC, "invoiceNumber" DESC
-      `;
-    }
 
     if (dbInvoices && dbInvoices.length > 0) {
       const seen = new Set<string>();
@@ -700,44 +673,33 @@ export async function getLemonSqueezyInvoices() {
           ? (inv.interval === "Yearly" ? "$149.90" : "$14.99")
           : (inv.interval === "Yearly" ? "$69.90" : "$6.99");
 
-        let adjustments = "+$0.00 standard renewal";
+        const baseNum = parseFloat(baseAmount.replace("$", "")) || 0;
+        const paidNum = parseFloat((inv.amount || "$0").replace("$", "")) || 0;
+        let adjustments = "+$0.00";
 
-        // Extract days left from description e.g. "(8 days left)"
-        const daysMatch = inv.description?.match(/\((\d+)\s*days\s*left\)/i);
-        let daysLeftText = daysMatch ? ` (${daysMatch[1]} days left)` : "";
-        if (!daysLeftText && inv.amount === "$2.13") {
-          daysLeftText = " (8 days left)";
-        } else if (!daysLeftText && (inv.description?.toLowerCase().includes("prorate") || inv.description?.toLowerCase().includes("upgrade"))) {
-          const numAmount = parseFloat(inv.amount.replace(/[^0-9.]/g, "") || "0");
-          if (numAmount > 0 && numAmount < 8.0) {
-            const calculatedDays = Math.max(1, Math.round((numAmount / 8.0) * 30));
-            daysLeftText = ` (${calculatedDays} days left)`;
-          } else {
-            daysLeftText = "";
+        if (inv.description?.includes("Downgrade Leftover Credit") || (paidNum === 0 && baseNum > 0)) {
+          adjustments = `-$${baseNum.toFixed(2)} (Leftover credit applied - $0.00 due)`;
+        } else if (inv.description?.includes("Upgrade Prorated Charge")) {
+          const discount = baseNum - paidNum;
+          if (discount > 0.01) {
+            adjustments = `-$${discount.toFixed(2)} (Prorated upgrade adjustment)`;
+          } else if (discount < -0.01) {
+            adjustments = `+$${Math.abs(discount).toFixed(2)} (Additional charge)`;
           }
-        }
-
-        const isInitial = inv.invoiceNumber?.endsWith("-001") || inv.description?.toLowerCase().includes("initial");
-        const isRenewal = inv.description?.toLowerCase().includes("renewal") || (!isInitial && !inv.description?.toLowerCase().includes("prorate") && !inv.description?.toLowerCase().includes("credit") && !inv.description?.toLowerCase().includes("upgrade") && !inv.description?.toLowerCase().includes("downgrade"));
-        const isUpgrade = !isInitial && !isRenewal && (inv.description?.toLowerCase().includes("prorate") || inv.description?.toLowerCase().includes("upgrade"));
-        const isDowngrade = !isInitial && !isRenewal && !isUpgrade && (inv.description?.toLowerCase().includes("credit") || inv.description?.toLowerCase().includes("downgrade") || inv.amount === "$0.00");
-
-        let formattedDesc = "";
-        if (isInitial) {
-          adjustments = "+$0.00 initial checkout";
-          formattedDesc = `FluxBooking ${inv.planName} - ${inv.interval} Subscription (Initial)`;
-        } else if (isRenewal) {
-          adjustments = "+$0.00 standard renewal";
-          formattedDesc = `FluxBooking ${inv.planName} - ${inv.interval} Subscription Renewal`;
-        } else if (isUpgrade) {
-          adjustments = `+${inv.amount} prorated charge${daysLeftText}`;
-          formattedDesc = `FluxBooking ${inv.planName} - Upgrade Prorated Charge${daysLeftText}`;
-        } else if (isDowngrade) {
-          adjustments = `-$8.00 leftover credit${daysLeftText}`;
-          formattedDesc = `FluxBooking ${inv.planName} - Downgrade Leftover Credit${daysLeftText}`;
-        } else {
-          adjustments = "+$0.00 standard renewal";
-          formattedDesc = `FluxBooking ${inv.planName} - ${inv.interval} Subscription Renewal`;
+        } else if (inv.description?.includes("Renewal") && Math.abs(baseNum - paidNum) > 0.01) {
+          const discount = baseNum - paidNum;
+          if (discount > 0.01) {
+            adjustments = `-$${discount.toFixed(2)} (Renewal credit applied)`;
+          } else if (discount < -0.01) {
+            adjustments = `+$${Math.abs(discount).toFixed(2)} (Renewal adjustment)`;
+          }
+        } else if (Math.abs(baseNum - paidNum) > 0.01) {
+          const discount = baseNum - paidNum;
+          if (discount > 0.01) {
+            adjustments = `-$${discount.toFixed(2)} (Credit adjustment)`;
+          } else if (discount < -0.01) {
+            adjustments = `+$${Math.abs(discount).toFixed(2)} (Adjustment)`;
+          }
         }
 
         invoices.push({
@@ -752,8 +714,8 @@ export async function getLemonSqueezyInvoices() {
           status: inv.status || "PAID",
           isUpcoming: false,
           pdfUrl: inv.pdfUrl,
-          paymentMethod: inv.paymentMethod || "Card ending in 4242",
-          description: formattedDesc
+          paymentMethod: inv.paymentMethod || "Card on file",
+          description: inv.description || `FluxBooking ${inv.planName} - ${inv.interval} Subscription`
         });
       });
 
@@ -773,81 +735,6 @@ export async function getLemonSqueezyInvoices() {
     }
   } catch (err) {
     console.error("Database invoice lookup error:", err);
-  }
-
-  // 4. Initial historical seed if no invoices yet
-  if (invoices.length <= 1) {
-    const startYear = new Date().getFullYear();
-    const today = new Date();
-    const pastDate1 = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
-    const pastDate2 = new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000);
-
-    if (tenant.plan === "PRO") {
-      invoices.push({
-        id: `INV-${startYear}-003`,
-        number: `INV-${startYear}-003`,
-        date: today,
-        planName: "Pro Plan",
-        interval: intervalStr,
-        amount: intervalStr === "Yearly" ? "$149.90" : "$14.99",
-        status: "PAID",
-        isUpcoming: false,
-        paymentMethod: "Card ending in 4242",
-        description: `FluxBooking Pro Plan - ${intervalStr} Subscription`
-      });
-
-      invoices.push({
-        id: `INV-${startYear}-002`,
-        number: `INV-${startYear}-002`,
-        date: pastDate1,
-        planName: "Starter Plan",
-        interval: "Monthly",
-        amount: "$6.99",
-        status: "PAID",
-        isUpcoming: false,
-        paymentMethod: "Card ending in 4242",
-        description: `FluxBooking Starter Plan - Monthly Subscription`
-      });
-
-      invoices.push({
-        id: `INV-${startYear}-001`,
-        number: `INV-${startYear}-001`,
-        date: pastDate2,
-        planName: "Pro Plan",
-        interval: "Monthly",
-        amount: "$14.99",
-        status: "PAID",
-        isUpcoming: false,
-        paymentMethod: "Card ending in 4242",
-        description: `FluxBooking Pro Plan - Monthly Subscription`
-      });
-    } else {
-      invoices.push({
-        id: `INV-${startYear}-002`,
-        number: `INV-${startYear}-002`,
-        date: today,
-        planName: "Starter Plan",
-        interval: intervalStr,
-        amount: intervalStr === "Yearly" ? "$69.90" : "$6.99",
-        status: "PAID",
-        isUpcoming: false,
-        paymentMethod: "Card ending in 4242",
-        description: `FluxBooking Starter Plan - ${intervalStr} Subscription`
-      });
-
-      invoices.push({
-        id: `INV-${startYear}-001`,
-        number: `INV-${startYear}-001`,
-        date: pastDate2,
-        planName: "Pro Plan",
-        interval: "Monthly",
-        amount: "$14.99",
-        status: "PAID",
-        isUpcoming: false,
-        paymentMethod: "Card ending in 4242",
-        description: `FluxBooking Pro Plan - Monthly Subscription`
-      });
-    }
   }
 
   return invoices;
