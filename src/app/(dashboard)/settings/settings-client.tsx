@@ -47,23 +47,9 @@ export function SettingsClient({
   const [confirmDeleteBusiness, setConfirmDeleteBusiness] = useState(false);
   const [deleteBusinessLoading, setDeleteBusinessLoading] = useState(false);
 
-  // Handle successful checkout return and sync subscription
-  useEffect(() => {
-    if (searchParams.get("success") === "true") {
-      syncLemonSqueezySubscription().then((res) => {
-        if (res.success) {
-          toast.success(`Subscription upgraded! Active plan: ${res.plan}`);
-        } else {
-          toast.success("Payment received! Refreshing subscription...");
-        }
-        window.location.href = "/settings/billing";
-      });
-    }
-  }, [searchParams]);
-
   const handleCopyUrl = () => {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://fluxbooking.com");
-    const fullUrl = `${appUrl}/b/${tenant?.slug}`;
+    const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+    const fullUrl = `${origin}/b/${tenant?.slug}`;
     navigator.clipboard.writeText(fullUrl);
     setCopied(true);
     toast.success("Public booking URL copied to clipboard!");

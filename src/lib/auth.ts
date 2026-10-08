@@ -63,6 +63,7 @@ export const authOptions: NextAuthOptions = {
           return {
             ...token,
             id: user.id,
+            name: user.name,
             role: user.role,
             tenantId: user.tenantId,
             phone: (user as any).phone,
@@ -76,14 +77,16 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       try {
+        if (!session) return session;
         return {
           ...session,
           user: {
-            ...session.user,
-            id: token.id,
-            role: token.role,
-            tenantId: token.tenantId,
-            phone: token.phone,
+            ...(session.user || {}),
+            id: (token?.id as string) || (session.user as any)?.id,
+            name: (token?.name as string) || session.user?.name || null,
+            role: (token?.role as any) || (session.user as any)?.role || "STAFF",
+            tenantId: (token?.tenantId as string) || (session.user as any)?.tenantId || null,
+            phone: (token?.phone as string) || (session.user as any)?.phone || null,
           },
         };
       } catch (error) {

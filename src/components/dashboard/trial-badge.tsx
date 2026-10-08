@@ -38,7 +38,7 @@ export function TrialBadge({ planStatus, trialEndsAt, plan }: TrialBadgeProps) {
 
   const isCritical = daysRemaining <= 3 || isExpired;
 
-  const planName = plan ? plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase() : "Starter";
+  const planName = plan && plan !== "FREE" ? `${plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()} Plan` : "Free Trial";
 
   return (
     <Link 
@@ -47,7 +47,7 @@ export function TrialBadge({ planStatus, trialEndsAt, plan }: TrialBadgeProps) {
     >
       {/* Circular Progress SVG with Tooltip */}
       <Tooltip 
-        content={isExpired ? "Your trial has expired. Click to view billing plans." : `You are on the ${planName} Plan Trial (${daysRemaining} days remaining). Click to manage billing.`} 
+        content={isExpired ? "Your 14-day trial has expired. Click to choose a billing plan." : `You have ${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in your 14-day free trial. Click to view plans.`} 
         position="bottom"
       >
         <div className="relative h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center shrink-0">

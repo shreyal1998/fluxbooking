@@ -832,7 +832,7 @@ export function CalendarView({
                               return (
                                  <div 
                                    key={subIdx}
-                                   className={`flex-1 relative group transition-colors ${subSlotsCount > 1 && subIdx < subSlotsCount - 1 ? 'border-b border-dashed border-slate-200/80 dark:border-slate-800/80' : ''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
+                                   className={`flex-1 relative group transition-colors ${''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                    style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                    onDragOver={handleDragOver}
                                    onDrop={(e) => handleDrop(e, subSlotTime, singleStaffParam)}
@@ -1211,7 +1211,7 @@ export function CalendarView({
                                  return (
                                     <div 
                                       key={subIdx}
-                                      className={`flex-1 relative group transition-colors ${subSlotsCount > 1 && subIdx < subSlotsCount - 1 ? 'border-b border-dashed border-slate-200/80 dark:border-slate-800/80' : ''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
+                                      className={`flex-1 relative group transition-colors ${''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                       style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                       onDragOver={handleDragOver}
                                       onDrop={(e) => handleDrop(e, subSlotTime, activeStaffParam)}
@@ -1555,7 +1555,7 @@ export function CalendarView({
                                  return (
                                     <div 
                                       key={subIdx}
-                                       className={`flex-1 relative group transition-colors ${subSlotsCount > 1 && subIdx < subSlotsCount - 1 ? 'border-b border-dashed border-slate-200/80 dark:border-slate-800/80' : ''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
+                                       className={`flex-1 relative group transition-colors ${''} ${isClosed ? 'bg-zebra bg-slate-100 dark:bg-slate-900 cursor-pointer' : isPastSlot ? `bg-slate-50 dark:bg-slate-900/80 cursor-pointer` : 'bg-white dark:bg-slate-900 cursor-pointer'}`}
                                      style={{ backgroundPositionY: isClosed ? `-${((slot.minutes - displayRange.start) / slotDuration) * slotHeight + (subIdx * (slotHeight / subSlotsCount))}px` : undefined }}
                                      onDragOver={handleDragOver}
                                      onDrop={(e) => handleDrop(e, subSlotTime, staff.id)}

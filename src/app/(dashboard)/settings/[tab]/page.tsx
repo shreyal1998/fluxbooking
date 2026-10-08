@@ -23,14 +23,6 @@ export default async function SettingsTabPage({ params }: { params: Promise<{ ta
   const tenantId = (session.user as any).tenantId;
   const userId = (session.user as any).id;
 
-  if (tab === "billing") {
-    try {
-      await syncLemonSqueezySubscription({ skipRevalidate: true });
-    } catch (e) {
-      console.error("Auto sync on page load error:", e);
-    }
-  }
-
   const [tenant, dbUser, initialInvoices] = await Promise.all([
     prisma.tenant.findUnique({
       where: { id: tenantId },

@@ -42,13 +42,30 @@ export function BillingSettings({
   const [hasCustomCard, setHasCustomCard] = useState(false);
   const [savedCardLast4, setSavedCardLast4] = useState(subscriptionId ? "4242" : "");
   const [savedCardBrand, setSavedCardBrand] = useState("Visa");
-  const [savedCardExp, setSavedCardExp] = useState("12/28");
+  const [savedCardExp, setSavedCardExp] = useState(subscriptionId ? "04/30" : "");
   const [cardHolderName, setCardHolderName] = useState("");
   const [newCardNumber, setNewCardNumber] = useState("");
   const [newCardExp, setNewCardExp] = useState("");
   const [newCardCvc, setNewCardCvc] = useState("");
   const [cardErrors, setCardErrors] = useState<{ [key: string]: string }>({});
   const [savingCard, setSavingCard] = useState(false);
+
+  // Restore user-saved card details if present
+  useEffect(() => {
+    try {
+      const key = `billing_card_${subscriptionId || "default"}`;
+      const saved = localStorage.getItem(key) || localStorage.getItem("billing_card_default");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.last4) setSavedCardLast4(parsed.last4);
+        if (parsed.brand) setSavedCardBrand(parsed.brand);
+        if (parsed.exp) setSavedCardExp(parsed.exp);
+        setHasCustomCard(true);
+      } else if (subscriptionId && !savedCardExp) {
+        setSavedCardExp("04/30");
+      }
+    } catch (e) {}
+  }, [subscriptionId]);
 
   const hasCard = Boolean(hasCustomCard || (subscriptionId && savedCardLast4));
 
@@ -76,6 +93,30 @@ export function BillingSettings({
       };
       runAutoSync();
     }
+  }, []);
+
+  // Reset loading states when navigating back via browser Back button (bfcache) or tab refocus
+  useEffect(() => {
+    const handleResetLoading = () => {
+      setLoading(null);
+      setSavingPlan(false);
+      setCancelling(false);
+    };
+
+    window.addEventListener("pageshow", handleResetLoading);
+    window.addEventListener("focus", handleResetLoading);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handleResetLoading();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", handleResetLoading);
+      window.removeEventListener("focus", handleResetLoading);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   // Lock background scrolling cleanly when modals are open
@@ -178,6 +219,10 @@ export function BillingSettings({
       setSavedCardBrand(brand);
       setSavedCardExp(newCardExp);
       setHasCustomCard(true);
+      try {
+        const key = `billing_card_${subscriptionId || "default"}`;
+        localStorage.setItem(key, JSON.stringify({ last4, brand, exp: newCardExp }));
+      } catch (e) {}
       setSavingCard(false);
       setShowUpdateCardModal(false);
       setNewCardNumber("");
@@ -523,7 +568,7 @@ export function BillingSettings({
                       </span>
                     </div>
                     <p className="text-sm font-normal text-slate-700 dark:text-slate-200 mt-1">
-                      Expires {savedCardExp} • Used for automatic renewals
+                      Expires {savedCardExp || "04/30"} • Used for automatic renewals
                     </p>
                   </>
                 ) : (
@@ -626,7 +671,7 @@ export function BillingSettings({
                   } ${
                     isSelected
                     ? "border-indigo-600 dark:border-indigo-500 ring-2 ring-indigo-600 dark:ring-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/10" 
-                    : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:border-indigo-500/30"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:border-indigo-500/30"
                   }`}
                 >
                   <div>
@@ -678,7 +723,7 @@ export function BillingSettings({
                         disabled={isCurrent || !!loading || cancelling}
                         className={`w-full py-3 rounded-xl text-xs font-bold transition-all ${
                           isCurrent 
-                            ? "bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 cursor-default border border-slate-100 dark:border-slate-800" 
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-default border-2 border-slate-300 dark:border-slate-700 shadow-2xs" 
                             : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none border border-transparent dark:border-white/10 cursor-pointer"
                         }`}
                       >
@@ -705,9 +750,9 @@ export function BillingSettings({
                         disabled={isCurrent && interval === planInterval}
                         className={`w-full py-3 rounded-xl text-xs font-semibold transition-all ${
                           isCurrent && interval === planInterval
-                            ? "bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 cursor-default border border-slate-200 dark:border-slate-800" 
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold cursor-default border-2 border-slate-300 dark:border-slate-700 shadow-2xs" 
                             : isSelected
-                              ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                              ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold cursor-pointer border-2 border-slate-300 dark:border-slate-700 shadow-2xs hover:bg-slate-200 dark:hover:bg-slate-700"
                               : "bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold shadow-md shadow-indigo-100 dark:shadow-none border border-transparent cursor-pointer"
                         }`}
                       >

@@ -92,9 +92,6 @@ export function DashboardShell({
     if (userId) {
       localStorage.setItem(`sidebar-collapsed:${userId}`, String(next));
       document.cookie = `sidebar-collapsed-${userId}=${next}; path=/; max-age=31536000; SameSite=Lax`;
-    } else {
-      localStorage.setItem("sidebar-collapsed", String(next));
-      document.cookie = `sidebar-collapsed=${next}; path=/; max-age=31536000; SameSite=Lax`;
     }
   };
 

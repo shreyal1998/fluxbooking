@@ -9,6 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
+    "db:clear": "node scripts/clear-db.mjs",
     "vercel-build": "npx prisma migrate resolve --applied 20260711054549_init || true && npx prisma migrate deploy && next build"
   },
   "dependencies": {

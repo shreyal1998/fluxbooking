@@ -57,7 +57,7 @@ export function TrialBanner({ planStatus, trialEndsAt }: TrialBannerProps) {
                  : `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left on trial.`}
            </p>
            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-widest leading-relaxed">
-             Starter Features
+             14-Day Free Trial
            </p>
         </div>
       </div>

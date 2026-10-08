@@ -53,7 +53,7 @@ export default async function DashboardLayout({
   const dbTheme = user?.theme || "light";
 
   const cookieStore = await cookies();
-  const isCollapsed = (cookieStore.get(`sidebar-collapsed-${userId}`)?.value || cookieStore.get("sidebar-collapsed")?.value) === "true";
+  const isCollapsed = cookieStore.get(`sidebar-collapsed-${userId}`)?.value === "true";
 
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col">
