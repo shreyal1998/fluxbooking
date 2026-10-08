@@ -56,10 +56,9 @@ export async function registerBusiness(formData: FormData) {
 
     // Create Tenant and User in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Set trial for 14 days, ending at 23:59:59 in user's timezone
+      // Set trial for exactly 14 days
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-      trialEndsAt.setHours(23, 59, 59, 999);
 
       const tenant = await tx.tenant.create({
         data: {

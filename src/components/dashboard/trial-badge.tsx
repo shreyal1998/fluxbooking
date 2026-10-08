@@ -22,7 +22,7 @@ export function TrialBadge({ planStatus, trialEndsAt, plan }: TrialBadgeProps) {
       const now = new Date();
       const end = new Date(trialEndsAt);
       const diffDays = differenceInCalendarDays(end, now);
-      setDaysRemaining(diffDays > 0 ? diffDays : 0);
+      setDaysRemaining(diffDays > 0 ? Math.min(diffDays, TRIAL_DURATION) : 0);
       setIsExpired(end < now);
     }
   }, [trialEndsAt]);

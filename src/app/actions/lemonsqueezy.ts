@@ -7,7 +7,74 @@ import { revalidatePath } from "next/cache";
 
 const LEMON_SQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1";
 
-export async function createLemonSqueezyCheckout(variantId: string) {
+function getStarterMonthlyVariantId() {
+  return (
+    process.env.NEXT_LS_VARIANT_STARTER_MONTHLY ||
+    process.env.LS_VARIANT_STARTER_MONTHLY ||
+    process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_MONTHLY ||
+    process.env.LEMON_SQUEEZY_STARTER_MONTHLY_VARIANT_ID ||
+    ""
+  );
+}
+
+function getStarterYearlyVariantId() {
+  return (
+    process.env.NEXT_LS_VARIANT_STARTER_YEARLY ||
+    process.env.LS_VARIANT_STARTER_YEARLY ||
+    process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_YEARLY ||
+    process.env.LEMON_SQUEEZY_STARTER_YEARLY_VARIANT_ID ||
+    ""
+  );
+}
+
+function getProMonthlyVariantId() {
+  return (
+    process.env.NEXT_LS_VARIANT_PRO_MONTHLY ||
+    process.env.LS_VARIANT_PRO_MONTHLY ||
+    process.env.NEXT_PUBLIC_LS_VARIANT_PRO_MONTHLY ||
+    process.env.LEMON_SQUEEZY_PRO_MONTHLY_VARIANT_ID ||
+    ""
+  );
+}
+
+function getProYearlyVariantId() {
+  return (
+    process.env.NEXT_LS_VARIANT_PRO_YEARLY ||
+    process.env.LS_VARIANT_PRO_YEARLY ||
+    process.env.NEXT_PUBLIC_LS_VARIANT_PRO_YEARLY ||
+    process.env.LEMON_SQUEEZY_PRO_YEARLY_VARIANT_ID ||
+    ""
+  );
+}
+
+function resolveVariantId(variantIdOrPlan: string, interval: "MONTH" | "YEAR" = "MONTH"): string {
+  if (
+    variantIdOrPlan &&
+    !variantIdOrPlan.includes("placeholder") &&
+    variantIdOrPlan !== "STARTER" &&
+    variantIdOrPlan !== "PRO" &&
+    variantIdOrPlan !== "FREE"
+  ) {
+    return variantIdOrPlan;
+  }
+
+  const str = (variantIdOrPlan || "").toLowerCase();
+  const isStarter = str.includes("starter") || variantIdOrPlan === "STARTER";
+  const isPro = str.includes("pro") || variantIdOrPlan === "PRO";
+  const isYearly = str.includes("yearly") || interval === "YEAR";
+
+  if (isStarter) {
+    return isYearly ? getStarterYearlyVariantId() : getStarterMonthlyVariantId();
+  }
+
+  if (isPro) {
+    return isYearly ? getProYearlyVariantId() : getProMonthlyVariantId();
+  }
+
+  return "";
+}
+
+export async function createLemonSqueezyCheckout(variantId: string, interval: "MONTH" | "YEAR" = "MONTH") {
   console.log("--- AUTH DEBUG ---");
   const session = await getServerSession(authOptions);
   console.log("Session exists:", !!session);
@@ -28,7 +95,9 @@ export async function createLemonSqueezyCheckout(variantId: string) {
   const apiKey = process.env.LEMON_SQUEEZY_API_KEY;
   const storeId = process.env.LEMON_SQUEEZY_STORE_ID;
 
-  if (!variantId || variantId.includes("placeholder")) {
+  const finalVariantId = resolveVariantId(variantId, interval);
+
+  if (!finalVariantId || finalVariantId.includes("placeholder")) {
     return { error: "This plan is not correctly configured in your environment variables." };
   }
 
@@ -38,7 +107,7 @@ export async function createLemonSqueezyCheckout(variantId: string) {
 
   console.log("--- LEMON SQUEEZY DEBUG ---");
   console.log("Store ID:", storeId);
-  console.log("Attempting Variant ID:", variantId);
+  console.log("Attempting Variant ID:", finalVariantId);
   console.log("---------------------------");
 
   const tenant = tenantId ? await prisma.tenant.findUnique({
@@ -60,7 +129,7 @@ export async function createLemonSqueezyCheckout(variantId: string) {
     businessName: tenant?.name,
     adminEmail: resolvedEmail,
     adminName: customerName,
-    variantId
+    variantId: finalVariantId
   });
 
   try {
@@ -100,7 +169,7 @@ export async function createLemonSqueezyCheckout(variantId: string) {
               data: { type: "stores", id: storeId.toString() }
             },
             variant: {
-              data: { type: "variants", id: variantId.toString() }
+              data: { type: "variants", id: finalVariantId.toString() }
             }
           }
         }
@@ -280,16 +349,16 @@ export async function syncLemonSqueezySubscription(options?: { skipRevalidate?: 
           let planId = "PRO";
           let interval = "MONTH";
 
-          if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_PRO_YEARLY) {
+          if (variantId === getProYearlyVariantId()) {
             planId = "PRO";
             interval = "YEAR";
-          } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_PRO_MONTHLY) {
+          } else if (variantId === getProMonthlyVariantId()) {
             planId = "PRO";
             interval = "MONTH";
-          } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_YEARLY) {
+          } else if (variantId === getStarterYearlyVariantId()) {
             planId = "STARTER";
             interval = "YEAR";
-          } else if (variantId === process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_MONTHLY) {
+          } else if (variantId === getStarterMonthlyVariantId()) {
             planId = "STARTER";
             interval = "MONTH";
           }
@@ -458,13 +527,9 @@ export async function updateLemonSqueezySubscriptionPlan({
 
   const isJustResuming = isResume || (tenant.plan === planId && tenant.planInterval === interval && (tenant.planStatus === "CANCELLED" || tenant.planStatus === "CANCELED"));
 
-  const variantId = interval === "YEAR" 
-    ? (planId === "PRO" 
-        ? (process.env.NEXT_PUBLIC_LS_VARIANT_PRO_YEARLY || process.env.LEMON_SQUEEZY_PRO_YEARLY_VARIANT_ID)
-        : (process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_YEARLY || process.env.LEMON_SQUEEZY_STARTER_YEARLY_VARIANT_ID))
-    : (planId === "PRO" 
-        ? (process.env.NEXT_PUBLIC_LS_VARIANT_PRO_MONTHLY || process.env.LEMON_SQUEEZY_PRO_MONTHLY_VARIANT_ID)
-        : (process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_MONTHLY || process.env.LEMON_SQUEEZY_STARTER_MONTHLY_VARIANT_ID));
+  const variantId = interval === "YEAR"
+    ? (planId === "PRO" ? getProYearlyVariantId() : getStarterYearlyVariantId())
+    : (planId === "PRO" ? getProMonthlyVariantId() : getStarterMonthlyVariantId());
 
   if (apiKey && tenant.lemonSqueezySubscriptionId && variantId) {
     try {

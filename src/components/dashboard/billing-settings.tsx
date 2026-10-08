@@ -303,18 +303,12 @@ export function BillingSettings({
 
     const variantId = interval === "YEAR" ? plan.price.yearlyVariantId : plan.price.monthlyVariantId;
 
-    if (!variantId) {
-      alert("Plan configuration error: Variant ID missing for this interval");
-      setLoading(null);
-      return;
-    }
-
-    const result = await createLemonSqueezyCheckout(variantId);
+    const result = await createLemonSqueezyCheckout(variantId || planId, interval === "YEAR" ? "YEAR" : "MONTH");
 
     if (result.url) {
       window.location.href = result.url;
     } else if (result.error) {
-      alert(result.error);
+      toast.error(result.error);
       setLoading(null);
     }
   };
@@ -346,16 +340,14 @@ export function BillingSettings({
       // If subscription is cancelled or requires checkout, open Lemon Squeezy checkout to create active subscription
       const plan = PLANS.find(p => p.id === selectedPlanId);
       const variantId = interval === "YEAR" ? plan?.price.yearlyVariantId : plan?.price.monthlyVariantId;
-      if (variantId) {
-        const checkoutRes = await createLemonSqueezyCheckout(variantId);
-        if (checkoutRes.url) {
-          window.location.href = checkoutRes.url;
-          return;
-        } else if (checkoutRes.error) {
-          toast.error(checkoutRes.error);
-          setSavingPlan(false);
-          return;
-        }
+      const checkoutRes = await createLemonSqueezyCheckout(variantId || selectedPlanId, interval === "YEAR" ? "YEAR" : "MONTH");
+      if (checkoutRes.url) {
+        window.location.href = checkoutRes.url;
+        return;
+      } else if (checkoutRes.error) {
+        toast.error(checkoutRes.error);
+        setSavingPlan(false);
+        return;
       }
     } catch (err) {
       console.error(err);
@@ -392,16 +384,14 @@ export function BillingSettings({
       // If subscription was permanently cancelled on Lemon Squeezy, open checkout to create a fresh subscription
       const plan = PLANS.find(p => p.id === currentPlan);
       const variantId = (planInterval || "MONTH") === "YEAR" ? plan?.price.yearlyVariantId : plan?.price.monthlyVariantId;
-      if (variantId) {
-        const checkoutRes = await createLemonSqueezyCheckout(variantId);
-        if (checkoutRes.url) {
-          window.location.href = checkoutRes.url;
-          return;
-        } else if (checkoutRes.error) {
-          toast.error(checkoutRes.error);
-          setSavingPlan(false);
-          return;
-        }
+      const checkoutRes = await createLemonSqueezyCheckout(variantId || currentPlan, (planInterval || "MONTH") === "YEAR" ? "YEAR" : "MONTH");
+      if (checkoutRes.url) {
+        window.location.href = checkoutRes.url;
+        return;
+      } else if (checkoutRes.error) {
+        toast.error(checkoutRes.error);
+        setSavingPlan(false);
+        return;
       }
     } catch (err) {
       console.error(err);
